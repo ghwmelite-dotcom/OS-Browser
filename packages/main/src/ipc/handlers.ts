@@ -16,15 +16,24 @@ import { initCertHandler } from '../services/cert-handler';
 import { registerBookmarkImportHandlers } from '../services/bookmark-import';
 
 export function registerAllHandlers(mainWindow: BrowserWindow): void {
-  // Window controls
-  ipcMain.handle(IPC.WINDOW_MINIMIZE, () => mainWindow.minimize());
-  ipcMain.handle(IPC.WINDOW_MAXIMIZE, () => {
-    if (mainWindow.isMaximized()) mainWindow.unmaximize();
-    else mainWindow.maximize();
+  // Window controls — use event.sender to find the calling window
+  // so these work for new windows AND private windows, not just mainWindow
+  ipcMain.handle(IPC.WINDOW_MINIMIZE, (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    win?.minimize();
   });
-  ipcMain.handle(IPC.WINDOW_CLOSE, () => mainWindow.close());
-  ipcMain.handle(IPC.WINDOW_FULLSCREEN, () => {
-    mainWindow.setFullScreen(!mainWindow.isFullScreen());
+  ipcMain.handle(IPC.WINDOW_MAXIMIZE, (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win?.isMaximized()) win.unmaximize();
+    else win?.maximize();
+  });
+  ipcMain.handle(IPC.WINDOW_CLOSE, (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    win?.close();
+  });
+  ipcMain.handle(IPC.WINDOW_FULLSCREEN, (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    win?.setFullScreen(!win.isFullScreen());
   });
 
   // New window

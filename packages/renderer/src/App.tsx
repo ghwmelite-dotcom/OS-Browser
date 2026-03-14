@@ -39,10 +39,27 @@ export function App() {
     const init = async () => {
       try {
         await loadSettings();
+        const settings = useSettingsStore.getState().settings as any;
+        const startupMode = settings?.startup_mode || 'newtab';
+
         await loadTabs();
-        if (useTabsStore.getState().tabs.length === 0) {
-          await createTab();
+        const existingTabs = useTabsStore.getState().tabs;
+
+        if (startupMode === 'restore' && existingTabs.length > 0) {
+          // Resume where user left off — tabs are already loaded from DB
+          // Navigate each tab that has a real URL to restore the WebContentsView
+          for (const tab of existingTabs) {
+            if (tab.url && tab.url !== 'os-browser://newtab') {
+              await window.osBrowser.tabs.navigate(tab.id, tab.url);
+            }
+          }
+        } else {
+          // Start fresh — create a new tab if none exist
+          if (existingTabs.length === 0) {
+            await createTab();
+          }
         }
+
         await loadStats();
       } catch (err) {
         console.error('Init error:', err);

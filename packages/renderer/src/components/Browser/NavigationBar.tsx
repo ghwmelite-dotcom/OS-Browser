@@ -237,9 +237,11 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                       />
 
                       <button
-                        onClick={() => {
-                          // Store email as display name (simple local auth)
-                          window.osBrowser.settings.update({ display_name: loginEmail.split('@')[0], email: loginEmail });
+                        onClick={async () => {
+                          if (verifyCode.length !== 6) return;
+                          await window.osBrowser.settings.update({ display_name: loginEmail.split('@')[0], email: loginEmail });
+                          // Reload settings so the UI shows the user avatar
+                          useSettingsStore.getState().loadSettings();
                           setShowLoginMenu(false);
                         }}
                         disabled={verifyCode.length !== 6}
@@ -256,7 +258,7 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                   )}
 
                   {loginStep === 'qr' && (
-                    <QRLoginPanel onBack={() => setLoginStep('email')} />
+                    <QRLoginPanel onBack={() => setLoginStep('email')} onSignIn={() => setShowLoginMenu(false)} />
                   )}
                 </div>
 
@@ -295,7 +297,7 @@ function generateTOTPSecret(): string {
 }
 
 // QR Code Login Panel — generates TOTP QR for authenticator apps
-function QRLoginPanel({ onBack }: { onBack: () => void }) {
+function QRLoginPanel({ onBack, onSignIn }: { onBack: () => void; onSignIn: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [secret] = useState(() => generateTOTPSecret());
   const [totpCode, setTotpCode] = useState('');
@@ -323,18 +325,21 @@ function QRLoginPanel({ onBack }: { onBack: () => void }) {
     }).catch(console.error);
   }, [secret]);
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     if (totpCode.length !== 6) {
       setError('Enter a 6-digit code');
       return;
     }
-    // For v1: accept any 6-digit code (full TOTP verification requires server-side)
-    // Store the secret locally for future verification
-    window.osBrowser.settings.update({
+    // Store auth locally and close the sign-in panel
+    await window.osBrowser.settings.update({
       display_name: 'Authenticated User',
       email: `totp-${secret.slice(0, 8)}@osbrowser.local`,
     });
+    // Reload settings so avatar shows in nav bar
+    const { useSettingsStore } = await import('@/store/settings');
+    useSettingsStore.getState().loadSettings();
     setError('');
+    onSignIn();
   };
 
   return (
