@@ -16,11 +16,6 @@ files:
   - "!**/*.ts"
   - "!**/*.tsx"
   - "!**/*.map"
-extraResources:
-  - from: node_modules/sql.js/dist/
-    to: node_modules/sql.js/dist/
-    filter:
-      - "**/*"
 asar: true
 win:
   target:

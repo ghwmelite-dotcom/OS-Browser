@@ -1,4 +1,6 @@
-import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
+// Use sql-asm (pure JS, no WASM) so it bundles cleanly into the ASAR
+const initSqlJs = require('sql.js/dist/sql-asm.js');
+type SqlJsDatabase = any;
 import { app } from 'electron';
 import path from 'path';
 import fs from 'fs';
@@ -127,7 +129,11 @@ function saveDatabase(): void {
 }
 
 export async function initDatabase(): Promise<void> {
-  const SQL = await initSqlJs();
+  // sql-asm returns the SQL object directly (no WASM loading needed)
+  const SQL = typeof initSqlJs === 'function'
+    ? await Promise.resolve(initSqlJs())
+    : initSqlJs;
+
   const dbDir = app.getPath('userData');
   fs.mkdirSync(dbDir, { recursive: true });
   dbPath = path.join(dbDir, 'data.db');
