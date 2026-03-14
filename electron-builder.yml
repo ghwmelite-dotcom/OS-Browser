@@ -8,19 +8,11 @@ files:
   - packages/preload/dist/**/*
   - packages/renderer/dist/**/*
   - packages/shared/dist/**/*
-  - assets/**/*
-  - node_modules/sql.js/**/*
-  - "!landing/**/*"
-  - "!worker/**/*"
-  - "!docs/**/*"
+  - assets/icon.*
+  - assets/tray-icon.png
   - "!**/*.ts"
   - "!**/*.tsx"
   - "!**/*.map"
-extraResources:
-  - from: node_modules/sql.js/dist/sql-wasm.wasm
-    to: sql-wasm.wasm
-asarUnpack:
-  - node_modules/sql.js/**/*
 asar: true
 win:
   target:
