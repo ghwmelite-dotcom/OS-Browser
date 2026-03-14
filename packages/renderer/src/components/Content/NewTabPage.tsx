@@ -162,15 +162,23 @@ export function NewTabPage() {
 
   return (
     <div className="min-h-full overflow-y-auto noise-bg" style={{ background: 'var(--color-bg)' }}>
-      {/* Atmospheric gradient overlay — visible ambient glow */}
+      {/* Ghana flag atmospheric gradient — Red, Gold, Green, Black */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
           background: [
-            'radial-gradient(ellipse 100% 60% at 50% -5%, rgba(212,160,23,0.12) 0%, transparent 55%)',
-            'radial-gradient(ellipse 70% 50% at 90% 90%, rgba(0,107,63,0.08) 0%, transparent 45%)',
-            'radial-gradient(ellipse 50% 40% at 5% 85%, rgba(206,17,38,0.05) 0%, transparent 40%)',
-            'radial-gradient(circle at 50% 50%, rgba(212,160,23,0.02) 0%, transparent 70%)',
+            // Gold glow from top center — most prominent (Ghana's star)
+            'radial-gradient(ellipse 110% 55% at 50% -8%, rgba(212,160,23,0.18) 0%, rgba(212,160,23,0.06) 30%, transparent 55%)',
+            // Red glow from top-left
+            'radial-gradient(ellipse 60% 45% at 0% 0%, rgba(206,17,38,0.12) 0%, transparent 45%)',
+            // Green glow from bottom-right
+            'radial-gradient(ellipse 70% 50% at 100% 95%, rgba(0,107,63,0.14) 0%, transparent 50%)',
+            // Red accent bottom-left
+            'radial-gradient(ellipse 40% 35% at 5% 90%, rgba(206,17,38,0.08) 0%, transparent 40%)',
+            // Green accent top-right
+            'radial-gradient(ellipse 45% 30% at 95% 10%, rgba(0,107,63,0.06) 0%, transparent 35%)',
+            // Subtle gold center warmth
+            'radial-gradient(circle at 50% 45%, rgba(212,160,23,0.04) 0%, transparent 60%)',
           ].join(', '),
           zIndex: 0,
         }}
