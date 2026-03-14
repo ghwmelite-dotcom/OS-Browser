@@ -2,6 +2,7 @@
   "name": "os-browser",
   "private": true,
   "version": "1.0.0",
+  "main": "packages/main/dist/main.js",
   "workspaces": [
     "packages/*",
     "worker"

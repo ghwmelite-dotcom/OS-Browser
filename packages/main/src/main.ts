@@ -58,8 +58,15 @@ function createWindow() {
   registerAllHandlers(mainWindow);
 
   // Load renderer
-  if (process.env.NODE_ENV === 'development') {
+  const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+  if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
+    // Fallback to built files if dev server isn't running
+    mainWindow.webContents.on('did-fail-load', () => {
+      mainWindow!.loadFile(
+        path.join(__dirname, '..', '..', 'renderer', 'dist', 'index.html')
+      );
+    });
   } else {
     mainWindow.loadFile(
       path.join(__dirname, '..', '..', 'renderer', 'dist', 'index.html')

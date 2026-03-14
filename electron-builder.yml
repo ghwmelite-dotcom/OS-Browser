@@ -9,23 +9,33 @@ files:
   - packages/renderer/dist/**/*
   - packages/shared/dist/**/*
   - assets/**/*
+  - "!assets/icon-256.png"
+  - "!landing/**/*"
+  - "!worker/**/*"
+  - "!docs/**/*"
+  - "!**/*.ts"
+  - "!**/*.tsx"
+  - "!**/*.map"
+extraResources:
+  - from: node_modules/sql.js/dist/
+    to: node_modules/sql.js/dist/
+    filter:
+      - "**/*"
+asar: true
 win:
   target:
     - target: nsis
       arch: [x64]
-    - target: msi
-      arch: [x64]
-  icon: assets/icon.png
+  icon: assets/icon.ico
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: OS Browser
-msi:
-  oneClick: false
-  perMachine: true
+  installerIcon: assets/icon.ico
+  uninstallerIcon: assets/icon.ico
 publish:
   provider: github
   owner: ghwmelite-dotcom
-  repo: os-browser
+  repo: OS-Browser
