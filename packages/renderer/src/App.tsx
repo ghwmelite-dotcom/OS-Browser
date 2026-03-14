@@ -60,7 +60,12 @@ export function App() {
     <div className="h-screen w-screen flex flex-col bg-bg">
       <TitleBar />
       <TabBar />
-      <NavigationBar />
+      <NavigationBar
+        onOpenHistory={() => setShowHistory(true)}
+        onOpenBookmarks={() => setShowBookmarks(true)}
+        onOpenSettings={() => setShowSettings(true)}
+        onOpenStats={() => {}}
+      />
       <BookmarksBar />
 
       {/* Content + Sidebar */}
