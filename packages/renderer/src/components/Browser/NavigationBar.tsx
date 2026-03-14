@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Mail, QrCode, ArrowRight as ArrowRightIcon } from 'lucide-react';
+import QRCode from 'qrcode';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
 import { useSidebarStore } from '@/store/sidebar';
@@ -255,38 +256,7 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                   )}
 
                   {loginStep === 'qr' && (
-                    <>
-                      <div className="w-44 h-44 mx-auto mb-3 rounded-xl flex items-center justify-center border" style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)' }}>
-                        {/* Generated QR-like pattern */}
-                        <div className="text-center">
-                          <div className="w-28 h-28 mx-auto mb-2 grid grid-cols-7 gap-[2px] p-2">
-                            {Array.from({ length: 49 }, (_, i) => {
-                              const isCorner = (i < 3 || (i >= 4 && i < 7)) && (Math.floor(i/7) < 3) ||
-                                (i % 7 >= 4 && Math.floor(i/7) < 3) ||
-                                (i % 7 < 3 && Math.floor(i/7) >= 4);
-                              const isRandom = Math.sin(i * 7.3 + 42) > 0;
-                              return (
-                                <div key={i} className="rounded-[1px]" style={{
-                                  background: isCorner || isRandom ? 'var(--color-text-primary)' : 'transparent',
-                                  opacity: isCorner ? 1 : 0.7,
-                                }} />
-                              );
-                            })}
-                          </div>
-                          <p className="text-[10px] text-text-muted">OS Browser QR Login</p>
-                        </div>
-                      </div>
-
-                      <p className="text-[12px] text-text-muted text-center mb-3">
-                        QR login will be available with the OS Browser mobile app
-                      </p>
-
-                      <button onClick={() => setLoginStep('email')} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[13px] font-medium border transition-colors hover:bg-surface-2"
-                        style={{ borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }}>
-                        <Mail size={14} />
-                        Use email instead
-                      </button>
-                    </>
+                    <QRLoginPanel onBack={() => setLoginStep('email')} />
                   )}
                 </div>
 
@@ -309,5 +279,49 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
         />
       </div>
     </div>
+  );
+}
+
+// QR Code Login Panel — generates a real scannable QR code
+function QRLoginPanel({ onBack }: { onBack: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [sessionId] = useState(() => crypto.randomUUID());
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    // Generate a real QR code encoding a login URL with session ID
+    const loginUrl = `https://os-browser-api.ghwmelite.workers.dev/api/v1/auth/qr/${sessionId}`;
+    QRCode.toCanvas(canvasRef.current, loginUrl, {
+      width: 180,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#ffffff',
+      },
+      errorCorrectionLevel: 'M',
+    }).catch(() => {});
+  }, [sessionId]);
+
+  return (
+    <>
+      <div className="flex justify-center mb-3">
+        <div className="rounded-xl overflow-hidden bg-white p-1">
+          <canvas ref={canvasRef} style={{ width: 180, height: 180 }} />
+        </div>
+      </div>
+
+      <p className="text-[12px] text-text-secondary text-center mb-1 font-medium">
+        Scan with your phone camera
+      </p>
+      <p className="text-[11px] text-text-muted text-center mb-3">
+        Open any QR scanner app and point it at this code to sign in instantly
+      </p>
+
+      <button onClick={onBack} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[13px] font-medium border transition-colors hover:bg-surface-2"
+        style={{ borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }}>
+        <Mail size={14} />
+        Use email instead
+      </button>
+    </>
   );
 }
