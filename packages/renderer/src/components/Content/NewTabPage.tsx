@@ -13,7 +13,6 @@ import {
   Globe,
   Zap,
 } from 'lucide-react';
-import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
 import { useStatsStore } from '@/store/stats';
 import { useSettingsStore } from '@/store/settings';
@@ -74,8 +73,7 @@ export function NewTabPage() {
   const [portals, setPortals] = useState<GovPortal[]>([]);
   const [searchValue, setSearchValue] = useState('');
   const [recentHistory, setRecentHistory] = useState<HistoryEntry[]>([]);
-  const { navigate } = useNavigationStore();
-  const { activeTabId, updateTab } = useTabsStore();
+  const { activeTabId, createTab } = useTabsStore();
   const { totalAdsBlocked } = useStatsStore();
   const { settings } = useSettingsStore();
   const { openPanel } = useSidebarStore();
@@ -105,19 +103,13 @@ export function NewTabPage() {
   // Navigate the active tab — uses the SAME navigate() from the navigation
   // store that the OmniBar uses.  Also updates the tab store URL eagerly so
   // ContentArea stops showing the NewTabPage immediately.
-  const handleNavigate = (url: string) => {
-    if (!activeTabId) return;
-
+  // Use createTab(url) — this creates a brand new tab with a WebContentsView
+  // in the main process in one step. Much simpler than trying to navigate
+  // an existing newtab (which has no WebContentsView).
+  const openUrl = (url: string) => {
     let finalUrl = url;
-    if (!url.includes('://')) {
-      finalUrl = `https://${url}`;
-    }
-
-    // Update tab store URL eagerly — makes ContentArea's isNewTab false
-    updateTab(activeTabId, { url: finalUrl, title: finalUrl });
-
-    // Navigate (updates nav store + IPC to main process)
-    navigate(activeTabId, finalUrl);
+    if (!finalUrl.includes('://')) finalUrl = `https://${finalUrl}`;
+    createTab(finalUrl);
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -125,14 +117,14 @@ export function NewTabPage() {
     if (!searchValue.trim()) return;
     const query = searchValue.trim();
     if (query.includes('.') && !query.includes(' ')) {
-      handleNavigate(query.startsWith('http') ? query : `https://${query}`);
+      openUrl(query.startsWith('http') ? query : `https://${query}`);
     } else {
-      handleNavigate(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
+      openUrl(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
     }
   };
 
   const handlePortalClick = (url: string) => {
-    handleNavigate(url);
+    openUrl(url);
   };
 
   const quickActions = [
@@ -377,7 +369,7 @@ export function NewTabPage() {
               {recentHistory.map((entry, index) => (
                 <button
                   key={entry.id}
-                  onClick={() => handleNavigate(entry.url)}
+                  onClick={() => openUrl(entry.url)}
                   aria-label={`Visit ${entry.title || entry.url}`}
                   className="group w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-2/50 transition-all duration-150 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ghana-gold animate-fade-up"
                   style={{
