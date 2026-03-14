@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:askozzy.ghwmelite.workers.dev)"
+      "WebFetch(domain:askozzy.ghwmelite.workers.dev)",
+      "Bash(cd:*)",
+      "Bash(npm view:*)"
     ]
   }
 }

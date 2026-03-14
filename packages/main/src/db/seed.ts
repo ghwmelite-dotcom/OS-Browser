@@ -1,7 +1,6 @@
-import type Database from '@journeyapps/sqlcipher';
 import { DEFAULT_GOV_PORTALS } from '@os-browser/shared';
 
-export function seedDatabase(db: Database.Database): void {
+export function seedDatabase(db: any): void {
   const count = (db.prepare('SELECT COUNT(*) as count FROM gov_portals').get() as any).count;
 
   if (count === 0) {

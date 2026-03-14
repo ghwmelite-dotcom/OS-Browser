@@ -1,6 +1,4 @@
-import type Database from '@journeyapps/sqlcipher';
-
-export function up(db: Database.Database): void {
+export function up(db: any): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS user_profile (
       id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
@@ -42,16 +40,10 @@ export function up(db: Database.Database): void {
       UNIQUE(url)
     );
 
-    CREATE VIRTUAL TABLE IF NOT EXISTS history_fts USING fts5(
-      page_text,
-      content='',
-      tokenize='porter unicode61'
-    );
-
-    CREATE TABLE IF NOT EXISTS history_fts_map (
+    CREATE TABLE IF NOT EXISTS history_fulltext (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      history_id INTEGER NOT NULL REFERENCES history(id) ON DELETE CASCADE,
-      fts_rowid INTEGER NOT NULL,
+      history_id INTEGER NOT NULL,
+      page_text TEXT NOT NULL,
       indexed_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 

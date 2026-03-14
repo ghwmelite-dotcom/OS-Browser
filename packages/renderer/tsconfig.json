@@ -5,7 +5,12 @@
     "rootDir": "src",
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "noImplicitAny": false
   },
   "include": ["src/**/*"]
 }

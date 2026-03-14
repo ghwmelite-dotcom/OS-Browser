@@ -1,57 +1,160 @@
-import Database from '@journeyapps/sqlcipher';
-import { app, safeStorage } from 'electron';
+import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
+import { app } from 'electron';
 import path from 'path';
 import fs from 'fs';
-import crypto from 'crypto';
 
-let db: Database.Database | null = null;
+let db: SqlJsDatabase | null = null;
+let dbPath: string = '';
 
-function getDbDir(): string {
-  return path.join(app.getPath('userData'));
-}
+// Wrapper to provide better-sqlite3-like API over sql.js
+class PreparedStatement {
+  private db: SqlJsDatabase;
+  private sql: string;
 
-function getOrCreateEncryptionKey(): string {
-  const dbDir = getDbDir();
-  const keyPath = path.join(dbDir, '.keyref');
-
-  if (fs.existsSync(keyPath) && safeStorage.isEncryptionAvailable()) {
-    const encrypted = fs.readFileSync(keyPath);
-    return safeStorage.decryptString(encrypted);
+  constructor(db: SqlJsDatabase, sql: string) {
+    this.db = db;
+    this.sql = sql;
   }
 
-  const keyHex = crypto.randomBytes(32).toString('hex');
-
-  if (safeStorage.isEncryptionAvailable()) {
-    const encrypted = safeStorage.encryptString(keyHex);
-    fs.writeFileSync(keyPath, encrypted);
+  run(...params: any[]): { lastInsertRowid: number; changes: number } {
+    const flatParams = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+    this.db.run(this.sql, flatParams);
+    const lastId = this.db.exec('SELECT last_insert_rowid() as id')[0]?.values[0]?.[0] as number || 0;
+    const changes = this.db.getRowsModified();
+    saveDatabase();
+    return { lastInsertRowid: lastId, changes };
   }
 
-  return keyHex;
+  get(...params: any[]): any {
+    const flatParams = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+    try {
+      const stmt = this.db.prepare(this.sql);
+      stmt.bind(flatParams.length > 0 ? flatParams : undefined);
+      if (stmt.step()) {
+        const columns = stmt.getColumnNames();
+        const values = stmt.get();
+        stmt.free();
+        const row: any = {};
+        columns.forEach((col, i) => { row[col] = values[i]; });
+        return row;
+      }
+      stmt.free();
+      return undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  all(...params: any[]): any[] {
+    const flatParams = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+    try {
+      const results = this.db.exec(this.sql, flatParams);
+      if (results.length === 0) return [];
+      const { columns, values } = results[0];
+      return values.map(row => {
+        const obj: any = {};
+        columns.forEach((col, i) => { obj[col] = row[i]; });
+        return obj;
+      });
+    } catch {
+      return [];
+    }
+  }
 }
 
-export function getDatabase(): Database.Database {
-  if (db) return db;
+// Database wrapper with better-sqlite3-compatible API
+class DatabaseWrapper {
+  private sqlDb: SqlJsDatabase;
 
-  const dbDir = getDbDir();
+  constructor(sqlDb: SqlJsDatabase) {
+    this.sqlDb = sqlDb;
+  }
+
+  prepare(sql: string): PreparedStatement {
+    return new PreparedStatement(this.sqlDb, sql);
+  }
+
+  exec(sql: string): void {
+    this.sqlDb.run(sql);
+    saveDatabase();
+  }
+
+  pragma(pragma: string): any {
+    try {
+      const result = this.sqlDb.exec(`PRAGMA ${pragma}`);
+      return result.length > 0 ? result[0].values[0]?.[0] : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  transaction<T>(fn: () => T): () => T {
+    return () => {
+      this.sqlDb.run('BEGIN TRANSACTION');
+      try {
+        const result = fn();
+        this.sqlDb.run('COMMIT');
+        saveDatabase();
+        return result;
+      } catch (err) {
+        this.sqlDb.run('ROLLBACK');
+        throw err;
+      }
+    };
+  }
+
+  close(): void {
+    saveDatabase();
+    this.sqlDb.close();
+  }
+
+  getInternalDb(): SqlJsDatabase {
+    return this.sqlDb;
+  }
+}
+
+let wrapper: DatabaseWrapper | null = null;
+
+function saveDatabase(): void {
+  if (!db || !dbPath) return;
+  try {
+    const data = db.export();
+    const buffer = Buffer.from(data);
+    fs.writeFileSync(dbPath, buffer);
+  } catch {
+    // Silently fail on save errors during shutdown
+  }
+}
+
+export async function initDatabase(): Promise<void> {
+  const SQL = await initSqlJs();
+  const dbDir = app.getPath('userData');
   fs.mkdirSync(dbDir, { recursive: true });
+  dbPath = path.join(dbDir, 'data.db');
 
-  const dbPath = path.join(dbDir, 'data.db');
-  db = new Database(dbPath);
+  if (fs.existsSync(dbPath)) {
+    const buffer = fs.readFileSync(dbPath);
+    db = new SQL.Database(buffer);
+  } else {
+    db = new SQL.Database();
+  }
 
-  // Apply SQLCipher encryption
-  const key = getOrCreateEncryptionKey();
-  db.pragma(`key = "x'${key}'"`);
+  wrapper = new DatabaseWrapper(db);
+  wrapper.pragma('journal_mode = WAL');
+  wrapper.pragma('foreign_keys = ON');
+}
 
-  // Performance settings
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
-
-  return db;
+export function getDatabase(): DatabaseWrapper {
+  if (!wrapper) {
+    throw new Error('Database not initialized. Call initDatabase() first.');
+  }
+  return wrapper as any;
 }
 
 export function closeDatabase(): void {
-  if (db) {
-    db.close();
+  if (wrapper) {
+    wrapper.close();
+    wrapper = null;
     db = null;
   }
 }

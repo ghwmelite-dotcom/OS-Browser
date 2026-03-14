@@ -1,6 +1,6 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
-import { getDatabase, closeDatabase, runMigrations } from './db/database';
+import { initDatabase, getDatabase, closeDatabase, runMigrations } from './db/database';
 import { seedDatabase } from './db/seed';
 import { registerAllHandlers } from './ipc/handlers';
 
@@ -76,7 +76,8 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  await initDatabase();
   runMigrations();
   const db = getDatabase();
   seedDatabase(db);
