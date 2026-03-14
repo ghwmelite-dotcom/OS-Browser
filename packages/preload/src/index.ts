@@ -37,6 +37,8 @@ contextBridge.exposeInMainWorld('osBrowser', {
   maximize: () => ipcRenderer.invoke(IPC.WINDOW_MAXIMIZE),
   newWindow: () => ipcRenderer.invoke('window:new'),
   newPrivateWindow: () => ipcRenderer.invoke('window:new-private'),
+  hideWebViews: () => ipcRenderer.invoke('webviews:hide'),
+  showWebViews: () => ipcRenderer.invoke('webviews:show'),
   close: () => ipcRenderer.invoke(IPC.WINDOW_CLOSE),
   fullscreen: () => ipcRenderer.invoke(IPC.WINDOW_FULLSCREEN),
 

@@ -16,6 +16,8 @@ const mockBridge = {
   fullscreen: noop,
   newWindow: noop,
   newPrivateWindow: noop,
+  hideWebViews: noop,
+  showWebViews: noop,
 
   tabs: {
     create: async (url?: string) => ({

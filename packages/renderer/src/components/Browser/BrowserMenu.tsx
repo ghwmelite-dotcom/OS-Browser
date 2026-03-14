@@ -30,6 +30,15 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
   const { clearAll: clearHistory } = useHistoryStore();
   const { addBookmark } = useBookmarksStore();
 
+  // Hide WebContentsViews when menu opens, show when it closes
+  useEffect(() => {
+    if (isOpen) {
+      window.osBrowser?.hideWebViews?.();
+    } else {
+      window.osBrowser?.showWebViews?.();
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: MouseEvent) => {
