@@ -44,6 +44,12 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             <Toggle label="Privacy Mode" value={settings.privacy_mode} onChange={v => updateSettings({privacy_mode: v})} />
             <Toggle label="Ad Blocking" value={settings.ad_blocking} onChange={v => updateSettings({ad_blocking: v})} />
           </Section>
+          <Section title="On Startup">
+            <Select label="When OS Browser opens" value={(settings as any).startup_mode || 'newtab'} options={[
+              {value:'newtab',label:'Open the New Tab page'},
+              {value:'restore',label:'Continue where you left off'},
+            ]} onChange={v => updateSettings({startup_mode: v} as any)} />
+          </Section>
           <Section title="Search">
             <Select label="Search Engine" value={settings.search_engine} options={[{value:'osbrowser',label:'OS Browser AI'},{value:'google',label:'Google'},{value:'duckduckgo',label:'DuckDuckGo'},{value:'bing',label:'Bing'}]} onChange={v => updateSettings({search_engine: v})} />
           </Section>
