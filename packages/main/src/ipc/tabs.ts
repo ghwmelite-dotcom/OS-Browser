@@ -19,7 +19,9 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
       'INSERT INTO tabs (id, title, url, position, is_active, last_accessed_at) VALUES (?, ?, ?, ?, 1, datetime("now"))'
     ).run(id, 'New Tab', tabUrl, position);
 
-    if (tabUrl !== 'os-browser://newtab') {
+    // Only create a WebContentsView for real URLs — not internal os-browser:// pages
+    // Internal pages (newtab, settings, etc.) are rendered by React in the renderer
+    if (!tabUrl.startsWith('os-browser://')) {
       const view = new WebContentsView();
       mainWindow.contentView.addChildView(view);
       resizeViewToContent(view, mainWindow);
@@ -28,7 +30,8 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
       tabViews.set(id, view);
     }
 
-    return { id, title: 'New Tab', url: tabUrl, position, is_pinned: false, is_active: true, is_muted: false, favicon_path: null, last_accessed_at: new Date().toISOString() };
+    const title = tabUrl === 'os-browser://settings' ? 'Settings' : 'New Tab';
+    return { id, title, url: tabUrl, position, is_pinned: false, is_active: true, is_muted: false, favicon_path: null, last_accessed_at: new Date().toISOString() };
   });
 
   ipcMain.handle(IPC.TAB_CLOSE, (_event, id: string) => {
@@ -76,6 +79,9 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle(IPC.TAB_NAVIGATE, (_event, id: string, url: string) => {
     const db = getDatabase();
     db.prepare('UPDATE tabs SET url = ?, last_accessed_at = datetime("now") WHERE id = ?').run(url, id);
+
+    // Don't create WebContentsView for internal pages
+    if (url.startsWith('os-browser://')) return;
 
     let view = tabViews.get(id);
     if (!view) {

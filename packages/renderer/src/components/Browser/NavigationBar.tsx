@@ -59,7 +59,7 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
   };
 
   return (
-    <div className="h-[44px] bg-surface-1 border-b border-border-1/50 flex items-center px-3 shrink-0 relative z-[50]">
+    <div className="h-[44px] bg-surface-1 border-b border-border-1/50 flex items-center pl-3 pr-1 shrink-0 relative z-[50]">
       {/* ── Left: Nav buttons ── */}
       <div className="flex items-center gap-1 mr-3">
         <NavButton
@@ -87,8 +87,8 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
       {/* ── Center: OmniBar ── */}
       <OmniBar />
 
-      {/* ── Right: Actions, pushed to far right edge ── */}
-      <div className="flex items-center gap-1.5 ml-3 pr-1">
+      {/* ── Right: Actions, flush to far right edge ── */}
+      <div className="flex items-center gap-2 ml-3">
         {/* Share */}
         <NavButton
           onClick={() => {
