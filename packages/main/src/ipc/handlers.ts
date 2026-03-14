@@ -77,6 +77,26 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
     }
   });
 
+  // Hide/show WebContentsViews (needed when dropdowns/menus open over the page)
+  ipcMain.handle('webviews:hide', () => {
+    const { getTabViews } = require('./tabs');
+    const views = getTabViews();
+    for (const view of views.values()) {
+      view.setVisible(false);
+    }
+  });
+
+  ipcMain.handle('webviews:show', () => {
+    const { getTabViews } = require('./tabs');
+    const views = getTabViews();
+    const db = getDatabase();
+    // Only show the active tab's view
+    const activeTab = db.prepare('SELECT id FROM tabs WHERE is_active = 1').get() as any;
+    for (const [id, view] of views.entries()) {
+      view.setVisible(activeTab && id === activeTab.id);
+    }
+  });
+
   // App info
   ipcMain.handle(IPC.APP_GET_VERSION, () => app.getVersion());
 

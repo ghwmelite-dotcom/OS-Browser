@@ -41,7 +41,13 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
   const { activeTabId } = useTabsStore();
   const { isOpen, toggleSidebar, openPanel, activePanel } = useSidebarStore();
   const { settings } = useSettingsStore();
-  const [showLoginMenu, setShowLoginMenu] = useState(false);
+  const [showLoginMenu, _setShowLoginMenu] = useState(false);
+  // Wrap setter to hide/show WebContentsViews
+  const setShowLoginMenu = (v: boolean) => {
+    _setShowLoginMenu(v);
+    if (v) window.osBrowser?.hideWebViews?.();
+    else window.osBrowser?.showWebViews?.();
+  };
   const [loginEmail, setLoginEmail] = useState('');
   const [loginStep, setLoginStep] = useState<'email' | 'code' | 'qr'>('email');
   const [verifyCode, setVerifyCode] = useState('');
@@ -53,9 +59,9 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
   };
 
   return (
-    <div className="h-[44px] bg-surface-1 border-b border-border-1/50 flex items-center px-2 shrink-0 gap-0.5">
+    <div className="h-[44px] bg-surface-1 border-b border-border-1/50 flex items-center px-3 shrink-0 relative z-[50]">
       {/* ── Left: Nav buttons ── */}
-      <div className="flex items-center gap-0.5 mr-2">
+      <div className="flex items-center gap-1 mr-3">
         <NavButton
           onClick={() => activeTabId && goBack(activeTabId)}
           disabled={!canGoBack}
@@ -81,8 +87,8 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
       {/* ── Center: OmniBar ── */}
       <OmniBar />
 
-      {/* ── Right: Actions, pushed to far right ── */}
-      <div className="flex items-center gap-0.5 ml-2">
+      {/* ── Right: Actions, pushed to far right edge ── */}
+      <div className="flex items-center gap-1.5 ml-3 pr-1">
         {/* Share */}
         <NavButton
           onClick={() => {
