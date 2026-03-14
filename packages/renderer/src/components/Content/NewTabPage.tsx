@@ -162,13 +162,16 @@ export function NewTabPage() {
 
   return (
     <div className="min-h-full overflow-y-auto noise-bg" style={{ background: 'var(--color-bg)' }}>
-      {/* Atmospheric gradient overlay */}
+      {/* Atmospheric gradient overlay — visible ambient glow */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
-          background:
-            'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,160,23,0.04) 0%, transparent 60%), ' +
-            'radial-gradient(ellipse 60% 40% at 80% 100%, rgba(0,107,63,0.03) 0%, transparent 50%)',
+          background: [
+            'radial-gradient(ellipse 100% 60% at 50% -5%, rgba(212,160,23,0.12) 0%, transparent 55%)',
+            'radial-gradient(ellipse 70% 50% at 90% 90%, rgba(0,107,63,0.08) 0%, transparent 45%)',
+            'radial-gradient(ellipse 50% 40% at 5% 85%, rgba(206,17,38,0.05) 0%, transparent 40%)',
+            'radial-gradient(circle at 50% 50%, rgba(212,160,23,0.02) 0%, transparent 70%)',
+          ].join(', '),
           zIndex: 0,
         }}
       />
