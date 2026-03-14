@@ -1,31 +1,59 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TitleBar } from './components/Browser/TitleBar';
 import { TabBar } from './components/Browser/TabBar';
 import { NavigationBar } from './components/Browser/NavigationBar';
+import { BookmarksBar } from './components/Browser/BookmarksBar';
 import { StatusBar } from './components/Browser/StatusBar';
+import { ContentArea } from './components/Content/ContentArea';
+import { AISidebar } from './components/Sidebar/AISidebar';
+import { AskOzzyPanel } from './components/AskOzzyPanel';
+import { HistoryPanel } from './components/Panels/HistoryPanel';
+import { BookmarkManager } from './components/Panels/BookmarkManager';
+import { SettingsPanel } from './components/Panels/SettingsPanel';
 import { useTabsStore } from './store/tabs';
 import { useSettingsStore } from './store/settings';
 import { useConnectivityStore } from './store/connectivity';
 import { useStatsStore } from './store/stats';
 import { useSidebarStore } from './store/sidebar';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 export function App() {
-  const { loadTabs, createTab, tabs } = useTabsStore();
+  const { loadTabs, createTab } = useTabsStore();
   const { loadSettings } = useSettingsStore();
   const { init: initConnectivity } = useConnectivityStore();
   const { loadStats } = useStatsStore();
-  const { isOpen } = useSidebarStore();
+  const { isOpen, activePanel } = useSidebarStore();
+
+  const [showHistory, setShowHistory] = useState(false);
+  const [showBookmarks, setShowBookmarks] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  useKeyboardShortcuts({
+    onToggleHistory: () => setShowHistory(prev => !prev),
+    onToggleBookmarks: () => setShowBookmarks(prev => !prev),
+    onToggleSettings: () => setShowSettings(prev => !prev),
+  });
 
   useEffect(() => {
-    loadSettings();
-    loadTabs().then(() => {
-      if (useTabsStore.getState().tabs.length === 0) {
-        createTab();
+    const init = async () => {
+      try {
+        await loadSettings();
+        await loadTabs();
+        if (useTabsStore.getState().tabs.length === 0) {
+          await createTab();
+        }
+        await loadStats();
+      } catch (err) {
+        console.error('Init error:', err);
       }
-    });
-    loadStats();
-    const cleanup = initConnectivity();
-    return cleanup;
+    };
+    init();
+
+    let cleanup: (() => void) | undefined;
+    try {
+      cleanup = initConnectivity();
+    } catch {}
+    return () => cleanup?.();
   }, []);
 
   return (
@@ -33,27 +61,28 @@ export function App() {
       <TitleBar />
       <TabBar />
       <NavigationBar />
+      <BookmarksBar />
 
-      {/* Content area */}
+      {/* Content + Sidebar */}
       <div className="flex-1 flex overflow-hidden">
         {/* Main content */}
-        <div className="flex-1 flex items-center justify-center text-text-muted">
-          {/* NewTabPage or WebContentsView will render here */}
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-ghana-gold mb-2">OS Browser</h1>
-            <p className="text-md text-text-secondary">Ghana's AI-Powered Browser</p>
-          </div>
+        <div className="flex-1 overflow-hidden">
+          <ContentArea />
         </div>
 
-        {/* Sidebar placeholder */}
-        {isOpen && (
-          <div className="w-[380px] bg-surface-1 border-l border-border-1 animate-slide-in-right">
-            <div className="p-4 text-text-secondary text-sm">AI Sidebar — Coming next</div>
-          </div>
-        )}
+        {/* AI Sidebar */}
+        {isOpen && activePanel === 'ai' && <AISidebar />}
+
+        {/* AskOzzy Panel */}
+        {isOpen && activePanel === 'askozzy' && <AskOzzyPanel />}
       </div>
 
       <StatusBar />
+
+      {/* Overlay Panels */}
+      {showHistory && <HistoryPanel onClose={() => setShowHistory(false)} />}
+      {showBookmarks && <BookmarkManager onClose={() => setShowBookmarks(false)} />}
+      {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
     </div>
   );
 }
