@@ -5,6 +5,9 @@ import { registerTabHandlers } from './tabs';
 import { registerHistoryHandlers } from './history';
 import { registerBookmarkHandlers } from './bookmarks';
 import { initAdBlocker, getAdBlockStats } from '../services/adblock';
+import { registerAIHandlers } from './ai';
+import { initConnectivityMonitor, getConnectivityStatus } from '../net/connectivity';
+import { initOfflineQueue, getQueueCount } from '../services/offline-queue';
 
 export function registerAllHandlers(mainWindow: BrowserWindow): void {
   // Window controls
@@ -62,4 +65,15 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
 
   // Initialize ad blocker network interception
   initAdBlocker();
+
+  // AI, connectivity, and offline queue
+  registerAIHandlers(mainWindow);
+  initConnectivityMonitor(mainWindow);
+  initOfflineQueue(mainWindow);
+
+  // Connectivity status
+  ipcMain.handle(IPC.CONNECTIVITY_STATUS, () => getConnectivityStatus());
+
+  // Offline queue count
+  ipcMain.handle(IPC.OFFLINE_QUEUE_COUNT, () => getQueueCount());
 }

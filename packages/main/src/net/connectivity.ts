@@ -1,0 +1,53 @@
+import { BrowserWindow } from 'electron';
+import { IPC } from '@os-browser/shared';
+import type { ConnectivityState } from '@os-browser/shared';
+
+const API_BASE = 'https://os-browser-api.workers.dev';
+let currentStatus: ConnectivityState = 'online';
+let checkInterval: NodeJS.Timeout | null = null;
+let mainWindowRef: BrowserWindow | null = null;
+
+async function checkConnectivity(): Promise<ConnectivityState> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(`${API_BASE}/api/v1/health`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    return response.ok ? 'online' : 'intermittent';
+  } catch {
+    return 'offline';
+  }
+}
+
+async function runCheck(): Promise<void> {
+  const newStatus = await checkConnectivity();
+  if (newStatus !== currentStatus) {
+    currentStatus = newStatus;
+    mainWindowRef?.webContents.send(IPC.CONNECTIVITY_CHANGED, currentStatus);
+  }
+}
+
+export function initConnectivityMonitor(mainWindow: BrowserWindow): void {
+  mainWindowRef = mainWindow;
+
+  // Initial check
+  runCheck();
+
+  // Periodic checks every 30 seconds
+  checkInterval = setInterval(runCheck, 30000);
+}
+
+export function getConnectivityStatus(): ConnectivityState {
+  return currentStatus;
+}
+
+export function stopConnectivityMonitor(): void {
+  if (checkInterval) {
+    clearInterval(checkInterval);
+    checkInterval = null;
+  }
+}
