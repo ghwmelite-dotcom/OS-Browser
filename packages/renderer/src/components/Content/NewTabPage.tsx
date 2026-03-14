@@ -70,7 +70,7 @@ export function NewTabPage() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="min-h-full">
       <div className="max-w-[800px] mx-auto px-6 py-12 animate-fade-in">
         {/* Greeting */}
         <div className="text-center mb-10">

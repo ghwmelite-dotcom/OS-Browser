@@ -66,7 +66,7 @@ export function App() {
       {/* Content + Sidebar */}
       <div className="flex-1 flex overflow-hidden">
         {/* Main content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
           <ContentArea />
         </div>
 
