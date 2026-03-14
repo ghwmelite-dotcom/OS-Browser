@@ -1,0 +1,52 @@
+import { ipcMain, BrowserWindow, app } from 'electron';
+import { IPC } from '@os-browser/shared';
+import { registerSettingsHandlers } from './settings';
+
+export function registerAllHandlers(mainWindow: BrowserWindow): void {
+  // Window controls
+  ipcMain.handle(IPC.WINDOW_MINIMIZE, () => mainWindow.minimize());
+  ipcMain.handle(IPC.WINDOW_MAXIMIZE, () => {
+    if (mainWindow.isMaximized()) mainWindow.unmaximize();
+    else mainWindow.maximize();
+  });
+  ipcMain.handle(IPC.WINDOW_CLOSE, () => mainWindow.close());
+  ipcMain.handle(IPC.WINDOW_FULLSCREEN, () => {
+    mainWindow.setFullScreen(!mainWindow.isFullScreen());
+  });
+
+  // App info
+  ipcMain.handle(IPC.APP_GET_VERSION, () => app.getVersion());
+
+  // Gov Portals
+  ipcMain.handle(IPC.GOV_PORTAL_LIST, () => {
+    const { getDatabase } = require('../db/database');
+    const db = getDatabase();
+    return db.prepare('SELECT * FROM gov_portals WHERE is_visible = 1 ORDER BY position').all();
+  });
+
+  ipcMain.handle(IPC.GOV_PORTAL_UPDATE, (_event: any, id: number, data: any) => {
+    const { getDatabase } = require('../db/database');
+    const db = getDatabase();
+    const allowed = ['name', 'url', 'category', 'position', 'is_visible'];
+    const fields = Object.keys(data).filter(k => allowed.includes(k));
+    if (fields.length === 0) return;
+    const sets = fields.map(f => `${f} = ?`).join(', ');
+    const values = fields.map(f => data[f]);
+    db.prepare(`UPDATE gov_portals SET ${sets} WHERE id = ?`).run(...values, id);
+  });
+
+  // Stats
+  ipcMain.handle(IPC.STATS_GET, () => {
+    const { getDatabase } = require('../db/database');
+    const db = getDatabase();
+    return {
+      totalPages: (db.prepare('SELECT COUNT(*) as count FROM history').get() as any).count,
+      totalBookmarks: (db.prepare('SELECT COUNT(*) as count FROM bookmarks').get() as any).count,
+      totalConversations: (db.prepare('SELECT COUNT(*) as count FROM conversations').get() as any).count,
+      totalAdsBlocked: (db.prepare('SELECT COALESCE(SUM(ads_blocked), 0) as total FROM adblock_stats').get() as any).total,
+    };
+  });
+
+  // Register domain handlers
+  registerSettingsHandlers();
+}
