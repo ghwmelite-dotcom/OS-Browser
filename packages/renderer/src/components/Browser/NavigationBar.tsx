@@ -49,7 +49,7 @@ interface NavigationBarProps {
 
 export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, onOpenStats }: NavigationBarProps) {
   const { canGoBack, canGoForward, isLoading } = useNavigationStore();
-  const { goBack, goForward, reload, stop } = useNavigationStore();
+  const { goBack, goForward, reload, stop, navigate } = useNavigationStore();
   const { activeTabId } = useTabsStore();
   const { isOpen, toggleSidebar, openPanel, activePanel } = useSidebarStore();
   const { settings } = useSettingsStore();
@@ -106,9 +106,18 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
 
         {/* Bookmark star */}
         <NavButton
-          onClick={() => {}}
+          onClick={async () => {
+            const url = useNavigationStore.getState().currentUrl;
+            const title = useTabsStore.getState().tabs.find(t => t.id === activeTabId)?.title || url;
+            if (url && url !== 'os-browser://newtab') {
+              const isBookmarked = await window.osBrowser.bookmarks.isBookmarked(url);
+              if (!isBookmarked) {
+                await window.osBrowser.bookmarks.add({ url, title });
+              }
+            }
+          }}
           icon={<Star size={15} strokeWidth={1.8} className="text-text-secondary" />}
-          label="Bookmark this page"
+          label="Bookmark this page (Ctrl+D)"
         />
 
         {/* AskOzzy */}
@@ -175,42 +184,29 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                 style={{ background: 'var(--color-surface-1)' }}
               >
                 <div className="text-center mb-4">
-                  <div
-                    className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center"
-                    style={{ background: 'var(--color-surface-2)' }}
-                  >
-                    <User size={24} className="text-text-muted" />
+                  {/* OS Browser icon */}
+                  <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center overflow-hidden"
+                    style={{ background: 'linear-gradient(135deg, #CE1126 0%, #FCD116 50%, #006B3F 100%)' }}>
+                    <svg width="28" height="28" viewBox="0 0 512 512">
+                      <path d="M256 90L370 140V270Q370 370 256 430Q142 370 142 270V140Z" fill="white" stroke="#000" strokeWidth="4" opacity=".95"/>
+                      <text x="256" y="310" textAnchor="middle" fontFamily="Georgia,serif" fontWeight="900" fontSize="160" fill="#0f1117" letterSpacing="-8">OS</text>
+                    </svg>
                   </div>
-                  <h3 className="text-[14px] font-semibold text-text-primary">Sign in to OS Browser</h3>
-                  <p className="text-[12px] text-text-muted mt-1">Sync your bookmarks, history, and settings</p>
+                  <h3 className="text-[14px] font-semibold text-text-primary">OS Browser Account</h3>
+                  <p className="text-[12px] text-text-muted mt-1 leading-relaxed">Sign in to sync bookmarks and settings across devices. The browser is completely free without an account.</p>
                 </div>
 
-                {/* Google Sign In */}
-                <button
-                  className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-lg border border-border-1 hover:bg-surface-2 transition-colors duration-150 mb-2"
-                  onClick={() => setShowLoginMenu(false)}
+                {/* Coming soon notice */}
+                <div
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-[13px] font-medium border"
+                  style={{ borderColor: 'var(--color-border-1)', color: 'var(--color-text-secondary)' }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                  </svg>
-                  <span className="text-[13px] font-medium text-text-primary">Sign in with Google</span>
-                </button>
-
-                {/* Email sign in */}
-                <button
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150"
-                  style={{ background: 'var(--color-accent)', color: 'var(--color-btn-text, #fff)' }}
-                  onClick={() => setShowLoginMenu(false)}
-                >
-                  <LogIn size={14} />
-                  Sign in with Email
-                </button>
+                  <User size={14} />
+                  Account sync coming soon
+                </div>
 
                 <p className="text-[11px] text-text-muted text-center mt-3">
-                  Your data stays on your device by default
+                  No account needed — all features work offline and for free
                 </p>
               </div>
             </>
