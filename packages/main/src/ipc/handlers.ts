@@ -8,6 +8,8 @@ import { initAdBlocker, getAdBlockStats } from '../services/adblock';
 import { registerAIHandlers } from './ai';
 import { initConnectivityMonitor, getConnectivityStatus } from '../net/connectivity';
 import { initOfflineQueue, getQueueCount } from '../services/offline-queue';
+import { registerAgentHandlers } from './agents';
+import { initTray } from '../services/tray';
 
 export function registerAllHandlers(mainWindow: BrowserWindow): void {
   // Window controls
@@ -70,6 +72,12 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
   registerAIHandlers(mainWindow);
   initConnectivityMonitor(mainWindow);
   initOfflineQueue(mainWindow);
+
+  // Custom AI agents
+  registerAgentHandlers();
+
+  // System tray
+  initTray(mainWindow);
 
   // Connectivity status
   ipcMain.handle(IPC.CONNECTIVITY_STATUS, () => getConnectivityStatus());
