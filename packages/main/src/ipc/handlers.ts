@@ -1,6 +1,10 @@
 import { ipcMain, BrowserWindow, app } from 'electron';
 import { IPC } from '@os-browser/shared';
 import { registerSettingsHandlers } from './settings';
+import { registerTabHandlers } from './tabs';
+import { registerHistoryHandlers } from './history';
+import { registerBookmarkHandlers } from './bookmarks';
+import { initAdBlocker, getAdBlockStats } from '../services/adblock';
 
 export function registerAllHandlers(mainWindow: BrowserWindow): void {
   // Window controls
@@ -47,6 +51,15 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
     };
   });
 
+  // Ad block stats
+  ipcMain.handle(IPC.ADBLOCK_STATS_UPDATE, () => getAdBlockStats());
+
   // Register domain handlers
   registerSettingsHandlers();
+  registerTabHandlers(mainWindow);
+  registerHistoryHandlers();
+  registerBookmarkHandlers();
+
+  // Initialize ad blocker network interception
+  initAdBlocker();
 }
