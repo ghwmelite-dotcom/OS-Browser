@@ -64,15 +64,17 @@ export function TabBar() {
             }
           }}
         >
-          {tabs.map((tab) => (
-            <div key={tab.id} data-tab-id={tab.id} className="h-[30px] flex items-end">
+          {tabs.map((tab, index) => (
+            <div key={tab.id} data-tab-id={tab.id} className="h-[36px] flex items-end">
               <Tab
                 id={tab.id}
                 title={tab.title}
                 favicon={tab.favicon_path}
+                url={tab.url}
                 isActive={tab.id === activeTabId}
                 isPinned={tab.is_pinned}
                 isLoading={tab.is_loading}
+                index={index}
                 onSwitch={() => switchTab(tab.id)}
                 onClose={() => closeTab(tab.id)}
               />

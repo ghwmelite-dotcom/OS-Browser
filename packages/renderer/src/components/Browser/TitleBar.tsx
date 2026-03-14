@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Minus, Square, X } from 'lucide-react';
 import { useSettingsStore } from '@/store/settings';
 
 declare global {
@@ -31,47 +31,66 @@ export function TitleBar() {
 
   return (
     <div
-      className="h-7 bg-bg flex items-center justify-between px-2 shrink-0 select-none"
+      className="h-8 bg-bg flex items-center justify-between shrink-0 select-none"
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
-      {/* macOS-style traffic light dots */}
-      <div
-        className="flex items-center gap-[6px] pl-1 group"
-        style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-      >
-        <button
-          onClick={handleClose}
-          className="w-[10px] h-[10px] rounded-full bg-[#ff5f57] hover:brightness-110 transition-all duration-150 ease-out focus:outline-none focus:ring-1 focus:ring-ghana-gold/50 focus:ring-offset-1 focus:ring-offset-bg"
-          aria-label="Close window"
-        />
-        <button
-          onClick={handleMinimize}
-          className="w-[10px] h-[10px] rounded-full bg-[#febc2e] hover:brightness-110 transition-all duration-150 ease-out focus:outline-none focus:ring-1 focus:ring-ghana-gold/50 focus:ring-offset-1 focus:ring-offset-bg"
-          aria-label="Minimize window"
-        />
-        <button
-          onClick={handleMaximize}
-          className="w-[10px] h-[10px] rounded-full bg-[#28c840] hover:brightness-110 transition-all duration-150 ease-out focus:outline-none focus:ring-1 focus:ring-ghana-gold/50 focus:ring-offset-1 focus:ring-offset-bg"
-          aria-label="Maximize window"
-        />
+      {/* Left: App title */}
+      <div className="flex items-center gap-2 pl-3">
+        <span className="text-xs font-semibold tracking-wide" style={{ color: 'var(--color-accent)' }}>
+          OS Browser
+        </span>
       </div>
 
-      {/* Spacer — draggable area */}
+      {/* Center: draggable area */}
       <div className="flex-1" />
 
-      {/* Theme toggle */}
-      <div style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+      {/* Right: Theme toggle + Window controls */}
+      <div
+        className="flex items-center h-full"
+        style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+      >
+        {/* Theme toggle */}
         <button
           onClick={toggleTheme}
-          className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-surface-2 transition-all duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-ghana-gold/50"
+          className="w-10 h-full flex items-center justify-center hover:bg-surface-2 transition-colors duration-100"
           aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           title={isDark ? 'Light mode' : 'Dark mode'}
         >
           {isDark ? (
-            <Sun size={12} className="text-text-muted hover:text-ghana-gold transition-colors duration-150" />
+            <Sun size={13} className="text-text-muted" />
           ) : (
-            <Moon size={12} className="text-text-muted hover:text-ghana-gold transition-colors duration-150" />
+            <Moon size={13} className="text-text-muted" />
           )}
+        </button>
+
+        {/* Minimize */}
+        <button
+          onClick={handleMinimize}
+          className="w-11 h-full flex items-center justify-center hover:bg-surface-2 transition-colors duration-100"
+          aria-label="Minimize"
+          title="Minimize"
+        >
+          <Minus size={14} className="text-text-secondary" />
+        </button>
+
+        {/* Maximize */}
+        <button
+          onClick={handleMaximize}
+          className="w-11 h-full flex items-center justify-center hover:bg-surface-2 transition-colors duration-100"
+          aria-label="Maximize"
+          title="Maximize"
+        >
+          <Square size={11} className="text-text-secondary" />
+        </button>
+
+        {/* Close */}
+        <button
+          onClick={handleClose}
+          className="w-11 h-full flex items-center justify-center hover:bg-[#e81123] hover:text-white transition-colors duration-100 group"
+          aria-label="Close"
+          title="Close"
+        >
+          <X size={14} className="text-text-secondary group-hover:text-white" />
         </button>
       </div>
     </div>
