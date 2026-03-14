@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, LogIn } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, LogIn, Share, ExternalLink } from 'lucide-react';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
 import { useSidebarStore } from '@/store/sidebar';
@@ -92,6 +92,18 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
 
       {/* Right side actions */}
       <div className="flex items-center gap-[3px] ml-1">
+        {/* Share / Open in external */}
+        <NavButton
+          onClick={() => {
+            const url = useNavigationStore.getState().currentUrl;
+            if (url && url !== 'os-browser://newtab') {
+              navigator.clipboard?.writeText(url);
+            }
+          }}
+          icon={<Share size={15} strokeWidth={1.8} className="text-text-secondary" />}
+          label="Share or copy link"
+        />
+
         {/* Bookmark star */}
         <NavButton
           onClick={() => {}}
