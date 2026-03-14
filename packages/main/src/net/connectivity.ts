@@ -2,7 +2,7 @@ import { BrowserWindow } from 'electron';
 import { IPC } from '@os-browser/shared';
 import type { ConnectivityState } from '@os-browser/shared';
 
-const API_BASE = 'https://os-browser-api.workers.dev';
+const API_BASE = 'https://os-browser-api.ghwmelite.workers.dev';
 let currentStatus: ConnectivityState = 'online';
 let checkInterval: NodeJS.Timeout | null = null;
 let mainWindowRef: BrowserWindow | null = null;

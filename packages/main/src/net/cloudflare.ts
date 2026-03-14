@@ -2,7 +2,7 @@ import { safeStorage, app } from 'electron';
 import fs from 'fs';
 import path from 'path';
 
-const API_BASE = 'https://os-browser-api.workers.dev';
+const API_BASE = 'https://os-browser-api.ghwmelite.workers.dev';
 
 function getTokenPath(): string {
   return path.join(app.getPath('userData'), '.device-token');
