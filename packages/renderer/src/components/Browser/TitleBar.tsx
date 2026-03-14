@@ -31,53 +31,46 @@ export function TitleBar() {
 
   return (
     <div
-      className="h-8 bg-surface-1 border-b border-border-1 flex items-center justify-between px-3 shrink-0"
+      className="h-7 bg-bg flex items-center justify-between px-2 shrink-0 select-none"
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
-      {/* Traffic light window controls */}
+      {/* macOS-style traffic light dots */}
       <div
-        className="flex items-center gap-1"
+        className="flex items-center gap-[6px] pl-1 group"
         style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
       >
         <button
           onClick={handleClose}
-          className="w-8 h-8 flex items-center justify-center rounded hover:bg-white/5 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-ghana-gold"
+          className="w-[10px] h-[10px] rounded-full bg-[#ff5f57] hover:brightness-110 transition-all duration-150 ease-out focus:outline-none focus:ring-1 focus:ring-ghana-gold/50 focus:ring-offset-1 focus:ring-offset-bg"
           aria-label="Close window"
-        >
-          <span className="w-3 h-3 rounded-full bg-ghana-red" />
-        </button>
+        />
         <button
           onClick={handleMinimize}
-          className="w-8 h-8 flex items-center justify-center rounded hover:bg-white/5 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-ghana-gold"
+          className="w-[10px] h-[10px] rounded-full bg-[#febc2e] hover:brightness-110 transition-all duration-150 ease-out focus:outline-none focus:ring-1 focus:ring-ghana-gold/50 focus:ring-offset-1 focus:ring-offset-bg"
           aria-label="Minimize window"
-        >
-          <span className="w-3 h-3 rounded-full bg-ghana-gold" />
-        </button>
+        />
         <button
           onClick={handleMaximize}
-          className="w-8 h-8 flex items-center justify-center rounded hover:bg-white/5 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-ghana-gold"
+          className="w-[10px] h-[10px] rounded-full bg-[#28c840] hover:brightness-110 transition-all duration-150 ease-out focus:outline-none focus:ring-1 focus:ring-ghana-gold/50 focus:ring-offset-1 focus:ring-offset-bg"
           aria-label="Maximize window"
-        >
-          <span className="w-3 h-3 rounded-full bg-ghana-green" />
-        </button>
+        />
       </div>
 
-      <span className="text-sm text-text-secondary font-medium tracking-wide">
-        OS Browser
-      </span>
+      {/* Spacer — draggable area */}
+      <div className="flex-1" />
 
       {/* Theme toggle */}
       <div style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         <button
           onClick={toggleTheme}
-          className="w-8 h-8 flex items-center justify-center rounded hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-ghana-gold"
+          className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-surface-2 transition-all duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-ghana-gold/50"
           aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           title={isDark ? 'Light mode' : 'Dark mode'}
         >
           {isDark ? (
-            <Sun size={14} className="text-ghana-gold" />
+            <Sun size={12} className="text-text-muted hover:text-ghana-gold transition-colors duration-150" />
           ) : (
-            <Moon size={14} className="text-ghana-gold" />
+            <Moon size={12} className="text-text-muted hover:text-ghana-gold transition-colors duration-150" />
           )}
         </button>
       </div>

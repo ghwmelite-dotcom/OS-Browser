@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Font faces ─── */
 @font-face {
   font-family: 'DM Sans';
   src: url('/fonts/DMSans-Regular.woff2') format('woff2');
@@ -23,7 +24,7 @@
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
-/* Theme CSS custom properties */
+/* ─── Theme custom properties ─── */
 :root, .dark {
   --color-bg: #0c0e14;
   --color-surface-1: #14171f;
@@ -34,6 +35,11 @@
   --color-text-primary: #e8eaf0;
   --color-text-secondary: #8b92a5;
   --color-text-muted: #5c637a;
+  --glass-bg: rgba(20, 23, 31, 0.72);
+  --glass-border: rgba(42, 47, 58, 0.5);
+  --noise-opacity: 0.03;
+  --search-shadow: 0 0 0 1px rgba(42, 47, 58, 0.4), 0 4px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --search-glow: 0 0 0 1px rgba(212, 160, 23, 0.3), 0 0 20px rgba(212, 160, 23, 0.08), 0 4px 24px rgba(0, 0, 0, 0.3);
 }
 
 .light {
@@ -46,25 +52,229 @@
   --color-text-primary: #1A1D23;
   --color-text-secondary: #5C6370;
   --color-text-muted: #9CA3AF;
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(224, 226, 230, 0.6);
+  --noise-opacity: 0.015;
+  --search-shadow: 0 0 0 1px rgba(224, 226, 230, 0.6), 0 4px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --search-glow: 0 0 0 1px rgba(212, 160, 23, 0.25), 0 0 20px rgba(212, 160, 23, 0.06), 0 4px 24px rgba(0, 0, 0, 0.06);
 }
 
+/* ─── Base layer ─── */
 @layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
     background-color: var(--color-bg);
     color: var(--color-text-primary);
     @apply font-sans m-0 p-0 overflow-hidden select-none;
     -webkit-app-region: no-drag;
+    line-height: 1.5;
   }
-  ::-webkit-scrollbar { width: 8px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background-color: var(--color-border-1); border-radius: 9999px; }
-  ::-webkit-scrollbar-thumb:hover { background-color: var(--color-border-2); }
 
+  /* Selection */
+  ::selection {
+    background-color: rgba(212, 160, 23, 0.25);
+    color: inherit;
+  }
+
+  ::-moz-selection {
+    background-color: rgba(212, 160, 23, 0.25);
+    color: inherit;
+  }
+
+  /* Scrollbar — thin and subtle */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-1);
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+    transition: background-color 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-border-2);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Focus ring */
+  :focus-visible {
+    outline: 2px solid rgba(212, 160, 23, 0.6);
+    outline-offset: 2px;
+    border-radius: 4px;
+    transition: outline-offset 0.15s ease;
+  }
+
+  /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
     }
   }
+}
+
+/* ─── Component utilities ─── */
+@layer components {
+  /* Glassmorphism */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+    border: 1px solid var(--glass-border);
+  }
+
+  /* Gold gradient text */
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #D4A017 0%, #F2C94C 50%, #D4A017 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Gold glow */
+  .glow-gold {
+    box-shadow: 0 0 16px rgba(212, 160, 23, 0.15), 0 0 4px rgba(212, 160, 23, 0.1);
+  }
+
+  /* Noise texture overlay — apply to a ::before pseudo */
+  .noise-bg {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .noise-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: var(--noise-opacity);
+    pointer-events: none;
+    z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 200px 200px;
+  }
+
+  /* Staggered animation delays */
+  .stagger-1 { animation-delay: 50ms; }
+  .stagger-2 { animation-delay: 100ms; }
+  .stagger-3 { animation-delay: 150ms; }
+  .stagger-4 { animation-delay: 200ms; }
+  .stagger-5 { animation-delay: 250ms; }
+  .stagger-6 { animation-delay: 300ms; }
+  .stagger-7 { animation-delay: 350ms; }
+  .stagger-8 { animation-delay: 400ms; }
+
+  /* Fade-up animation for staggered entrance */
+  .animate-fade-up {
+    animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Shimmer for borders */
+  .shimmer-border {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shimmer-border::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: linear-gradient(
+      120deg,
+      transparent 20%,
+      rgba(212, 160, 23, 0.4) 40%,
+      rgba(0, 107, 63, 0.3) 60%,
+      transparent 80%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s linear infinite;
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Search bar gold shimmer on left edge */
+  .search-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .search-shimmer::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10%;
+    bottom: 10%;
+    width: 3px;
+    border-radius: 0 4px 4px 0;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(212, 160, 23, 0.6) 50%,
+      transparent 100%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .search-shimmer:focus-within::before {
+    opacity: 1;
+    animation: searchPulse 2s ease-in-out infinite;
+  }
+}
+
+/* ─── Keyframes ─── */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes searchPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 }
