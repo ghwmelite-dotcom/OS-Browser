@@ -10,6 +10,8 @@ import { initConnectivityMonitor, getConnectivityStatus } from '../net/connectiv
 import { initOfflineQueue, getQueueCount } from '../services/offline-queue';
 import { registerAgentHandlers } from './agents';
 import { initTray } from '../services/tray';
+import { registerCredentialHandlers } from './credentials';
+import { initDownloadProtection } from '../services/downloads';
 
 export function registerAllHandlers(mainWindow: BrowserWindow): void {
   // Window controls
@@ -75,6 +77,10 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
 
   // Custom AI agents
   registerAgentHandlers();
+
+  // Credential manager and download protection
+  registerCredentialHandlers();
+  initDownloadProtection(mainWindow);
 
   // System tray
   initTray(mainWindow);

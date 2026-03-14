@@ -114,6 +114,34 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     db.prepare(`UPDATE tabs SET ${sets} WHERE id = ?`).run(...values, id);
   });
 
+  ipcMain.handle('tab:print', (_event, id: string) => {
+    const view = tabViews.get(id);
+    if (view) {
+      view.webContents.print({}, (success, failureReason) => {
+        mainWindow.webContents.send('print:result', { success, failureReason });
+      });
+    }
+  });
+
+  ipcMain.handle('tab:print-to-pdf', async (_event, id: string) => {
+    const view = tabViews.get(id);
+    if (!view) return null;
+
+    const { dialog } = require('electron');
+    const { filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Save as PDF',
+      defaultPath: 'page.pdf',
+      filters: [{ name: 'PDF', extensions: ['pdf'] }],
+    });
+
+    if (!filePath) return null;
+
+    const data = await view.webContents.printToPDF({});
+    const fs = require('fs');
+    fs.writeFileSync(filePath, data);
+    return filePath;
+  });
+
   // Resize views when window resizes
   mainWindow.on('resize', () => {
     for (const view of tabViews.values()) {
