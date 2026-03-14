@@ -288,26 +288,41 @@ function QRLoginPanel({ onBack }: { onBack: () => void }) {
   const [sessionId] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
-    if (!canvasRef.current) return;
-    // Encode the OS Browser download page with a login session parameter
-    // This is a real, live URL that phones can open
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Build the login URL
     const loginUrl = `https://os-browser.pages.dev/?action=qr-login&session=${sessionId}`;
-    QRCode.toCanvas(canvasRef.current, loginUrl, {
-      width: 180,
-      margin: 2,
+
+    // Render size accounts for devicePixelRatio so the QR stays crisp on
+    // high-DPI screens (Retina, etc.).  We render at 2x and scale down via CSS
+    // so every module edge is sharp — blurry modules are the #1 cause of
+    // "invalid QR" errors on phone cameras.
+    const displaySize = 200;
+    const scale = Math.max(window.devicePixelRatio || 1, 2);
+    const renderSize = displaySize * scale;
+
+    QRCode.toCanvas(canvas, loginUrl, {
+      width: renderSize,
+      margin: 3,           // a bit more quiet-zone helps scanners
       color: {
         dark: '#000000',
         light: '#ffffff',
       },
-      errorCorrectionLevel: 'H', // High error correction for better scan reliability
+      errorCorrectionLevel: 'M', // Medium — good recovery without over-densifying
+    }).then(() => {
+      // After the library sets canvas.width / canvas.height to renderSize,
+      // scale it back down via CSS so it looks sharp at displaySize.
+      canvas.style.width  = `${displaySize}px`;
+      canvas.style.height = `${displaySize}px`;
     }).catch(console.error);
   }, [sessionId]);
 
   return (
     <>
       <div className="flex justify-center mb-3">
-        <div className="rounded-xl overflow-hidden bg-white p-1">
-          <canvas ref={canvasRef} style={{ width: 180, height: 180 }} />
+        <div className="rounded-xl overflow-hidden bg-white p-2">
+          <canvas ref={canvasRef} />
         </div>
       </div>
 
