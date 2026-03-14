@@ -47,7 +47,19 @@ const mockBridge = {
   },
 
   bookmarks: {
-    list: async () => ({ bookmarks: [], folders: [] }),
+    list: async () => ({
+      bookmarks: [
+        { id: 1, url: 'https://ghana.gov.gh', title: 'Ghana.gov', description: null, folder_id: null, favicon_path: null, position: 0 },
+        { id: 2, url: 'https://gifmis.finance.gov.gh', title: 'GIFMIS', description: null, folder_id: null, favicon_path: null, position: 1 },
+        { id: 3, url: 'https://cagd.gov.gh', title: 'CAGD Payroll', description: null, folder_id: null, favicon_path: null, position: 2 },
+        { id: 4, url: 'https://gra.gov.gh', title: 'GRA Tax Portal', description: null, folder_id: null, favicon_path: null, position: 3 },
+        { id: 5, url: 'https://ohcs.gov.gh', title: 'OHCS Platform', description: null, folder_id: null, favicon_path: null, position: 4 },
+        { id: 6, url: 'https://ohcsgh.web.app', title: 'E-SPAR Portal', description: null, folder_id: null, favicon_path: null, position: 5 },
+      ],
+      folders: [
+        { id: 1, name: 'Government', parent_id: null, position: 0 },
+      ],
+    }),
     add: noop,
     update: noop,
     delete: noop,
