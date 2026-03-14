@@ -289,8 +289,9 @@ function QRLoginPanel({ onBack }: { onBack: () => void }) {
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    // Generate a real QR code encoding a login URL with session ID
-    const loginUrl = `https://os-browser-api.ghwmelite.workers.dev/api/v1/auth/qr/${sessionId}`;
+    // Encode the OS Browser download page with a login session parameter
+    // This is a real, live URL that phones can open
+    const loginUrl = `https://os-browser.pages.dev/?action=qr-login&session=${sessionId}`;
     QRCode.toCanvas(canvasRef.current, loginUrl, {
       width: 180,
       margin: 2,
@@ -298,8 +299,8 @@ function QRLoginPanel({ onBack }: { onBack: () => void }) {
         dark: '#000000',
         light: '#ffffff',
       },
-      errorCorrectionLevel: 'M',
-    }).catch(() => {});
+      errorCorrectionLevel: 'H', // High error correction for better scan reliability
+    }).catch(console.error);
   }, [sessionId]);
 
   return (

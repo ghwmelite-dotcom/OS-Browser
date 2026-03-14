@@ -19,6 +19,19 @@ import { useStatsStore } from '@/store/stats';
 import { useSettingsStore } from '@/store/settings';
 import { useSidebarStore } from '@/store/sidebar';
 
+// Navigate by creating a new tab OR navigating current tab and forcing URL update
+async function navigateToUrl(url: string) {
+  const { activeTabId, updateTab } = useTabsStore.getState();
+  if (!activeTabId) return;
+  // Update the tab's URL in the store immediately so ContentArea hides NewTabPage
+  updateTab(activeTabId, { url, title: url });
+  // Update navigation store
+  useNavigationStore.getState().setUrl(url);
+  useNavigationStore.getState().setLoading(true);
+  // Tell main process to create WebContentsView and load the URL
+  await window.osBrowser.tabs.navigate(activeTabId, url);
+}
+
 interface GovPortal {
   id: number;
   name: string;
@@ -100,17 +113,17 @@ export function NewTabPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchValue.trim() || !activeTabId) return;
+    if (!searchValue.trim()) return;
     const query = searchValue.trim();
     if (query.includes('.') && !query.includes(' ')) {
-      navigate(activeTabId, query.startsWith('http') ? query : `https://${query}`);
+      navigateToUrl(query.startsWith('http') ? query : `https://${query}`);
     } else {
-      navigate(activeTabId, `https://www.google.com/search?q=${encodeURIComponent(query)}`);
+      navigateToUrl(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
     }
   };
 
   const handlePortalClick = (url: string) => {
-    if (activeTabId) navigate(activeTabId, url);
+    navigateToUrl(url);
   };
 
   const quickActions = [
@@ -355,7 +368,7 @@ export function NewTabPage() {
               {recentHistory.map((entry, index) => (
                 <button
                   key={entry.id}
-                  onClick={() => activeTabId && navigate(activeTabId, entry.url)}
+                  onClick={() => navigateToUrl(entry.url)}
                   aria-label={`Visit ${entry.title || entry.url}`}
                   className="group w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-2/50 transition-all duration-150 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ghana-gold animate-fade-up"
                   style={{
