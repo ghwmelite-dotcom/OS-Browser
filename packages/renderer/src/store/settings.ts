@@ -30,7 +30,13 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   },
 
   updateSettings: async (data) => {
-    const updated = await window.osBrowser.settings.update(data);
-    set({ settings: updated });
+    // Optimistically update local state first (don't depend on IPC return)
+    set((s) => ({
+      settings: s.settings ? { ...s.settings, ...data } as Settings : s.settings,
+    }));
+    // Fire IPC to persist to database (don't await — fire and forget)
+    try {
+      await window.osBrowser.settings.update(data);
+    } catch {}
   },
 }));
