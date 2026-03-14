@@ -23,15 +23,42 @@
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
+/* Theme CSS custom properties */
+:root, .dark {
+  --color-bg: #0c0e14;
+  --color-surface-1: #14171f;
+  --color-surface-2: #1a1e28;
+  --color-surface-3: #21262f;
+  --color-border-1: #2a2f3a;
+  --color-border-2: #363c4a;
+  --color-text-primary: #e8eaf0;
+  --color-text-secondary: #8b92a5;
+  --color-text-muted: #5c637a;
+}
+
+.light {
+  --color-bg: #F8F9FA;
+  --color-surface-1: #FFFFFF;
+  --color-surface-2: #F0F1F3;
+  --color-surface-3: #E8E9EB;
+  --color-border-1: #E0E2E6;
+  --color-border-2: #D0D3D8;
+  --color-text-primary: #1A1D23;
+  --color-text-secondary: #5C6370;
+  --color-text-muted: #9CA3AF;
+}
+
 @layer base {
   body {
-    @apply bg-bg text-text-primary font-sans m-0 p-0 overflow-hidden select-none;
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    @apply font-sans m-0 p-0 overflow-hidden select-none;
     -webkit-app-region: no-drag;
   }
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { @apply bg-border-1 rounded-full; }
-  ::-webkit-scrollbar-thumb:hover { @apply bg-border-2; }
+  ::-webkit-scrollbar-thumb { background-color: var(--color-border-1); border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background-color: var(--color-border-2); }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {

@@ -5,18 +5,20 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        bg: { DEFAULT: '#0c0e14', light: '#F8F9FA' },
+        bg: { DEFAULT: 'var(--color-bg)' },
         surface: {
-          1: '#14171f', 2: '#1a1e28', 3: '#21262f',
-          '1-light': '#FFFFFF', '2-light': '#F0F1F3', '3-light': '#E8E9EB',
+          1: 'var(--color-surface-1)',
+          2: 'var(--color-surface-2)',
+          3: 'var(--color-surface-3)',
         },
         border: {
-          1: '#2a2f3a', 2: '#363c4a',
-          '1-light': '#E0E2E6', '2-light': '#D0D3D8',
+          1: 'var(--color-border-1)',
+          2: 'var(--color-border-2)',
         },
         text: {
-          primary: '#e8eaf0', secondary: '#8b92a5', muted: '#5c637a',
-          'primary-light': '#1A1D23', 'secondary-light': '#5C6370', 'muted-light': '#9CA3AF',
+          primary: 'var(--color-text-primary)',
+          secondary: 'var(--color-text-secondary)',
+          muted: 'var(--color-text-muted)',
         },
         ghana: {
           gold: '#D4A017', 'gold-light': '#F2C94C', 'gold-dim': 'rgba(212,160,23,0.12)',
