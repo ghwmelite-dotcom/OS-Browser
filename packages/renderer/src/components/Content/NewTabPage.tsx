@@ -19,18 +19,9 @@ import { useStatsStore } from '@/store/stats';
 import { useSettingsStore } from '@/store/settings';
 import { useSidebarStore } from '@/store/sidebar';
 
-// Navigate by creating a new tab OR navigating current tab and forcing URL update
-async function navigateToUrl(url: string) {
-  const { activeTabId, updateTab } = useTabsStore.getState();
-  if (!activeTabId) return;
-  // Update the tab's URL in the store immediately so ContentArea hides NewTabPage
-  updateTab(activeTabId, { url, title: url });
-  // Update navigation store
-  useNavigationStore.getState().setUrl(url);
-  useNavigationStore.getState().setLoading(true);
-  // Tell main process to create WebContentsView and load the URL
-  await window.osBrowser.tabs.navigate(activeTabId, url);
-}
+// Intentionally no module-level navigate helper — the component uses
+// useNavigationStore().navigate (same path as the OmniBar) so that
+// ContentArea's isNewTab check flips correctly.
 
 interface GovPortal {
   id: number;
@@ -84,7 +75,7 @@ export function NewTabPage() {
   const [searchValue, setSearchValue] = useState('');
   const [recentHistory, setRecentHistory] = useState<HistoryEntry[]>([]);
   const { navigate } = useNavigationStore();
-  const { activeTabId } = useTabsStore();
+  const { activeTabId, updateTab } = useTabsStore();
   const { totalAdsBlocked } = useStatsStore();
   const { settings } = useSettingsStore();
   const { openPanel } = useSidebarStore();
@@ -111,19 +102,39 @@ export function NewTabPage() {
 
   const displayName = settings?.display_name;
 
+  // Navigate the active tab — uses the SAME navigate() from the navigation
+  // store that the OmniBar uses.  Also updates the tab store URL eagerly so
+  // ContentArea stops showing the NewTabPage immediately.
+  const handleNavigate = (url: string) => {
+    if (!activeTabId) return;
+
+    // Ensure the URL has a protocol
+    let finalUrl = url;
+    if (!url.includes('://')) {
+      finalUrl = `https://${url}`;
+    }
+
+    // Update tab store URL eagerly — makes ContentArea's isNewTab false
+    updateTab(activeTabId, { url: finalUrl, title: finalUrl });
+
+    // Kick off actual navigation (updates nav store + IPC to main process).
+    // This is the exact same method OmniBar calls.
+    navigate(activeTabId, finalUrl);
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchValue.trim()) return;
     const query = searchValue.trim();
     if (query.includes('.') && !query.includes(' ')) {
-      navigateToUrl(query.startsWith('http') ? query : `https://${query}`);
+      handleNavigate(query.startsWith('http') ? query : `https://${query}`);
     } else {
-      navigateToUrl(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
+      handleNavigate(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
     }
   };
 
   const handlePortalClick = (url: string) => {
-    navigateToUrl(url);
+    handleNavigate(url);
   };
 
   const quickActions = [
@@ -368,7 +379,7 @@ export function NewTabPage() {
               {recentHistory.map((entry, index) => (
                 <button
                   key={entry.id}
-                  onClick={() => navigateToUrl(entry.url)}
+                  onClick={() => handleNavigate(entry.url)}
                   aria-label={`Visit ${entry.title || entry.url}`}
                   className="group w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-2/50 transition-all duration-150 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ghana-gold animate-fade-up"
                   style={{
