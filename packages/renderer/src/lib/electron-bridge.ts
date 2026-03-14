@@ -89,7 +89,7 @@ const mockBridge = {
       email: null,
       avatar_path: null,
       default_model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
-      theme: 'dark' as const,
+      theme: 'light' as const,
       language: 'en',
       sidebar_position: 'right' as const,
       ad_blocking: true,

@@ -197,7 +197,9 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
 
             {/* Settings & about */}
             <MenuItem icon={BarChart3} label="Statistics" onClick={onOpenStats} />
-            <MenuItem icon={Settings} label="Settings" onClick={onOpenSettings} />
+            <MenuItem icon={Settings} label="Settings" onClick={() => {
+              createTab('os-browser://settings' as any);
+            }} />
             <MenuItem icon={HelpCircle} label="Help" onClick={() => {
               if (activeTabId) navigate(activeTabId, 'https://github.com/ghwmelite-dotcom/OS-Browser');
             }} />

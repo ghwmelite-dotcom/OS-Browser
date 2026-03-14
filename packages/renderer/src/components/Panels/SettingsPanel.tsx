@@ -1,74 +1,182 @@
-import React from 'react';
-import { X, Settings } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Settings, Check } from 'lucide-react';
 import { useSettingsStore } from '@/store/settings';
 
-export function SettingsPanel({ onClose }: { onClose: () => void }) {
-  const { settings, updateSettings } = useSettingsStore();
-  if (!settings) return null;
+// Auto-save toast
+function SaveIndicator({ show }: { show: boolean }) {
+  if (!show) return null;
+  return (
+    <div className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-2.5 rounded-lg shadow-lg z-[200] animate-fade-up"
+      style={{ background: 'var(--color-accent)', color: '#fff' }}>
+      <Check size={14} />
+      <span className="text-[13px] font-medium">Saved automatically</span>
+    </div>
+  );
+}
+
+// Full settings page rendered inside a tab
+export function SettingsPage() {
+  const { settings, updateSettings, loadSettings } = useSettingsStore();
+  const [saveShow, setSaveShow] = useState(false);
+
+  useEffect(() => { loadSettings(); }, []);
+
+  const autoSave = useCallback(async (data: Record<string, any>) => {
+    await updateSettings(data);
+    setSaveShow(true);
+    setTimeout(() => setSaveShow(false), 1500);
+  }, [updateSettings]);
+
+  if (!settings) return <div className="flex-1 flex items-center justify-center text-text-muted">Loading...</div>;
+
+  const s = settings as any;
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="border-b border-border-1 px-4 py-4"><h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-3">{title}</h3>{children}</div>
-  );
-
-  const Toggle = ({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) => (
-    <div className="flex items-center justify-between py-1.5">
-      <span className="text-md text-text-primary">{label}</span>
-      <button onClick={() => onChange(!value)} className={`w-10 h-5 rounded-full transition-colors ${value ? 'bg-ghana-gold' : 'bg-border-2'} relative focus:outline-none focus:ring-2 focus:ring-ghana-gold`}>
-        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${value ? 'left-5' : 'left-0.5'}`} />
-      </button>
+    <div className="mb-8">
+      <h3 className="text-[13px] font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--color-accent)' }}>{title}</h3>
+      <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--color-border-1)', background: 'var(--color-surface-1)' }}>
+        {children}
+      </div>
     </div>
   );
 
-  const Select = ({ label, value, options, onChange }: { label: string; value: string; options: { value: string; label: string }[]; onChange: (v: string) => void }) => (
-    <div className="flex items-center justify-between py-1.5">
-      <span className="text-md text-text-primary">{label}</span>
-      <select value={value} onChange={e => onChange(e.target.value)} className="bg-surface-2 text-sm text-text-primary rounded-btn px-2 py-1 outline-none focus:ring-2 focus:ring-ghana-gold border border-border-1">
+  const Row = ({ children }: { children: React.ReactNode }) => (
+    <div className="flex items-center justify-between px-5 py-3.5 border-b last:border-b-0" style={{ borderColor: 'var(--color-border-1)' }}>
+      {children}
+    </div>
+  );
+
+  const Toggle = ({ label, desc, value, onChange }: { label: string; desc?: string; value: boolean; onChange: (v: boolean) => void }) => (
+    <Row>
+      <div className="flex-1 mr-4">
+        <span className="text-[14px] text-text-primary font-medium">{label}</span>
+        {desc && <p className="text-[12px] text-text-muted mt-0.5">{desc}</p>}
+      </div>
+      <button onClick={() => onChange(!value)}
+        className="w-11 h-6 rounded-full transition-all relative shrink-0"
+        style={{ background: value ? 'var(--color-accent)' : 'var(--color-border-2)' }}>
+        <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${value ? 'left-6' : 'left-1'}`} />
+      </button>
+    </Row>
+  );
+
+  const Select = ({ label, desc, value, options, onChange }: {
+    label: string; desc?: string; value: string; options: { value: string; label: string }[]; onChange: (v: string) => void
+  }) => (
+    <Row>
+      <div className="flex-1 mr-4">
+        <span className="text-[14px] text-text-primary font-medium">{label}</span>
+        {desc && <p className="text-[12px] text-text-muted mt-0.5">{desc}</p>}
+      </div>
+      <select value={value} onChange={e => onChange(e.target.value)}
+        className="px-3 py-1.5 rounded-lg text-[13px] outline-none border transition-colors cursor-pointer shrink-0"
+        style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }}>
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
-    </div>
+    </Row>
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center items-start pt-16">
-      <div className="w-[520px] max-h-[80vh] bg-surface-1 border border-border-1 rounded-card shadow-2xl flex flex-col overflow-hidden animate-fade-in">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border-1">
-          <div className="flex items-center gap-2"><Settings size={16} className="text-ghana-gold" /><span className="text-md font-medium">Settings</span></div>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-2 focus:outline-none focus:ring-2 focus:ring-ghana-gold"><X size={16} className="text-text-muted" /></button>
+    <div className="min-h-full overflow-y-auto" style={{ background: 'var(--color-bg)' }}>
+      <div className="max-w-[680px] mx-auto px-6 py-10">
+        <div className="flex items-center gap-3 mb-10">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--color-accent)', color: '#fff' }}>
+            <Settings size={20} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-text-primary">Settings</h1>
+            <p className="text-[12px] text-text-muted">Changes are saved automatically</p>
+          </div>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          <Section title="Appearance">
-            <Select label="Theme" value={settings.theme} options={[{value:'dark',label:'Dark'},{value:'light',label:'Light'},{value:'system',label:'System'}]} onChange={v => updateSettings({theme: v as any})} />
-            <Select label="Sidebar Position" value={settings.sidebar_position} options={[{value:'right',label:'Right'},{value:'left',label:'Left'}]} onChange={v => updateSettings({sidebar_position: v as any})} />
-          </Section>
-          <Section title="Privacy & Security">
-            <Toggle label="Privacy Mode" value={settings.privacy_mode} onChange={v => updateSettings({privacy_mode: v})} />
-            <Toggle label="Ad Blocking" value={settings.ad_blocking} onChange={v => updateSettings({ad_blocking: v})} />
-          </Section>
-          <Section title="On Startup">
-            <Select label="When OS Browser opens" value={(settings as any).startup_mode || 'newtab'} options={[
-              {value:'newtab',label:'Open the New Tab page'},
-              {value:'restore',label:'Continue where you left off'},
-            ]} onChange={v => updateSettings({startup_mode: v} as any)} />
-          </Section>
-          <Section title="Search">
-            <Select label="Search Engine" value={settings.search_engine} options={[{value:'osbrowser',label:'OS Browser AI'},{value:'google',label:'Google'},{value:'duckduckgo',label:'DuckDuckGo'},{value:'bing',label:'Bing'}]} onChange={v => updateSettings({search_engine: v})} />
-          </Section>
-          <Section title="AI">
-            <Select label="Default Model" value={settings.default_model} options={[
-              {value:'@cf/meta/llama-3.3-70b-instruct-fp8-fast',label:'Llama 3.3 70B'},
-              {value:'@cf/meta/llama-3.1-8b-instruct',label:'Llama 3.1 8B'},
-              {value:'@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',label:'DeepSeek R1'},
-              {value:'@cf/mistral/mistral-small-3.1-24b-instruct',label:'Mistral Small'},
-              {value:'@cf/qwen/qwen2.5-72b-instruct',label:'Qwen 2.5 72B'},
-              {value:'@hf/google/gemma-7b-it',label:'Gemma 7B'},
-            ]} onChange={v => updateSettings({default_model: v})} />
-          </Section>
-          <Section title="Language">
-            <Select label="Language" value={settings.language} options={[{value:'en',label:'English'},{value:'tw',label:'Twi (Akan)'}]} onChange={v => updateSettings({language: v})} />
-          </Section>
-        </div>
+
+        <Section title="On Startup">
+          <Select label="When OS Browser opens" desc="Choose what happens when you launch the browser"
+            value={s.startup_mode || 'newtab'}
+            options={[
+              { value: 'newtab', label: 'Open the New Tab page' },
+              { value: 'restore', label: 'Continue where you left off' },
+            ]}
+            onChange={v => autoSave({ startup_mode: v })} />
+        </Section>
+
+        <Section title="Appearance">
+          <Select label="Theme" desc="Controls the browser's color scheme"
+            value={s.theme}
+            options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'System default' }]}
+            onChange={v => {
+              autoSave({ theme: v });
+              document.documentElement.classList.toggle('dark', v === 'dark');
+              document.documentElement.classList.toggle('light', v !== 'dark');
+            }} />
+          <Select label="Sidebar Position" desc="Which side the AI assistant appears on"
+            value={s.sidebar_position}
+            options={[{ value: 'right', label: 'Right' }, { value: 'left', label: 'Left' }]}
+            onChange={v => autoSave({ sidebar_position: v })} />
+        </Section>
+
+        <Section title="Privacy & Security">
+          <Toggle label="Privacy Mode" desc="No history, cache, or logs recorded while active"
+            value={!!s.privacy_mode} onChange={v => autoSave({ privacy_mode: v })} />
+          <Toggle label="Ad Blocking" desc="Block ads, trackers, and malware at the network level"
+            value={!!s.ad_blocking} onChange={v => autoSave({ ad_blocking: v })} />
+        </Section>
+
+        <Section title="Search">
+          <Select label="Default Search Engine" desc="Used when typing search terms in the address bar"
+            value={s.search_engine}
+            options={[
+              { value: 'osbrowser', label: 'OS Browser AI' },
+              { value: 'google', label: 'Google' },
+              { value: 'duckduckgo', label: 'DuckDuckGo' },
+              { value: 'bing', label: 'Bing' },
+            ]}
+            onChange={v => autoSave({ search_engine: v })} />
+        </Section>
+
+        <Section title="AI Assistant">
+          <Select label="Default AI Model" desc="The AI model used for chat, summarization, and translation"
+            value={s.default_model}
+            options={[
+              { value: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', label: 'Llama 3.3 70B (Default)' },
+              { value: '@cf/meta/llama-3.1-8b-instruct', label: 'Llama 3.1 8B (Fast)' },
+              { value: '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b', label: 'DeepSeek R1 (Code & Math)' },
+              { value: '@cf/mistral/mistral-small-3.1-24b-instruct', label: 'Mistral Small (Chat)' },
+              { value: '@cf/qwen/qwen2.5-72b-instruct', label: 'Qwen 2.5 72B (Multilingual)' },
+              { value: '@hf/google/gemma-7b-it', label: 'Gemma 7B (Lightweight)' },
+            ]}
+            onChange={v => autoSave({ default_model: v })} />
+        </Section>
+
+        <Section title="Language">
+          <Select label="Browser Language" desc="The language used for the browser interface"
+            value={s.language}
+            options={[{ value: 'en', label: 'English' }, { value: 'tw', label: 'Twi (Akan)' }]}
+            onChange={v => autoSave({ language: v })} />
+        </Section>
+
+        <Section title="About">
+          <Row>
+            <div>
+              <span className="text-[14px] text-text-primary font-medium">OS Browser</span>
+              <p className="text-[12px] text-text-muted mt-0.5">Version 1.0.0 — Ghana's AI-Powered Browser</p>
+            </div>
+            <span className="text-[12px] text-text-muted">Powered by OHCS</span>
+          </Row>
+        </Section>
       </div>
-      <div className="fixed inset-0 bg-black/50 -z-10" onClick={onClose} />
+
+      <SaveIndicator show={saveShow} />
     </div>
   );
+}
+
+// Overlay wrapper — opens settings in a new tab instead
+export function SettingsPanel({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    // Open settings as a tab
+    window.osBrowser.tabs.create('os-browser://settings' as any).then(() => {
+      onClose();
+    });
+  }, [onClose]);
+  return null;
 }

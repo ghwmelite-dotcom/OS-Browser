@@ -42,6 +42,20 @@ export function App() {
         const settings = useSettingsStore.getState().settings as any;
         const startupMode = settings?.startup_mode || 'newtab';
 
+        // Check if this is a private window (always dark mode)
+        const isPrivate = new URLSearchParams(window.location.search).get('private') === 'true';
+        if (isPrivate) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+          // Set privacy mode
+          window.osBrowser.settings.update({ privacy_mode: true });
+        } else {
+          // Apply saved theme on startup
+          const theme = settings?.theme || 'light';
+          document.documentElement.classList.toggle('dark', theme === 'dark');
+          document.documentElement.classList.toggle('light', theme !== 'dark');
+        }
+
         await loadTabs();
         const existingTabs = useTabsStore.getState().tabs;
 
