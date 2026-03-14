@@ -19,7 +19,10 @@ export function SettingsPage() {
   const { settings, updateSettings, loadSettings } = useSettingsStore();
   const [saveShow, setSaveShow] = useState(false);
 
-  useEffect(() => { loadSettings(); }, []);
+  useEffect(() => {
+    // Only load if not already loaded
+    if (!settings) loadSettings();
+  }, []);
 
   const autoSave = useCallback(async (data: Record<string, any>) => {
     await updateSettings(data);
@@ -27,7 +30,20 @@ export function SettingsPage() {
     setTimeout(() => setSaveShow(false), 1500);
   }, [updateSettings]);
 
-  if (!settings) return <div className="flex-1 flex items-center justify-center text-text-muted">Loading...</div>;
+  if (!settings) {
+    // Try loading once more after a short delay
+    setTimeout(() => loadSettings(), 100);
+    return (
+      <div className="flex-1 flex items-center justify-center text-text-muted">
+        <div className="text-center">
+          <p className="text-[14px] mb-2">Loading settings...</p>
+          <button onClick={() => loadSettings()} className="text-[12px] underline" style={{ color: 'var(--color-accent)' }}>
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const s = settings as any;
 
@@ -173,8 +189,15 @@ export function SettingsPage() {
 // Overlay wrapper — opens settings in a new tab instead
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
   useEffect(() => {
-    // Open settings as a tab
-    window.osBrowser.tabs.create('os-browser://settings' as any).then(() => {
+    // Check if a settings tab already exists — switch to it instead of creating duplicate
+    import('@/store/tabs').then(({ useTabsStore }) => {
+      const { tabs, switchTab, createTab } = useTabsStore.getState();
+      const existingSettings = tabs.find(t => t.url === 'os-browser://settings');
+      if (existingSettings) {
+        switchTab(existingSettings.id);
+      } else {
+        createTab('os-browser://settings');
+      }
       onClose();
     });
   }, [onClose]);
