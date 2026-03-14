@@ -416,7 +416,7 @@ export function runMigrations(): void {
       email: null,
       avatar_path: null,
       default_model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
-      theme: 'dark',
+      theme: 'light',
       language: 'en',
       sidebar_position: 'right',
       ad_blocking: 1,

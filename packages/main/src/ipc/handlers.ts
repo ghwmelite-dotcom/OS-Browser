@@ -54,23 +54,26 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
     }
   });
 
-  // New private window (same but with privacy indicator)
+  // New private window — separate session, dark mode, no cache
   ipcMain.handle('window:new-private', () => {
     const path = require('path');
     const privWin = new BrowserWindow({
       width: 1280, height: 800, minWidth: 800, minHeight: 600,
-      frame: false, titleBarStyle: 'hidden', backgroundColor: '#1a0a1a',
+      frame: false, titleBarStyle: 'hidden', backgroundColor: '#0f1117',
       webPreferences: {
         preload: path.join(__dirname, '..', '..', 'preload', 'dist', 'index.js'),
         contextIsolation: true, nodeIntegration: false, sandbox: true, webviewTag: false,
-        // Private session — separate from main window
+        // Private session — completely separate cookies, cache, storage
         partition: 'private-' + Date.now(),
       },
     });
     if (app.isPackaged) {
-      privWin.loadFile(path.join(__dirname, '..', '..', 'renderer', 'dist', 'index.html'));
+      privWin.loadFile(
+        path.join(__dirname, '..', '..', 'renderer', 'dist', 'index.html'),
+        { query: { private: 'true' } }
+      );
     } else {
-      privWin.loadURL('http://localhost:5173');
+      privWin.loadURL('http://localhost:5173?private=true');
     }
   });
 
