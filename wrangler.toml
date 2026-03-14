@@ -1,0 +1,26 @@
+name = "os-browser-api"
+main = "worker/src/index.ts"
+compatibility_date = "2025-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[ai]
+binding = "AI"
+
+# Replace these IDs with actual values from your .env before deployment
+[[kv_namespaces]]
+binding = "RATE_LIMITS"
+id = "REPLACE_WITH_ACTUAL_KV_ID"
+
+[[kv_namespaces]]
+binding = "PAGE_CACHE"
+id = "REPLACE_WITH_ACTUAL_KV_ID"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "REPLACE_WITH_ACTUAL_KV_ID"
+
+[vars]
+ENVIRONMENT = "production"
+APP_NAME = "OS Browser"
+APP_VERSION = "1.0.0"
+DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
