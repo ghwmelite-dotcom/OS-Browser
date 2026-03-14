@@ -120,17 +120,12 @@ export function OmniBar() {
     <div className="flex-1 max-w-[800px] relative">
       <form onSubmit={handleSubmit}>
         <div
-          className={`
-            flex items-center gap-2 px-3 rounded-[24px] transition-all duration-200
-            ${isFocused
-              ? 'bg-surface-1 border-2'
-              : 'bg-surface-2 border border-transparent hover:bg-surface-3/50'
-            }
-          `}
+          className="flex items-center gap-2 px-3.5 rounded-[20px] transition-all duration-200"
           style={{
-            height: '34px',
-            borderColor: isFocused ? 'var(--color-accent)' : undefined,
-            boxShadow: isFocused ? 'var(--search-glow)' : 'none',
+            height: '36px',
+            background: isFocused ? 'var(--color-surface-1)' : 'var(--color-surface-2)',
+            border: isFocused ? '2px solid var(--color-accent)' : '1.5px solid var(--color-border-2)',
+            boxShadow: isFocused ? 'var(--search-glow)' : '0 1px 3px rgba(0,0,0,0.06)',
           }}
         >
           {/* Icon */}
