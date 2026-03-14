@@ -108,7 +108,6 @@ export function NewTabPage() {
   const handleNavigate = (url: string) => {
     if (!activeTabId) return;
 
-    // Ensure the URL has a protocol
     let finalUrl = url;
     if (!url.includes('://')) {
       finalUrl = `https://${url}`;
@@ -117,8 +116,7 @@ export function NewTabPage() {
     // Update tab store URL eagerly — makes ContentArea's isNewTab false
     updateTab(activeTabId, { url: finalUrl, title: finalUrl });
 
-    // Kick off actual navigation (updates nav store + IPC to main process).
-    // This is the exact same method OmniBar calls.
+    // Navigate (updates nav store + IPC to main process)
     navigate(activeTabId, finalUrl);
   };
 
