@@ -1,50 +1,81 @@
 import React from 'react';
-import { Shield, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
+import { Shield, Lock, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
 import { useConnectivityStore } from '@/store/connectivity';
 import { useSettingsStore } from '@/store/settings';
 import { useStatsStore } from '@/store/stats';
+import { useNavigationStore } from '@/store/navigation';
 
 export function StatusBar() {
   const { status, queuedCount } = useConnectivityStore();
   const { settings } = useSettingsStore();
   const { totalAdsBlocked } = useStatsStore();
+  const { currentUrl, isLoading, isSecure } = useNavigationStore();
+
+  const isNewTab = currentUrl === 'os-browser://newtab';
+  const displayUrl = isNewTab ? '' : currentUrl;
 
   const connectivityIcon = {
-    online: <Wifi size={12} className="text-ghana-green" />,
-    intermittent: <AlertTriangle size={12} className="text-yellow-500" />,
-    offline: <WifiOff size={12} className="text-ghana-red" />,
+    online: <Wifi size={10} className="text-ghana-green" />,
+    intermittent: <AlertTriangle size={10} className="text-yellow-500" />,
+    offline: <WifiOff size={10} className="text-ghana-red" />,
   }[status];
 
   const connectivityLabel = {
-    online: 'Online',
-    intermittent: 'Unstable connection',
-    offline: `Offline${queuedCount > 0 ? ` · ${queuedCount} queued` : ''}`,
+    online: '',
+    intermittent: 'Unstable',
+    offline: `Offline${queuedCount > 0 ? ` (${queuedCount})` : ''}`,
   }[status];
 
   return (
-    <div className="h-6 bg-surface-1 border-t border-border-1 flex items-center justify-between px-3 shrink-0 text-xs text-text-muted" aria-live="polite">
-      <div className="flex items-center gap-3">
-        {/* Connectivity */}
-        <span className="flex items-center gap-1">
-          {connectivityIcon}
-          {connectivityLabel}
-        </span>
-
-        {/* Privacy mode */}
-        {settings?.privacy_mode && (
-          <span className="flex items-center gap-1 text-ghana-gold">
-            <Shield size={11} />
-            Privacy Mode
+    <div
+      className="h-[22px] bg-surface-1 border-t border-border-1/40 flex items-center justify-between px-3 shrink-0 group transition-opacity duration-200 ease-out opacity-60 hover:opacity-100"
+      aria-live="polite"
+    >
+      {/* Left: URL / status */}
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        {isLoading && (
+          <span className="text-[10px] text-text-muted truncate">
+            Loading...
+          </span>
+        )}
+        {!isLoading && displayUrl && (
+          <span className="text-[10px] text-text-muted truncate max-w-[400px] font-mono">
+            {displayUrl}
           </span>
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      {/* Right: indicators */}
+      <div className="flex items-center gap-3 shrink-0">
+        {/* Connectivity — only show if not online */}
+        {status !== 'online' && (
+          <span className="flex items-center gap-1 text-[10px] text-text-muted">
+            {connectivityIcon}
+            {connectivityLabel}
+          </span>
+        )}
+
+        {/* Privacy mode */}
+        {settings?.privacy_mode && (
+          <span className="flex items-center gap-1 text-[10px] text-ghana-gold/70">
+            <Shield size={9} />
+            Private
+          </span>
+        )}
+
+        {/* Security */}
+        {!isNewTab && isSecure && (
+          <span className="flex items-center gap-1 text-[10px] text-ghana-green/70">
+            <Lock size={9} />
+            Secure
+          </span>
+        )}
+
         {/* Ad block stats */}
         {settings?.ad_blocking && totalAdsBlocked > 0 && (
-          <span className="flex items-center gap-1">
-            <Shield size={11} className="text-ghana-green" />
-            {totalAdsBlocked.toLocaleString()} ads blocked
+          <span className="flex items-center gap-1 text-[10px] text-text-muted">
+            <Shield size={9} className="text-ghana-green/70" />
+            {totalAdsBlocked.toLocaleString()}
           </span>
         )}
       </div>
