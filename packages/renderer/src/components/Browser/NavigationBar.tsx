@@ -256,16 +256,29 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
 
                   {loginStep === 'qr' && (
                     <>
-                      <div className="w-40 h-40 mx-auto mb-3 rounded-xl flex items-center justify-center" style={{ background: 'var(--color-surface-2)' }}>
-                        {/* QR placeholder */}
+                      <div className="w-44 h-44 mx-auto mb-3 rounded-xl flex items-center justify-center border" style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)' }}>
+                        {/* Generated QR-like pattern */}
                         <div className="text-center">
-                          <QrCode size={48} className="text-text-muted mx-auto mb-2" />
-                          <p className="text-[11px] text-text-muted">Scan with your<br />phone camera</p>
+                          <div className="w-28 h-28 mx-auto mb-2 grid grid-cols-7 gap-[2px] p-2">
+                            {Array.from({ length: 49 }, (_, i) => {
+                              const isCorner = (i < 3 || (i >= 4 && i < 7)) && (Math.floor(i/7) < 3) ||
+                                (i % 7 >= 4 && Math.floor(i/7) < 3) ||
+                                (i % 7 < 3 && Math.floor(i/7) >= 4);
+                              const isRandom = Math.sin(i * 7.3 + 42) > 0;
+                              return (
+                                <div key={i} className="rounded-[1px]" style={{
+                                  background: isCorner || isRandom ? 'var(--color-text-primary)' : 'transparent',
+                                  opacity: isCorner ? 1 : 0.7,
+                                }} />
+                              );
+                            })}
+                          </div>
+                          <p className="text-[10px] text-text-muted">OS Browser QR Login</p>
                         </div>
                       </div>
 
                       <p className="text-[12px] text-text-muted text-center mb-3">
-                        Open OS Browser on your phone and scan this code to sign in
+                        QR login will be available with the OS Browser mobile app
                       </p>
 
                       <button onClick={() => setLoginStep('email')} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[13px] font-medium border transition-colors hover:bg-surface-2"

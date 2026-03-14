@@ -37,7 +37,11 @@ interface HistoryEntry {
 
 /* ── Relative time formatter ── */
 function relativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime()) || date.getFullYear() < 2020) return 'Recently';
+  const diff = Date.now() - date.getTime();
+  if (diff < 0) return 'Just now';
   const minutes = Math.floor(diff / 60000);
   if (minutes < 1) return 'Just now';
   if (minutes < 60) return `${minutes}m ago`;
@@ -45,7 +49,7 @@ function relativeTime(dateStr: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString();
+  return date.toLocaleDateString();
 }
 
 /* ── Category colors for portal tags ── */

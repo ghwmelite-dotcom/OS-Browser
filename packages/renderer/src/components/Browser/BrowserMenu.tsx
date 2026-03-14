@@ -105,10 +105,10 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             {/* New tab / window */}
             <MenuItem icon={Plus} label="New tab" shortcut="Ctrl+T" onClick={() => createTab()} />
             <MenuItem icon={Copy} label="New window" shortcut="Ctrl+N" onClick={() => {
-              window.osBrowser?.maximize?.(); // Placeholder — Electron single-window for v1
+              window.osBrowser?.newWindow?.();
             }} />
             <MenuItem icon={Shield} label="New private window" shortcut="Ctrl+Shift+N" onClick={() => {
-              updateSettings({ privacy_mode: true });
+              window.osBrowser?.newPrivateWindow?.();
             }} />
             <Separator />
 

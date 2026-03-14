@@ -35,7 +35,10 @@ export const useNavigationStore = create<NavigationState>((set) => ({
     if (!url.includes('://') && url.includes('.') && !url.includes(' ')) {
       finalUrl = `https://${url}`;
     }
-    set({ isLoading: true, currentUrl: finalUrl });
+    set({ isLoading: true, currentUrl: finalUrl, isSecure: finalUrl.startsWith('https://') });
+    // Also update the tab's URL in the tabs store so ContentArea switches from NewTabPage
+    const { useTabsStore } = await import('./tabs');
+    useTabsStore.getState().updateTab(tabId, { url: finalUrl });
     await window.osBrowser.tabs.navigate(tabId, finalUrl);
   },
 

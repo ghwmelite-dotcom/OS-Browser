@@ -35,6 +35,8 @@ const IPC = {
 contextBridge.exposeInMainWorld('osBrowser', {
   minimize: () => ipcRenderer.invoke(IPC.WINDOW_MINIMIZE),
   maximize: () => ipcRenderer.invoke(IPC.WINDOW_MAXIMIZE),
+  newWindow: () => ipcRenderer.invoke('window:new'),
+  newPrivateWindow: () => ipcRenderer.invoke('window:new-private'),
   close: () => ipcRenderer.invoke(IPC.WINDOW_CLOSE),
   fullscreen: () => ipcRenderer.invoke(IPC.WINDOW_FULLSCREEN),
 

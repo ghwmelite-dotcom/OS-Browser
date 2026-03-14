@@ -27,6 +27,44 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
     mainWindow.setFullScreen(!mainWindow.isFullScreen());
   });
 
+  // New window
+  ipcMain.handle('window:new', () => {
+    const path = require('path');
+    const newWin = new BrowserWindow({
+      width: 1280, height: 800, minWidth: 800, minHeight: 600,
+      frame: false, titleBarStyle: 'hidden', backgroundColor: '#0a0a08',
+      webPreferences: {
+        preload: path.join(__dirname, '..', '..', 'preload', 'dist', 'index.js'),
+        contextIsolation: true, nodeIntegration: false, sandbox: true, webviewTag: false,
+      },
+    });
+    if (app.isPackaged) {
+      newWin.loadFile(path.join(__dirname, '..', '..', 'renderer', 'dist', 'index.html'));
+    } else {
+      newWin.loadURL('http://localhost:5173');
+    }
+  });
+
+  // New private window (same but with privacy indicator)
+  ipcMain.handle('window:new-private', () => {
+    const path = require('path');
+    const privWin = new BrowserWindow({
+      width: 1280, height: 800, minWidth: 800, minHeight: 600,
+      frame: false, titleBarStyle: 'hidden', backgroundColor: '#1a0a1a',
+      webPreferences: {
+        preload: path.join(__dirname, '..', '..', 'preload', 'dist', 'index.js'),
+        contextIsolation: true, nodeIntegration: false, sandbox: true, webviewTag: false,
+        // Private session — separate from main window
+        partition: 'private-' + Date.now(),
+      },
+    });
+    if (app.isPackaged) {
+      privWin.loadFile(path.join(__dirname, '..', '..', 'renderer', 'dist', 'index.html'));
+    } else {
+      privWin.loadURL('http://localhost:5173');
+    }
+  });
+
   // App info
   ipcMain.handle(IPC.APP_GET_VERSION, () => app.getVersion());
 
