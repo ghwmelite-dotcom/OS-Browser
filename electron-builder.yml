@@ -15,7 +15,7 @@ win:
       arch: [x64]
     - target: msi
       arch: [x64]
-  icon: assets/icon.ico
+  icon: assets/icon.png
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
@@ -27,5 +27,5 @@ msi:
   perMachine: true
 publish:
   provider: github
-  owner: ohwpstudios
+  owner: ghwmelite-dotcom
   repo: os-browser

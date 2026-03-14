@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OS Browser — Ghana's AI-Powered Desktop Browser</title>
+  <meta name="description" content="Download OS Browser — the AI-powered desktop browser built for Ghana's civil and public servants. Ad blocking, offline support, Twi translation, government portal quick-access." />
+  <meta name="theme-color" content="#0f1117" />
+  <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #faf7f0;
+      --surface: #ffffff;
+      --surface-2: #f5f1e8;
+      --border: #e8e2d6;
+      --text: #1a1814;
+      --text-2: #5a5244;
+      --text-3: #9c8e78;
+      --gold: #D4A017;
+      --gold-light: #F2C94C;
+      --red: #CE1126;
+      --green: #006B3F;
+      --accent: #D4A017;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    ::selection { background: rgba(212,160,23,0.2); }
+
+    /* ─── Nav ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      background: rgba(250,247,240,0.85);
+      border-bottom: 1px solid var(--border);
+      padding: 0 40px;
+      height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; color: var(--text); text-decoration: none; }
+    .nav-brand svg { width: 32px; height: 32px; border-radius: 8px; }
+    .nav-links { display: flex; gap: 32px; align-items: center; }
+    .nav-links a { color: var(--text-2); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.15s; }
+    .nav-links a:hover { color: var(--gold); }
+    .nav-cta {
+      background: var(--gold); color: #fff; border: none; padding: 8px 20px;
+      border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all 0.15s; text-decoration: none;
+    }
+    .nav-cta:hover { filter: brightness(1.1); box-shadow: 0 4px 16px rgba(212,160,23,0.3); }
+
+    /* ─── Announcement Bar ─── */
+    .announce {
+      margin-top: 56px; padding: 10px 20px;
+      background: linear-gradient(90deg, var(--red), var(--gold), var(--green));
+      text-align: center; font-size: 13px; font-weight: 600; color: #fff;
+      letter-spacing: 0.02em;
+    }
+
+    /* ─── Hero ─── */
+    .hero {
+      padding: 80px 40px 40px;
+      text-align: center;
+      max-width: 800px; margin: 0 auto;
+    }
+    .hero-icon {
+      width: 64px; height: 64px; margin: 0 auto 24px; border-radius: 16px;
+      overflow: hidden;
+    }
+    .hero-icon svg { width: 100%; height: 100%; }
+    .hero h1 {
+      font-size: 48px; font-weight: 800; letter-spacing: -0.03em;
+      line-height: 1.1; margin-bottom: 16px;
+    }
+    .hero h1 span { color: var(--gold); }
+    .hero p {
+      font-size: 17px; color: var(--text-2); max-width: 600px;
+      margin: 0 auto 40px; line-height: 1.7;
+    }
+
+    /* ─── Download Cards ─── */
+    .download-row {
+      display: flex; gap: 32px; justify-content: center;
+      flex-wrap: wrap; margin-bottom: 60px;
+    }
+    .dl-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 32px 48px; text-align: center;
+      min-width: 220px;
+      transition: all 0.2s;
+    }
+    .dl-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.08); transform: translateY(-2px); }
+    .dl-icon { font-size: 36px; margin-bottom: 12px; }
+    .dl-label { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+    .dl-buttons { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .dl-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      text-decoration: none; transition: all 0.15s; cursor: pointer; border: none;
+    }
+    .dl-btn-primary { background: var(--text); color: #fff; }
+    .dl-btn-primary:hover { background: #333; }
+    .dl-btn-gold { background: var(--gold); color: #fff; }
+    .dl-btn-gold:hover { filter: brightness(1.1); box-shadow: 0 4px 16px rgba(212,160,23,0.3); }
+    .dl-btn svg { width: 14px; height: 14px; }
+
+    /* ─── Browser Mockup ─── */
+    .mockup-section {
+      padding: 0 40px 80px;
+      max-width: 1000px; margin: 0 auto;
+    }
+    .mockup-frame {
+      background: #0f1117;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.15), 0 8px 32px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .mockup-titlebar {
+      height: 36px; background: #171921;
+      display: flex; align-items: center; padding: 0 14px; gap: 7px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    .mockup-content {
+      aspect-ratio: 16/9;
+      background: linear-gradient(180deg, #0f1117 0%, #141620 100%);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .mockup-content::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 100% 60% at 50% -5%, rgba(212,160,23,0.12) 0%, transparent 55%),
+        radial-gradient(ellipse 70% 50% at 90% 90%, rgba(0,107,63,0.08) 0%, transparent 45%),
+        radial-gradient(ellipse 50% 40% at 5% 85%, rgba(206,17,38,0.05) 0%, transparent 40%);
+    }
+    .mockup-inner {
+      position: relative; z-index: 1; text-align: center; color: #e8e8ec;
+    }
+    .mockup-inner h2 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .mockup-inner h2 span { color: var(--gold); }
+    .mockup-inner p { color: #9ca0ae; font-size: 14px; }
+    .mockup-grid {
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      gap: 12px; margin-top: 24px; padding: 0 40px;
+    }
+    .mockup-portal {
+      background: rgba(23,25,33,0.9); border: 1px solid rgba(46,51,64,0.5);
+      border-radius: 12px; padding: 16px 8px; text-align: center;
+    }
+    .mockup-portal-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: rgba(212,160,23,0.12);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 8px; font-weight: 700; color: var(--gold); font-size: 14px;
+    }
+    .mockup-portal span { font-size: 10px; color: #9ca0ae; }
+
+    /* ─── Features Section ─── */
+    .features {
+      padding: 80px 40px;
+      max-width: 1000px; margin: 0 auto;
+    }
+    .features h2 {
+      text-align: center; font-size: 36px; font-weight: 800;
+      margin-bottom: 12px; letter-spacing: -0.02em;
+    }
+    .features .subtitle {
+      text-align: center; color: var(--text-2); font-size: 16px;
+      margin-bottom: 56px;
+    }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .feature-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 32px;
+      transition: all 0.2s;
+    }
+    .feature-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.06); transform: translateY(-2px); }
+    .feature-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px; font-size: 22px;
+    }
+    .fi-gold { background: rgba(212,160,23,0.1); color: var(--gold); }
+    .fi-green { background: rgba(0,107,63,0.1); color: var(--green); }
+    .fi-red { background: rgba(206,17,38,0.1); color: var(--red); }
+    .feature-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-2); line-height: 1.6; }
+
+    /* ─── Ghana Banner ─── */
+    .ghana-banner {
+      margin: 0 40px 80px;
+      max-width: 920px; margin-left: auto; margin-right: auto;
+      background: linear-gradient(135deg, #CE1126 0%, #D4A017 50%, #006B3F 100%);
+      border-radius: 20px; padding: 48px; text-align: center; color: #fff;
+      position: relative; overflow: hidden;
+    }
+    .ghana-banner::before {
+      content: ''; position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity: 0.04;
+    }
+    .ghana-banner h2 { font-size: 32px; font-weight: 800; margin-bottom: 12px; position: relative; }
+    .ghana-banner p { font-size: 16px; opacity: 0.9; margin-bottom: 8px; position: relative; }
+    .ghana-banner .flag { font-size: 40px; margin-bottom: 16px; position: relative; }
+
+    /* ─── Bottom CTA ─── */
+    .bottom-cta {
+      padding: 80px 40px;
+      text-align: center;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+    .bottom-cta h2 {
+      font-size: 36px; font-weight: 800; margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+    .bottom-cta h2 span { color: var(--gold); }
+    .bottom-cta p {
+      color: var(--text-2); font-size: 16px; margin-bottom: 40px;
+      max-width: 600px; margin-left: auto; margin-right: auto;
+    }
+
+    /* ─── Footer ─── */
+    footer {
+      padding: 32px 40px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      font-size: 13px; color: var(--text-3);
+    }
+    footer a { color: var(--gold); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    .footer-row { display: flex; justify-content: center; gap: 24px; margin-bottom: 12px; }
+
+    /* ─── Animations ─── */
+    .fade-up {
+      opacity: 0; transform: translateY(24px);
+      animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) forwards;
+    }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
+
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 32px; }
+      .hero p { font-size: 15px; }
+      .features-grid { grid-template-columns: 1fr; }
+      .mockup-grid { grid-template-columns: repeat(3, 1fr); }
+      .download-row { flex-direction: column; align-items: center; }
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      .hero, .features, .bottom-cta { padding-left: 20px; padding-right: 20px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-up { opacity: 1; transform: none; animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a href="#" class="nav-brand">
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#CE1126"/><stop offset="50%" stop-color="#FCD116"/><stop offset="100%" stop-color="#006B3F"/></linearGradient><linearGradient id="sh" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="#FCD116"/></linearGradient></defs>
+      <rect width="512" height="512" rx="108" fill="url(#bg)"/><path d="M256 90L370 140V270Q370 370 256 430Q142 370 142 270V140Z" fill="url(#sh)" stroke="#000" stroke-width="4" opacity=".95"/><text x="256" y="310" text-anchor="middle" font-family="Georgia,serif" font-weight="900" font-size="160" fill="#0f1117" letter-spacing="-8">OS</text>
+    </svg>
+    OS Browser
+  </a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#download">Download</a>
+    <a href="https://askozzy.ghwmelite.workers.dev" target="_blank">AskOzzy</a>
+    <a href="https://github.com/ghwmelite-dotcom/OS-Browser" target="_blank">GitHub</a>
+  </div>
+  <a href="#download" class="nav-cta">Download Now</a>
+</nav>
+
+<!-- Announcement -->
+<div class="announce">
+  Built for Ghana's Civil & Public Servants &mdash; AI-Powered Browsing with AskOzzy Integration
+</div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-icon fade-up">
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#CE1126"/><stop offset="50%" stop-color="#FCD116"/><stop offset="100%" stop-color="#006B3F"/></linearGradient><linearGradient id="sh2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="#FCD116"/></linearGradient></defs>
+      <rect width="512" height="512" rx="108" fill="url(#bg2)"/><path d="M256 90L370 140V270Q370 370 256 430Q142 370 142 270V140Z" fill="url(#sh2)" stroke="#000" stroke-width="4" opacity=".95"/><text x="256" y="310" text-anchor="middle" font-family="Georgia,serif" font-weight="900" font-size="160" fill="#0f1117" letter-spacing="-8">OS</text>
+    </svg>
+  </div>
+  <h1 class="fade-up delay-1">
+    <span>OS Browser</span><br />AI-Powered Desktop Browser
+  </h1>
+  <p class="fade-up delay-2">
+    Built-in AI assistant, ad blocking, government portal quick-access, Twi translation, offline support, and AskOzzy integration &mdash; all in a beautiful Ghana-inspired browser.
+  </p>
+
+  <!-- Download Buttons -->
+  <div class="download-row fade-up delay-3" id="download">
+    <div class="dl-card">
+      <div class="dl-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/><path d="M15.5 8.5c-.828 0-1.5.895-1.5 2s.672 2 1.5 2M8.5 8.5c.828 0 1.5.895 1.5 2s-.672 2-1.5 2M12 17.5c1.38 0 2.5-.672 2.5-1.5h-5c0 .828 1.12 1.5 2.5 1.5z"/></svg>
+      </div>
+      <div class="dl-label">Mac OS</div>
+      <div class="dl-buttons">
+        <button class="dl-btn dl-btn-primary" disabled title="Coming soon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+          Apple Silicon
+        </button>
+        <button class="dl-btn dl-btn-primary" disabled title="Coming soon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+          Intel
+        </button>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px;">Coming Soon</div>
+    </div>
+
+    <div class="dl-card">
+      <div class="dl-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+      </div>
+      <div class="dl-label">Windows</div>
+      <div class="dl-buttons">
+        <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/latest" class="dl-btn dl-btn-gold">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </a>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px;">Windows 10/11 &bull; 64-bit</div>
+    </div>
+  </div>
+</section>
+
+<!-- Browser Mockup -->
+<section class="mockup-section fade-up delay-4">
+  <div class="mockup-frame">
+    <div class="mockup-titlebar">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+    </div>
+    <div class="mockup-content">
+      <div class="mockup-inner">
+        <h2><span>OS Browser</span></h2>
+        <p>Ghana's AI-Powered Browser</p>
+        <div class="mockup-grid">
+          <div class="mockup-portal"><div class="mockup-portal-icon">G</div><span>Ghana.gov</span></div>
+          <div class="mockup-portal"><div class="mockup-portal-icon">G</div><span>GIFMIS</span></div>
+          <div class="mockup-portal"><div class="mockup-portal-icon">C</div><span>CAGD</span></div>
+          <div class="mockup-portal"><div class="mockup-portal-icon">G</div><span>GRA Tax</span></div>
+          <div class="mockup-portal"><div class="mockup-portal-icon">O</div><span>OHCS</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+  <h2 class="fade-up">More Features</h2>
+  <p class="subtitle fade-up delay-1">Everything a civil servant needs, built into the browser</p>
+
+  <div class="features-grid">
+    <div class="feature-card fade-up delay-1">
+      <div class="feature-icon fi-gold">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      </div>
+      <h3>AI Sidebar</h3>
+      <p>Chat with 6 AI models. Summarize pages, translate to Twi, draft letters, and research topics — all without leaving the browser.</p>
+    </div>
+    <div class="feature-card fade-up delay-2">
+      <div class="feature-icon fi-green">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h3>Ad Blocking</h3>
+      <p>Network-level blocking removes ads, trackers, and malware before they load. Saves bandwidth. Auto-whitelists government sites.</p>
+    </div>
+    <div class="feature-card fade-up delay-3">
+      <div class="feature-icon fi-gold">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <h3>AskOzzy Integration</h3>
+      <p>One-click access to Ghana's sovereign AI platform for deep research, data analysis, and professional document drafting.</p>
+    </div>
+    <div class="feature-card fade-up delay-1">
+      <div class="feature-icon fi-red">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <h3>Privacy First</h3>
+      <p>All data stays on your device. No cloud telemetry. Encrypted database. Privacy mode leaves zero trace. Built for government trust.</p>
+    </div>
+    <div class="feature-card fade-up delay-2">
+      <div class="feature-icon fi-green">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20"/><path d="M5 20V4h4v16"/><path d="M15 20V8h4v12"/></svg>
+      </div>
+      <h3>Offline Support</h3>
+      <p>Cached pages work without internet. AI requests queue and process on reconnect. History and bookmarks always available.</p>
+    </div>
+    <div class="feature-card fade-up delay-3">
+      <div class="feature-icon fi-gold">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      </div>
+      <h3>Gov Portal Hub</h3>
+      <p>Pre-loaded shortcuts to GIFMIS, CAGD, GRA, SSNIT, OHCS, E-SPAR and more. One click to any government service.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Ghana Banner -->
+<div class="ghana-banner fade-up">
+  <div class="flag">🇬🇭</div>
+  <h2>Built for Ghana. By Ghana.</h2>
+  <p>Your data stays in Ghana. Sovereign. Private. Yours.</p>
+  <p style="font-size:13px;opacity:0.75;">Powered by OHCS &bull; Hodges & Co. Limited</p>
+</div>
+
+<!-- Bottom CTA -->
+<section class="bottom-cta">
+  <h2 class="fade-up">Download <span>OS Browser</span> Now</h2>
+  <p class="fade-up delay-1">AI-Powered, Ad-Blocking, Privacy-First Browser for Ghana's Public Servants</p>
+
+  <div class="download-row fade-up delay-2">
+    <div class="dl-card">
+      <div class="dl-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/><path d="M15.5 8.5c-.828 0-1.5.895-1.5 2s.672 2 1.5 2M8.5 8.5c.828 0 1.5.895 1.5 2s-.672 2-1.5 2"/></svg>
+      </div>
+      <div class="dl-label">Mac OS</div>
+      <div class="dl-buttons">
+        <button class="dl-btn dl-btn-primary" disabled>Apple Silicon</button>
+        <button class="dl-btn dl-btn-primary" disabled>Intel</button>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px;">Coming Soon</div>
+    </div>
+    <div class="dl-card">
+      <div class="dl-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+      </div>
+      <div class="dl-label">Windows</div>
+      <div class="dl-buttons">
+        <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/latest" class="dl-btn dl-btn-gold">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-row">
+    <a href="https://github.com/ghwmelite-dotcom/OS-Browser">GitHub</a>
+    <a href="https://askozzy.ghwmelite.workers.dev">AskOzzy</a>
+    <a href="https://ohcs.gov.gh">OHCS</a>
+  </div>
+  <p>&copy; 2026 Hodges & Co. Limited / ohwpstudios. Made with pride in Accra, Ghana 🇬🇭</p>
+</footer>
+
+</body>
+</html>
