@@ -13,7 +13,7 @@ export function registerSettingsHandlers(): void {
     const allowed = [
       'display_name', 'email', 'avatar_path', 'default_model',
       'theme', 'language', 'sidebar_position', 'ad_blocking',
-      'privacy_mode', 'search_engine', 'sync_enabled',
+      'privacy_mode', 'search_engine', 'sync_enabled', 'startup_mode',
     ];
 
     const fields = Object.keys(data).filter(k => allowed.includes(k));
