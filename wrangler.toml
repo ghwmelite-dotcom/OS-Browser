@@ -2,22 +2,22 @@ name = "os-browser-api"
 main = "worker/src/index.ts"
 compatibility_date = "2025-12-01"
 compatibility_flags = ["nodejs_compat"]
+account_id = "ea2eb3a9813660dfca2a60e594858538"
 
 [ai]
 binding = "AI"
 
-# Replace these IDs with actual values from your .env before deployment
 [[kv_namespaces]]
 binding = "RATE_LIMITS"
-id = "REPLACE_WITH_ACTUAL_KV_ID"
+id = "c159da5e083a4c2283af673653958537"
 
 [[kv_namespaces]]
 binding = "PAGE_CACHE"
-id = "REPLACE_WITH_ACTUAL_KV_ID"
+id = "cc0756a5ce3840efabb0fc021ff0bfef"
 
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "REPLACE_WITH_ACTUAL_KV_ID"
+id = "c5ff0cd2de1e4325a11ca987d729a6b5"
 
 [vars]
 ENVIRONMENT = "production"
