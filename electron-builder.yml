@@ -1,0 +1,31 @@
+appId: com.osbrowser.app
+productName: OS Browser
+directories:
+  output: out
+  buildResources: assets
+files:
+  - packages/main/dist/**/*
+  - packages/preload/dist/**/*
+  - packages/renderer/dist/**/*
+  - packages/shared/dist/**/*
+  - assets/**/*
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: msi
+      arch: [x64]
+  icon: assets/icon.ico
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: OS Browser
+msi:
+  oneClick: false
+  perMachine: true
+publish:
+  provider: github
+  owner: ohwpstudios
+  repo: os-browser
