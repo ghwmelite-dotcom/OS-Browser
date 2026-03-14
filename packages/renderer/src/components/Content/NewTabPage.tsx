@@ -91,14 +91,36 @@ export function NewTabPage() {
       .catch(() => {});
   }, []);
 
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  }, []);
+  const isLoggedIn = settings?.display_name && settings.display_name !== 'User';
+  const firstName = isLoggedIn ? settings!.display_name!.split(' ')[0] : '';
 
-  const displayName = settings?.display_name;
+  const { greeting, emoji, subtitle } = useMemo(() => {
+    const hour = new Date().getHours();
+    const day = new Date().getDay(); // 0=Sun, 1=Mon...
+    const isFriday = day === 5;
+    const isWeekend = day === 0 || day === 6;
+    const isMonday = day === 1;
+
+    if (isLoggedIn) {
+      // Personalized greetings for logged-in users
+      if (hour < 5) return { greeting: 'Still up', emoji: '🌙', subtitle: 'Burning the midnight oil? Remember to rest!' };
+      if (hour < 9) return { greeting: 'Good morning', emoji: '☀️', subtitle: isMonday ? 'New week, new goals! Let\'s make it count' : 'Ready to make today great?' };
+      if (hour < 12) return { greeting: 'Hey there', emoji: '👋', subtitle: 'What are you working on today?' };
+      if (hour < 14) return { greeting: 'Good afternoon', emoji: '🌤️', subtitle: 'Hope you\'re having a productive day!' };
+      if (hour < 17) return { greeting: 'Keep going', emoji: '💪', subtitle: isFriday ? 'Almost there! TGIF 🎉' : 'You\'re doing great today!' };
+      if (hour < 20) return { greeting: 'Good evening', emoji: '🌅', subtitle: isWeekend ? 'Enjoy your evening!' : 'Wrapping up for the day?' };
+      return { greeting: 'Good night', emoji: '✨', subtitle: 'Time to wind down. See you tomorrow!' };
+    } else {
+      // Cute welcoming greetings for guests
+      if (hour < 5) return { greeting: 'Akwaaba, Night Owl', emoji: '🦉', subtitle: 'Welcome! Browsing at this hour? We love the dedication' };
+      if (hour < 9) return { greeting: 'Akwaaba', emoji: '🌅', subtitle: 'Welcome to OS Browser! Sign in to personalize your experience' };
+      if (hour < 12) return { greeting: 'Maakye', emoji: '☀️', subtitle: 'Good morning! Your AI-powered browsing companion is ready' };
+      if (hour < 14) return { greeting: 'Hello, Explorer', emoji: '🌍', subtitle: 'Discover a smarter way to browse the web' };
+      if (hour < 17) return { greeting: 'Maaha', emoji: '👋', subtitle: 'Good afternoon! Ready to explore? Sign in to unlock all features' };
+      if (hour < 20) return { greeting: 'Maadwo', emoji: '🌆', subtitle: 'Good evening! Ghana\'s smartest browser is at your service' };
+      return { greeting: 'Welcome, Friend', emoji: '✨', subtitle: 'The internet is better with OS Browser. Try signing in!' };
+    }
+  }, [isLoggedIn]);
 
   // Navigate the active tab — uses the SAME navigate() from the navigation
   // store that the OmniBar uses.  Also updates the tab store URL eagerly so
@@ -205,17 +227,33 @@ export function NewTabPage() {
       <div className="relative z-10 max-w-[900px] mx-auto px-8 py-16">
         {/* ── Hero Section ── */}
         <header className="text-center mb-14 animate-fade-up">
-          <h1 className="font-bold text-gradient-gold tracking-tight mb-2" style={{ fontSize: '36px' }}>
-            OS Browser
-          </h1>
-          <p className="text-sm tracking-wide font-semibold" style={{ color: 'var(--color-subheading)' }}>
-            Ghana's AI-Powered Browser
-          </p>
-          {displayName && (
-            <p className="text-text-secondary text-md mt-4">
-              {greeting}, <span style={{ color: 'var(--color-accent)' }}>{displayName}</span>
-            </p>
+          {/* Greeting with emoji */}
+          <div className="text-[40px] mb-3">{emoji}</div>
+
+          {isLoggedIn ? (
+            <>
+              <h1 className="font-bold tracking-tight mb-1" style={{ fontSize: '28px', color: 'var(--color-text-primary)' }}>
+                {greeting}, <span className="text-gradient-gold">{firstName}</span>!
+              </h1>
+              <p className="text-[14px] text-text-secondary mt-2 leading-relaxed">
+                {subtitle}
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="font-bold tracking-tight mb-1" style={{ fontSize: '28px' }}>
+                <span className="text-gradient-gold">{greeting}</span>{' '}
+                <span style={{ color: 'var(--color-text-primary)' }}>{emoji === '🦉' ? '' : '🇬🇭'}</span>
+              </h1>
+              <p className="text-[14px] text-text-secondary mt-2 leading-relaxed max-w-[400px] mx-auto">
+                {subtitle}
+              </p>
+            </>
           )}
+
+          <p className="text-[11px] text-text-muted mt-3 tracking-wide font-semibold uppercase" style={{ color: 'var(--color-subheading)' }}>
+            OS Browser — Ghana's AI-Powered Browser
+          </p>
         </header>
 
         {/* ── Search Bar ── */}
