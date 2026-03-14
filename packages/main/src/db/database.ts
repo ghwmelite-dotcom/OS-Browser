@@ -173,32 +173,49 @@ class PreparedStatement {
     const whereClause = setMatch[2] || '';
     let changes = 0;
 
-    // Find matching rows
-    const rows = whereClause ? this.filterByWhere(table, whereClause, params) : table;
-
-    // Parse SET assignments
+    // Count how many ? placeholders are in the SET clause to know where WHERE params start
     const setClauses = setMatch[1].split(',').map(s => s.trim());
-    let paramIdx = 0;
+    let setParamCount = 0;
+    setClauses.forEach(clause => {
+      if (clause.includes('?')) setParamCount++;
+    });
+
+    // WHERE params start AFTER the SET params
+    const whereParams = params.slice(setParamCount);
+    const setParams = params.slice(0, setParamCount);
+
+    // Find matching rows using only the WHERE params
+    const rows = whereClause ? this.filterByWhere(table, whereClause, whereParams) : table;
+
+    // Apply SET assignments using SET params
+    let setParamIdx = 0;
 
     rows.forEach((row: any) => {
+      // Reset SET param index for each row (in case of multi-row update)
+      setParamIdx = 0;
       setClauses.forEach(clause => {
         const eqMatch = clause.match(/(\w+)\s*=\s*(.+)/);
         if (eqMatch) {
           const col = eqMatch[1];
           const val = eqMatch[2].trim();
           if (val === '?') {
-            row[col] = params[paramIdx++];
+            row[col] = setParams[setParamIdx++];
           } else if (/datetime/i.test(val)) {
             row[col] = new Date().toISOString();
-          } else if (/visit_count\s*\+\s*1/i.test(val)) {
+          } else if (/\w+\s*\+\s*1/i.test(val)) {
             row[col] = (row[col] || 0) + 1;
+          } else if (/^\d+$/.test(val)) {
+            // Literal number: is_active = 0, is_active = 1
+            row[col] = parseInt(val);
+          } else if (/^'.*'$/.test(val)) {
+            // Literal string: status = 'queued'
+            row[col] = val.slice(1, -1);
           }
         }
       });
       changes++;
     });
 
-    // Reset param index for WHERE
     saveToDisk();
     return { lastInsertRowid: 0, changes };
   }
