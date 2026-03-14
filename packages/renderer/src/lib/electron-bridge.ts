@@ -36,6 +36,10 @@ const mockBridge = {
     goForward: noop,
     reload: noop,
     stop: noop,
+    onLoading: () => () => {},
+    onUrlUpdated: () => () => {},
+    onTitleUpdated: () => () => {},
+    onFaviconUpdated: () => () => {},
   },
 
   history: {

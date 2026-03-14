@@ -11,6 +11,7 @@ import { HistoryPanel } from './components/Panels/HistoryPanel';
 import { BookmarkManager } from './components/Panels/BookmarkManager';
 import { SettingsPanel } from './components/Panels/SettingsPanel';
 import { useTabsStore } from './store/tabs';
+import { useNavigationStore } from './store/navigation';
 import { useSettingsStore } from './store/settings';
 import { useConnectivityStore } from './store/connectivity';
 import { useStatsStore } from './store/stats';
@@ -53,7 +54,38 @@ export function App() {
     try {
       cleanup = initConnectivity();
     } catch {}
-    return () => cleanup?.();
+
+    // Listen for tab events from main process
+    const cleanups: (() => void)[] = [];
+    try {
+      cleanups.push(window.osBrowser.tabs.onLoading((data: any) => {
+        useTabsStore.getState().updateTab(data.id, { is_loading: data.isLoading });
+        if (data.id === useTabsStore.getState().activeTabId) {
+          useNavigationStore.getState().setLoading(data.isLoading);
+        }
+      }));
+      cleanups.push(window.osBrowser.tabs.onUrlUpdated((data: any) => {
+        useTabsStore.getState().updateTab(data.id, { url: data.url });
+        if (data.id === useTabsStore.getState().activeTabId) {
+          useNavigationStore.getState().setUrl(data.url);
+          useNavigationStore.getState().setNavState({
+            canGoBack: data.canGoBack,
+            canGoForward: data.canGoForward,
+          });
+        }
+      }));
+      cleanups.push(window.osBrowser.tabs.onTitleUpdated((data: any) => {
+        useTabsStore.getState().updateTab(data.id, { title: data.title });
+      }));
+      cleanups.push(window.osBrowser.tabs.onFaviconUpdated((data: any) => {
+        useTabsStore.getState().updateTab(data.id, { favicon_path: data.favicon });
+      }));
+    } catch {}
+
+    return () => {
+      cleanup?.();
+      cleanups.forEach(c => c());
+    };
   }, []);
 
   return (

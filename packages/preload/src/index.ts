@@ -49,6 +49,26 @@ contextBridge.exposeInMainWorld('osBrowser', {
     goForward: (id: string) => ipcRenderer.invoke(IPC.TAB_GO_FORWARD, id),
     reload: (id: string) => ipcRenderer.invoke(IPC.TAB_RELOAD, id),
     stop: (id: string) => ipcRenderer.invoke(IPC.TAB_STOP, id),
+    onLoading: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('tab:loading', listener);
+      return () => ipcRenderer.removeListener('tab:loading', listener);
+    },
+    onUrlUpdated: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('tab:url-updated', listener);
+      return () => ipcRenderer.removeListener('tab:url-updated', listener);
+    },
+    onTitleUpdated: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('tab:title-updated', listener);
+      return () => ipcRenderer.removeListener('tab:title-updated', listener);
+    },
+    onFaviconUpdated: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('tab:favicon-updated', listener);
+      return () => ipcRenderer.removeListener('tab:favicon-updated', listener);
+    },
   },
 
   history: {
