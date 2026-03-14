@@ -187,15 +187,15 @@ export function NewTabPage() {
       <div className="relative z-10 max-w-[900px] mx-auto px-8 py-16">
         {/* ── Hero Section ── */}
         <header className="text-center mb-14 animate-fade-up">
-          <h1 className="text-2xl font-bold text-gradient-gold tracking-tight mb-2" style={{ fontSize: '32px' }}>
+          <h1 className="font-bold text-gradient-gold tracking-tight mb-2" style={{ fontSize: '36px' }}>
             OS Browser
           </h1>
-          <p className="text-text-muted text-sm tracking-wide">
+          <p className="text-sm tracking-wide font-semibold" style={{ color: 'var(--color-subheading)' }}>
             Ghana's AI-Powered Browser
           </p>
           {displayName && (
-            <p className="text-text-secondary text-md mt-3">
-              {greeting}, {displayName}
+            <p className="text-text-secondary text-md mt-4">
+              {greeting}, <span style={{ color: 'var(--color-accent)' }}>{displayName}</span>
             </p>
           )}
         </header>
@@ -238,7 +238,7 @@ export function NewTabPage() {
           <section className="mb-14 animate-fade-up stagger-2" aria-label="Government Portals">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-1 h-4 rounded-full bg-ghana-gold" />
-              <h2 className="text-sm font-medium text-text-secondary uppercase tracking-widest">
+              <h2 className="text-sm font-semibold uppercase tracking-widest" style={{ color: 'var(--color-accent-green)' }}>
                 Government Portals
               </h2>
             </div>
@@ -294,9 +294,9 @@ export function NewTabPage() {
                 Ghana's Sovereign AI — Deep research, data analysis & document drafting
               </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0 text-text-muted group-hover:text-ghana-gold transition-colors duration-200">
-              <span className="text-xs hidden sm:inline">Open</span>
-              <ExternalLink size={16} />
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="btn-gold px-4 py-1.5 text-xs hidden sm:inline-flex items-center gap-1.5">Open <ExternalLink size={12} /></span>
+              <ExternalLink size={16} className="sm:hidden text-text-muted" />
             </div>
           </button>
         </section>
@@ -304,8 +304,8 @@ export function NewTabPage() {
         {/* ── AI Quick Actions ── */}
         <section className="mb-14 animate-fade-up stagger-4" aria-label="AI Quick Actions">
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-1 h-4 rounded-full bg-ghana-gold" />
-            <h2 className="text-sm font-medium text-text-secondary uppercase tracking-widest">
+            <div className="w-1 h-4 rounded-full" style={{ backgroundColor: 'var(--color-accent)' }} />
+            <h2 className="text-sm font-semibold uppercase tracking-widest" style={{ color: 'var(--color-accent)' }}>
               AI Quick Actions
             </h2>
           </div>
@@ -343,7 +343,7 @@ export function NewTabPage() {
           <section className="mb-14 animate-fade-up stagger-5" aria-label="Recent browsing history">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-1 h-4 rounded-full bg-ghana-gold" />
-              <h2 className="text-sm font-medium text-text-secondary uppercase tracking-widest">
+              <h2 className="text-sm font-semibold uppercase tracking-widest" style={{ color: 'var(--color-accent-green)' }}>
                 Recent
               </h2>
             </div>

@@ -3,42 +3,60 @@
 @tailwind utilities;
 
 /* ─── Theme custom properties ─── */
+/* Dark mode: AskOzzy-style dark navy with gold CTAs and green accents */
 :root, .dark {
-  --color-bg: #050505;
-  --color-surface-1: #0e0e0e;
-  --color-surface-2: #151515;
-  --color-surface-3: #1c1c1c;
-  --color-border-1: #2a2520;
-  --color-border-2: #3a342c;
-  --color-text-primary: #f0ede8;
-  --color-text-secondary: #9a9080;
-  --color-text-muted: #5c5448;
-  --glass-bg: rgba(14, 14, 14, 0.82);
-  --glass-border: rgba(42, 37, 32, 0.6);
-  --noise-opacity: 0.035;
-  --search-shadow: 0 0 0 1px rgba(42, 37, 32, 0.7), 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(212, 160, 23, 0.04);
-  --search-glow: 0 0 0 1.5px rgba(212, 160, 23, 0.45), 0 0 30px rgba(212, 160, 23, 0.15), 0 8px 32px rgba(0, 0, 0, 0.5);
-  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
-  --card-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(212, 160, 23, 0.05);
+  --color-bg: #0f1117;
+  --color-surface-1: #171921;
+  --color-surface-2: #1e212b;
+  --color-surface-3: #272b36;
+  --color-border-1: #2e3340;
+  --color-border-2: #3a4050;
+  --color-text-primary: #e8e8ec;
+  --color-text-secondary: #9ca0ae;
+  --color-text-muted: #5c6172;
+  --color-accent: #D4A017;
+  --color-accent-green: #2ecc71;
+  --color-heading: #ffffff;
+  --color-subheading: #D4A017;
+  --color-link: #e8b840;
+  --color-btn-bg: #D4A017;
+  --color-btn-text: #0f1117;
+  --glass-bg: rgba(23, 25, 33, 0.88);
+  --glass-border: rgba(46, 51, 64, 0.6);
+  --noise-opacity: 0.025;
+  --search-shadow: 0 0 0 1px rgba(46, 51, 64, 0.8), 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --search-glow: 0 0 0 2px rgba(212, 160, 23, 0.5), 0 0 30px rgba(212, 160, 23, 0.12), 0 8px 32px rgba(0, 0, 0, 0.4);
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.25);
+  --card-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(212, 160, 23, 0.06);
+  --sidebar-bg: #141620;
 }
 
+/* Light mode: AskOzzy-style warm cream with gold headings and green accents */
 .light {
-  --color-bg: #f2efe8;
-  --color-surface-1: #f8f6f0;
-  --color-surface-2: #eeebe4;
-  --color-surface-3: #e4e0d8;
-  --color-border-1: #d4cfc5;
-  --color-border-2: #c2bbb0;
-  --color-text-primary: #1a1814;
-  --color-text-secondary: #5a5244;
-  --color-text-muted: #8a8070;
-  --glass-bg: rgba(248, 246, 240, 0.82);
-  --glass-border: rgba(212, 207, 197, 0.7);
-  --noise-opacity: 0.015;
-  --search-shadow: 0 0 0 1px rgba(212, 207, 197, 0.8), 0 4px 20px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --search-glow: 0 0 0 1.5px rgba(184, 134, 11, 0.35), 0 0 24px rgba(184, 134, 11, 0.08), 0 4px 20px rgba(0, 0, 0, 0.06);
-  --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.05);
+  --color-bg: #faf7f0;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #f5f1e8;
+  --color-surface-3: #ece7db;
+  --color-border-1: #e0dace;
+  --color-border-2: #cec6b6;
+  --color-text-primary: #2c2416;
+  --color-text-secondary: #6b5d48;
+  --color-text-muted: #9c8e78;
+  --color-accent: #c49315;
+  --color-accent-green: #1a8a4a;
+  --color-heading: #c49315;
+  --color-subheading: #1a8a4a;
+  --color-link: #b8860b;
+  --color-btn-bg: #D4A017;
+  --color-btn-text: #ffffff;
+  --glass-bg: rgba(255, 255, 255, 0.88);
+  --glass-border: rgba(224, 218, 206, 0.75);
+  --noise-opacity: 0.01;
+  --search-shadow: 0 0 0 1px rgba(224, 218, 206, 0.9), 0 4px 20px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1);
+  --search-glow: 0 0 0 2px rgba(196, 147, 21, 0.4), 0 0 24px rgba(196, 147, 21, 0.08), 0 4px 20px rgba(0, 0, 0, 0.05);
+  --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --sidebar-bg: #f7f4ec;
 }
 
 /* ─── Base layer ─── */
@@ -136,12 +154,52 @@
     box-shadow: var(--card-shadow-hover);
   }
 
-  /* Gold gradient text */
+  /* Title gradient — white in dark, gold in light (like AskOzzy) */
   .text-gradient-gold {
-    background: linear-gradient(135deg, #D4A017 0%, #F2C94C 45%, #D4A017 100%);
+    color: var(--color-heading);
+  }
+
+  .dark .text-gradient-gold {
+    background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  .light .text-gradient-gold {
+    background: linear-gradient(135deg, #c49315 0%, #e8b840 50%, #c49315 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Heading color — white in dark, gold in light */
+  .text-heading {
+    color: var(--color-heading);
+  }
+
+  /* Subheading — gold in dark, green in light */
+  .text-subheading {
+    color: var(--color-subheading);
+  }
+
+  /* Green accent text */
+  .text-accent-green {
+    color: var(--color-accent-green);
+  }
+
+  /* Gold button style (like AskOzzy's CTAs) */
+  .btn-gold {
+    background-color: var(--color-btn-bg);
+    color: var(--color-btn-text);
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.15s ease-out;
+  }
+
+  .btn-gold:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 4px 16px rgba(212, 160, 23, 0.25);
   }
 
   /* Gold glow */
