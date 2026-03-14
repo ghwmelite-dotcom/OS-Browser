@@ -1,5 +1,5 @@
-// Use sql-asm (pure JS, no WASM) so it bundles cleanly into the ASAR
-const initSqlJs = require('sql.js/dist/sql-asm.js');
+// Use sql-wasm (memory efficient) with WASM file loaded from extraResources
+const initSqlJs = require('sql.js');
 type SqlJsDatabase = any;
 import { app } from 'electron';
 import path from 'path';
@@ -129,10 +129,14 @@ function saveDatabase(): void {
 }
 
 export async function initDatabase(): Promise<void> {
-  // sql-asm returns the SQL object directly (no WASM loading needed)
-  const SQL = typeof initSqlJs === 'function'
-    ? await Promise.resolve(initSqlJs())
-    : initSqlJs;
+  // Locate the WASM file — in packaged app it's in extraResources
+  const wasmPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'sql-wasm.wasm')
+    : path.join(__dirname, '..', '..', '..', 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
+
+  const wasmBinary = fs.existsSync(wasmPath) ? fs.readFileSync(wasmPath) : undefined;
+
+  const SQL = await initSqlJs(wasmBinary ? { wasmBinary } : undefined);
 
   const dbDir = app.getPath('userData');
   fs.mkdirSync(dbDir, { recursive: true });

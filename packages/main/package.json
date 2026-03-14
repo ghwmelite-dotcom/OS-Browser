@@ -4,8 +4,8 @@
   "private": true,
   "main": "dist/main.js",
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --platform=node --outdir=dist --external:electron",
-    "dev": "esbuild src/main.ts --bundle --platform=node --outdir=dist --external:electron --watch"
+    "build": "esbuild src/main.ts --bundle --platform=node --outdir=dist --external:electron --external:sql.js",
+    "dev": "esbuild src/main.ts --bundle --platform=node --outdir=dist --external:electron --external:sql.js --watch"
   },
   "dependencies": {
     "@os-browser/shared": "*",
