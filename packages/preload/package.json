@@ -1,0 +1,17 @@
+{
+  "name": "@os-browser/preload",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --outdir=dist --external:electron",
+    "dev": "esbuild src/index.ts --bundle --platform=node --outdir=dist --external:electron --watch"
+  },
+  "dependencies": {
+    "@os-browser/shared": "*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0"
+  }
+}
