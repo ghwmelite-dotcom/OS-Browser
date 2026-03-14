@@ -2,6 +2,8 @@ import { ipcMain, BrowserWindow, WebContentsView } from 'electron';
 import { IPC } from '@os-browser/shared';
 import { getDatabase } from '../db/database';
 import crypto from 'crypto';
+import { cachePage } from '../services/page-cache';
+import { isTabSuspended, markTabRestored } from '../services/tab-suspension';
 
 const tabViews = new Map<string, WebContentsView>();
 
@@ -58,6 +60,9 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
       view.webContents.loadURL(tab.url);
       setupViewEvents(view, id, mainWindow);
       tabViews.set(id, view);
+      if (isTabSuspended(id)) {
+        markTabRestored(id);
+      }
     }
 
     return tab;
@@ -190,6 +195,17 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
 
   wc.on('did-stop-loading', () => {
     mainWindow.webContents.send('tab:loading', { id: tabId, isLoading: false });
+  });
+
+  wc.on('did-finish-load', async () => {
+    try {
+      const pageHtml = await wc.executeJavaScript('document.documentElement.outerHTML');
+      const pageTitle = await wc.executeJavaScript('document.title');
+      const pageUrl = wc.getURL();
+      if (pageUrl && !pageUrl.startsWith('os-browser://')) {
+        cachePage(pageUrl, pageHtml, pageTitle);
+      }
+    } catch { /* ignore errors from navigation */ }
   });
 
   wc.on('page-favicon-updated', (_e, favicons) => {

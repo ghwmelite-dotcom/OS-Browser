@@ -12,6 +12,8 @@ import { registerAgentHandlers } from './agents';
 import { initTray } from '../services/tray';
 import { registerCredentialHandlers } from './credentials';
 import { initDownloadProtection } from '../services/downloads';
+import { initCertHandler } from '../services/cert-handler';
+import { registerBookmarkImportHandlers } from '../services/bookmark-import';
 
 export function registerAllHandlers(mainWindow: BrowserWindow): void {
   // Window controls
@@ -81,6 +83,10 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
   // Credential manager and download protection
   registerCredentialHandlers();
   initDownloadProtection(mainWindow);
+
+  // Certificate error handling and bookmark import
+  initCertHandler(mainWindow);
+  registerBookmarkImportHandlers(mainWindow);
 
   // System tray
   initTray(mainWindow);
