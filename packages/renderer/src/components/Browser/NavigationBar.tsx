@@ -156,8 +156,12 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
             <>
               <div className="fixed inset-0 z-[99]" onClick={() => setShowLoginMenu(false)} />
               <div
-                className="absolute top-[36px] right-0 w-[300px] rounded-xl border shadow-2xl z-[100] overflow-hidden"
-                style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}
+                className="absolute top-[36px] right-0 w-[320px] rounded-xl border shadow-2xl z-[100] overflow-y-auto"
+                style={{
+                  background: 'var(--color-surface-1)',
+                  borderColor: 'var(--color-border-1)',
+                  maxHeight: 'calc(100vh - 100px)',
+                }}
               >
                 {/* Header */}
                 <div className="p-5 text-center border-b" style={{ borderColor: 'var(--color-border-1)' }}>
