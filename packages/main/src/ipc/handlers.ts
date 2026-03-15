@@ -13,7 +13,7 @@ import { initTray } from '../services/tray';
 import { registerCredentialHandlers } from './credentials';
 import { initDownloadProtection } from '../services/downloads';
 import { initCertHandler } from '../services/cert-handler';
-import { registerBookmarkImportHandlers } from '../services/bookmark-import';
+import { registerBookmarkImportHandlers, registerBookmarkExportHandler } from '../services/bookmark-import';
 import { getDatabase } from '../db/database';
 
 export function registerAllHandlers(mainWindow: BrowserWindow): void {
@@ -234,6 +234,7 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
   // Certificate error handling and bookmark import
   initCertHandler(mainWindow);
   registerBookmarkImportHandlers(mainWindow);
+  registerBookmarkExportHandler(mainWindow);
 
   // System tray
   initTray(mainWindow);

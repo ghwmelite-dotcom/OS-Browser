@@ -107,3 +107,54 @@ export function registerBookmarkImportHandlers(mainWindow: BrowserWindow): void 
     return { imported: bookmarks.length, folders: folderCache.size };
   });
 }
+
+export function registerBookmarkExportHandler(mainWindow: BrowserWindow): void {
+  ipcMain.handle('bookmark:export', async () => {
+    const db = getDatabase();
+    const bookmarks = db.prepare('SELECT * FROM bookmarks ORDER BY position').all() as any[];
+    const folders = db.prepare('SELECT * FROM bookmark_folders ORDER BY position').all() as any[];
+
+    let html = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<TITLE>Bookmarks</TITLE>
+<H1>Bookmarks</H1>
+<DL><p>\n`;
+
+    // Export folders with their bookmarks
+    for (const folder of folders) {
+      html += `  <DT><H3>${escapeHtml(folder.name)}</H3>\n  <DL><p>\n`;
+      const folderBookmarks = bookmarks.filter((b: any) => b.folder_id === folder.id);
+      for (const bm of folderBookmarks) {
+        html += `    <DT><A HREF="${escapeHtml(bm.url)}">${escapeHtml(bm.title)}</A>\n`;
+      }
+      html += `  </DL><p>\n`;
+    }
+
+    // Export unfiled bookmarks
+    const unfiled = bookmarks.filter((b: any) => !b.folder_id);
+    for (const bm of unfiled) {
+      html += `  <DT><A HREF="${escapeHtml(bm.url)}">${escapeHtml(bm.title)}</A>\n`;
+    }
+
+    html += `</DL><p>\n`;
+
+    // Show save dialog
+    const { dialog } = require('electron');
+    const { filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Export Bookmarks',
+      defaultPath: 'os-browser-bookmarks.html',
+      filters: [{ name: 'HTML', extensions: ['html'] }],
+    });
+
+    if (filePath) {
+      const fs = require('fs');
+      fs.writeFileSync(filePath, html, 'utf-8');
+      return { success: true, path: filePath };
+    }
+    return { success: false };
+  });
+}
+
+function escapeHtml(str: string): string {
+  return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}

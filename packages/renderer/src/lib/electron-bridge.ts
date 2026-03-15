@@ -75,6 +75,8 @@ const mockBridge = {
     isBookmarked: async () => false,
     createFolder: noop,
     deleteFolder: noop,
+    updateFolder: noop,
+    export: async () => ({ success: false }),
   },
 
   ai: {

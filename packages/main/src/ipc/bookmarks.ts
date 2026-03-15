@@ -16,6 +16,15 @@ export function registerBookmarkHandlers(): void {
     const result = db.prepare(
       'INSERT INTO bookmarks (url, title, description, folder_id, position) VALUES (?, ?, ?, ?, ?)'
     ).run(data.url, data.title, data.description || null, data.folder_id || null, position);
+
+    // Async favicon fetch — don't block the response
+    try {
+      const domain = new URL(data.url).hostname;
+      const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+      // Store the favicon URL directly — it's a reliable Google CDN URL
+      db.prepare('UPDATE bookmarks SET favicon_path = ? WHERE id = ?').run(faviconUrl, result.lastInsertRowid);
+    } catch {}
+
     return { id: result.lastInsertRowid, ...data, position };
   });
 
@@ -52,5 +61,15 @@ export function registerBookmarkHandlers(): void {
   ipcMain.handle(IPC.BOOKMARK_FOLDER_DELETE, (_event, id: number) => {
     const db = getDatabase();
     db.prepare('DELETE FROM bookmark_folders WHERE id = ?').run(id);
+  });
+
+  ipcMain.handle('bookmark:folder:update', (_event, id: number, data: any) => {
+    const db = getDatabase();
+    const allowed = ['name', 'position', 'parent_id'];
+    const fields = Object.keys(data).filter(k => allowed.includes(k));
+    if (fields.length === 0) return;
+    const sets = fields.map(f => `${f} = ?`).join(', ');
+    const values = fields.map(f => data[f]);
+    db.prepare(`UPDATE bookmark_folders SET ${sets} WHERE id = ?`).run(...values, id);
   });
 }
