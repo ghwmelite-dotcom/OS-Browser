@@ -1,6 +1,11 @@
 import React from 'react';
 import { BarChart3, Zap } from 'lucide-react';
 import { FeatureRegistry, StatusBarIndicatorProps } from '../registry';
+import { useTabsStore } from '@/store/tabs';
+import { useDataSaverStore } from '@/store/datasaver';
+
+const openDataDashboard = () => useTabsStore.getState().createTab('os-browser://data');
+const toggleLiteMode = () => useDataSaverStore.getState().toggleLiteMode();
 
 // ── Status Bar Indicator ────────────────────────────────────────────
 const DataSaverIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onClick }) => {
@@ -12,7 +17,7 @@ const DataSaverIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onC
       gap: '4px',
       padding: '2px 8px',
       fontSize: '11px',
-      color: stripColor,
+      color: 'var(--color-text-primary)',
       background: 'transparent',
       border: 'none',
       cursor: 'pointer',
@@ -21,7 +26,7 @@ const DataSaverIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onC
     },
     title: 'Data Saver — Click to open dashboard',
   },
-    React.createElement(BarChart3, { size: 12 }),
+    React.createElement(BarChart3, { size: 12, style: { color: stripColor } }),
     React.createElement('span', null, 'GH\u20B50.00'),
   );
 };
@@ -48,11 +53,8 @@ const dataSaverFeature = {
       icon: Zap,
       label: 'Toggle Lite Mode',
       order: 4,
-      onClick: () => {
-        // Handled by store integration
-        console.log('[DataSaver] Toggle lite mode');
-      },
-      getIsActive: () => false,
+      onClick: () => toggleLiteMode(),
+      getIsActive: () => useDataSaverStore.getState().liteModeEnabled,
     },
     commandBar: [
       {
@@ -60,7 +62,7 @@ const dataSaverFeature = {
         label: 'Open data dashboard',
         description: 'View data usage statistics and budget',
         keywords: ['data', 'usage', 'budget', 'bandwidth', 'stats', 'dashboard', 'monitor'],
-        action: () => console.log('[DataSaver] Open dashboard'),
+        action: () => openDataDashboard(),
         group: 'Data Saver',
       },
       {
@@ -68,7 +70,7 @@ const dataSaverFeature = {
         label: 'Toggle lite mode',
         description: 'Enable or disable data compression',
         keywords: ['lite', 'save', 'compress', 'mode', 'bandwidth', 'reduce'],
-        action: () => console.log('[DataSaver] Toggle lite mode'),
+        action: () => toggleLiteMode(),
         shortcut: 'Ctrl+Shift+L',
         group: 'Data Saver',
       },
@@ -77,7 +79,7 @@ const dataSaverFeature = {
         label: 'Change data plan',
         description: 'Switch carrier plan or update bundle settings',
         keywords: ['plan', 'mtn', 'telecel', 'bundle', 'carrier', 'airtime', 'subscription'],
-        action: () => console.log('[DataSaver] Change plan'),
+        action: () => openDataDashboard(),
         group: 'Data Saver',
       },
     ],

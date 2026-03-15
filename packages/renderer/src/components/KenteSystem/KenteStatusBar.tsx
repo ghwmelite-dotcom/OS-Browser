@@ -60,19 +60,29 @@ export function KenteStatusBar() {
     <div
       style={{
         height: 28,
+        minHeight: 28,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: 'var(--color-surface-1)',
-        borderTop: '1px solid var(--color-border-1)',
+        background: 'var(--color-surface-2)',
+        borderTop: '2px solid var(--color-border-2)',
         fontSize: 11,
         userSelect: 'none',
         flexShrink: 0,
+        overflow: 'hidden',
       }}
       aria-live="polite"
     >
-      {/* ─── Left group ─── */}
-      <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+      {/* Left group */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          height: '100%',
+          overflow: 'hidden',
+          minWidth: 0,
+        }}
+      >
         {/* URL / loading hint */}
         <div
           style={{
@@ -80,12 +90,14 @@ export function KenteStatusBar() {
             display: 'flex',
             alignItems: 'center',
             gap: 6,
-            color: 'var(--color-text-muted)',
+            color: 'var(--color-text-secondary)',
             maxWidth: 320,
             overflow: 'hidden',
             whiteSpace: 'nowrap',
             textOverflow: 'ellipsis',
             fontFamily: 'monospace',
+            flexShrink: 1,
+            minWidth: 0,
           }}
         >
           {isLoading ? 'Loading...' : displayUrl || ''}
@@ -114,8 +126,16 @@ export function KenteStatusBar() {
         })}
       </div>
 
-      {/* ─── Right group ─── */}
-      <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+      {/* Right group */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          height: '100%',
+          overflow: 'hidden',
+          flexShrink: 0,
+        }}
+      >
         {right.map((f, i) => {
           const StatusComp = f.surfaces.statusBar!.component;
           return (
@@ -138,7 +158,7 @@ export function KenteStatusBar() {
   );
 }
 
-/* ─── Sub-components ─── */
+/* Sub-components */
 
 /** 1px vertical divider between indicators */
 function Divider() {
@@ -147,7 +167,7 @@ function Divider() {
       style={{
         width: 1,
         height: 14,
-        background: 'var(--color-border-1)',
+        background: 'var(--color-border-2)',
         flexShrink: 0,
       }}
     />
@@ -187,8 +207,13 @@ function IndicatorSlot({
         cursor: 'pointer',
         height: '100%',
         minWidth: feature.surfaces.statusBar?.minWidth,
-        background: hovered ? 'var(--color-surface-2)' : 'transparent',
+        background: hovered ? 'var(--color-surface-3)' : 'transparent',
+        color: 'var(--color-text-secondary)',
         transition: 'background 150ms ease',
+        flexShrink: 0,
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis',
       }}
     >
       {children}

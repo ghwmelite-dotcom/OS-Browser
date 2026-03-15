@@ -1,6 +1,11 @@
 import React from 'react';
 import { MessageCircle } from 'lucide-react';
 import { FeatureRegistry, StatusBarIndicatorProps, SidebarPanelProps } from '../registry';
+import { MessagingPanel } from '@/components/Messaging/MessagingPanel';
+
+const dispatchMessaging = () => {
+  window.dispatchEvent(new CustomEvent('os-browser:messaging'));
+};
 
 // ── Status Bar Indicator ────────────────────────────────────────────
 const MessengerIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onClick }) => {
@@ -12,7 +17,7 @@ const MessengerIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onC
       gap: '4px',
       padding: '2px 8px',
       fontSize: '11px',
-      color: stripColor,
+      color: 'var(--color-text-primary)',
       background: 'transparent',
       border: 'none',
       cursor: 'pointer',
@@ -21,7 +26,7 @@ const MessengerIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onC
     },
     title: 'Messenger — Click to open',
   },
-    React.createElement(MessageCircle, { size: 12 }),
+    React.createElement(MessageCircle, { size: 12, style: { color: stripColor } }),
     React.createElement('span', null, '0'),
   );
 };
@@ -35,22 +40,12 @@ const MessengerPanel: React.FC<SidebarPanelProps> = ({ width, stripColor, onClos
       display: 'flex',
       flexDirection: 'column' as const,
       borderLeft: `3px solid ${stripColor}`,
-      background: 'var(--panel-bg, #1a1a2e)',
-      color: 'var(--panel-text, #e0e0e0)',
+      background: 'var(--color-surface-1)',
+      color: 'var(--color-text-primary)',
+      overflow: 'hidden',
     },
   },
-    React.createElement('div', {
-      style: { padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    },
-      React.createElement('span', { style: { fontWeight: 600, fontSize: '14px' } }, 'Messenger'),
-      React.createElement('button', {
-        onClick: onClose,
-        style: { background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '16px' },
-      }, '\u00D7'),
-    ),
-    React.createElement('div', { style: { padding: '12px 16px', fontSize: '13px', opacity: 0.7 } },
-      'Encrypted government messaging. End-to-end secure conversations.',
-    ),
+    React.createElement(MessagingPanel, { onClose }),
   );
 };
 
@@ -82,7 +77,7 @@ const messengerFeature = {
         label: 'Open messenger',
         description: 'Open the messenger panel',
         keywords: ['messenger', 'messages', 'chat', 'open', 'communication'],
-        action: () => console.log('[Messenger] Open'),
+        action: () => dispatchMessaging(),
         shortcut: 'Ctrl+Shift+M',
         group: 'Messenger',
       },
@@ -91,7 +86,7 @@ const messengerFeature = {
         label: 'New message',
         description: 'Start a new conversation',
         keywords: ['new', 'message', 'compose', 'write', 'send', 'chat'],
-        action: () => console.log('[Messenger] New message'),
+        action: () => dispatchMessaging(),
         group: 'Messenger',
       },
       {
@@ -99,7 +94,7 @@ const messengerFeature = {
         label: 'Search messages',
         description: 'Search through message history',
         keywords: ['search', 'messages', 'find', 'conversation', 'history', 'lookup'],
-        action: () => console.log('[Messenger] Search'),
+        action: () => dispatchMessaging(),
         group: 'Messenger',
       },
     ],

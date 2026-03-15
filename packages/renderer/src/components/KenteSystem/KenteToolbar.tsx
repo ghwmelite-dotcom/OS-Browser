@@ -4,7 +4,7 @@ import { useFeatureRegistry } from '@/hooks/useFeatureRegistry';
 import { useNavigationStore } from '@/store/navigation';
 import type { FeatureDefinition, ToolbarConfig, ToolbarDropdownItem } from '@/features/registry';
 
-// ── ToolbarButton ────────────────────────────────────────────────────
+// ToolbarButton
 function ToolbarButton({
   feature,
   config,
@@ -15,6 +15,7 @@ function ToolbarButton({
   const [hovered, setHovered] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState<'below' | 'above'>('below');
   const tooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -53,6 +54,15 @@ function ToolbarButton({
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
+  }, [showDropdown]);
+
+  // Position dropdown to avoid clipping at window edges
+  useEffect(() => {
+    if (!showDropdown || !buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    // If less than 200px below, show above
+    setDropdownPosition(spaceBelow < 200 ? 'above' : 'below');
   }, [showDropdown]);
 
   const handleClick = () => {
@@ -138,9 +148,12 @@ function ToolbarButton({
           ref={dropdownRef}
           style={{
             position: 'absolute',
-            top: 'calc(100% + 4px)',
+            ...(dropdownPosition === 'below'
+              ? { top: 'calc(100% + 4px)' }
+              : { bottom: 'calc(100% + 4px)' }),
             right: 0,
             minWidth: 200,
+            maxWidth: 'calc(100vw - 16px)',
             borderRadius: 12,
             border: '1px solid var(--color-border-1)',
             background: 'var(--color-surface-1)',
@@ -174,7 +187,7 @@ function ToolbarButton({
   );
 }
 
-// ── Dropdown menu item ───────────────────────────────────────────────
+// Dropdown menu item
 function DropdownMenuItem({
   item,
   onSelect,
@@ -207,7 +220,7 @@ function DropdownMenuItem({
         <Icon
           size={14}
           strokeWidth={1.8}
-          style={{ color: 'var(--color-text-muted)', flexShrink: 0 }}
+          style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }}
         />
       )}
       <span
@@ -223,7 +236,7 @@ function DropdownMenuItem({
         <span
           style={{
             fontSize: 10,
-            color: 'var(--color-text-muted)',
+            color: 'var(--color-text-secondary)',
             background: 'var(--color-surface-2)',
             padding: '2px 6px',
             borderRadius: 4,
@@ -237,7 +250,7 @@ function DropdownMenuItem({
   );
 }
 
-// ── KenteToolbar (main export) ───────────────────────────────────────
+// KenteToolbar (main export)
 export function KenteToolbar() {
   const features = useFeatureRegistry();
   const { currentUrl } = useNavigationStore();
@@ -254,7 +267,15 @@ export function KenteToolbar() {
   if (toolbarFeatures.length === 0) return null;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+        overflow: 'hidden',
+        flexWrap: 'wrap',
+      }}
+    >
       {toolbarFeatures.map((f) => (
         <ToolbarButton key={f.id} feature={f} config={f.surfaces.toolbar!} />
       ))}

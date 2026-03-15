@@ -1,6 +1,43 @@
 import React from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { FeatureRegistry, StatusBarIndicatorProps } from '../registry';
+import { useTabsStore } from '@/store/tabs';
+
+const saveSessionNow = () => {
+  // Trigger the browser's session save mechanism
+  try {
+    const tabs = useTabsStore.getState().tabs;
+    const sessionData = tabs.map(t => ({ id: t.id, url: t.url, title: t.title }));
+    localStorage.setItem('os-browser:dumsor-session', JSON.stringify({
+      tabs: sessionData,
+      activeTabId: useTabsStore.getState().activeTabId,
+      savedAt: Date.now(),
+    }));
+  } catch {
+    // Silently handle storage errors
+  }
+};
+
+const restoreSession = () => {
+  try {
+    const raw = localStorage.getItem('os-browser:dumsor-session');
+    if (!raw) return;
+    const session = JSON.parse(raw);
+    if (session?.tabs?.length) {
+      for (const tab of session.tabs) {
+        if (tab.url) {
+          useTabsStore.getState().createTab(tab.url);
+        }
+      }
+    }
+  } catch {
+    // Silently handle parse errors
+  }
+};
+
+const openSettings = () => {
+  useTabsStore.getState().createTab('os-browser://settings');
+};
 
 // ── Status Bar Indicator ────────────────────────────────────────────
 const DumsorGuardIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onClick }) => {
@@ -12,7 +49,7 @@ const DumsorGuardIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, o
       gap: '4px',
       padding: '2px 8px',
       fontSize: '11px',
-      color: stripColor,
+      color: 'var(--color-text-primary)',
       background: 'transparent',
       border: 'none',
       cursor: 'pointer',
@@ -21,8 +58,8 @@ const DumsorGuardIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, o
     },
     title: 'Dumsor Guard — Session protection active',
   },
-    React.createElement(ShieldCheck, { size: 12 }),
-    React.createElement('span', null, 'Saved 0s ago'),
+    React.createElement(ShieldCheck, { size: 12, style: { color: stripColor } }),
+    React.createElement('span', null, 'Protected'),
   );
 };
 
@@ -48,7 +85,7 @@ const dumsorGuardFeature = {
         label: 'Save session now',
         description: 'Immediately save all open tabs and session state',
         keywords: ['save', 'session', 'now', 'backup', 'dumsor', 'protect', 'snapshot'],
-        action: () => console.log('[DumsorGuard] Save session now'),
+        action: () => saveSessionNow(),
         shortcut: 'Ctrl+Shift+D',
         group: 'Dumsor Guard',
       },
@@ -57,7 +94,7 @@ const dumsorGuardFeature = {
         label: 'Dumsor Guard settings',
         description: 'Configure auto-save interval and recovery options',
         keywords: ['dumsor', 'settings', 'guard', 'configure', 'interval', 'auto', 'save'],
-        action: () => console.log('[DumsorGuard] Open settings'),
+        action: () => openSettings(),
         group: 'Dumsor Guard',
       },
       {
@@ -65,7 +102,7 @@ const dumsorGuardFeature = {
         label: 'Restore previous session',
         description: 'Recover tabs and state from the last saved session',
         keywords: ['restore', 'session', 'recover', 'previous', 'tabs', 'undo', 'crash'],
-        action: () => console.log('[DumsorGuard] Restore session'),
+        action: () => restoreSession(),
         group: 'Dumsor Guard',
       },
     ],

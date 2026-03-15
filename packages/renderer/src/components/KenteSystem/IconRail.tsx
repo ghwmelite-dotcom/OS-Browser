@@ -37,16 +37,22 @@ export function IconRail({
         flexShrink: 0,
         height: '100%',
         justifyContent: 'space-between',
+        overflow: 'hidden',
       }}
     >
-      {/* Feature icons */}
+      {/* Feature icons — scrollable when window is small */}
       <div
+        className="kente-icon-rail-list"
         style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           gap: 4,
           width: '100%',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          flex: 1,
+          minHeight: 0,
         }}
       >
         {features.map((f) => (
@@ -60,7 +66,15 @@ export function IconRail({
       </div>
 
       {/* Settings gear pinned to bottom */}
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+      <div
+        style={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          paddingTop: 4,
+        }}
+      >
         <RailIconButton
           icon={<Settings size={18} />}
           label="Settings"
@@ -69,11 +83,27 @@ export function IconRail({
           onClick={onOpenSettings}
         />
       </div>
+
+      <style>{`
+        .kente-icon-rail-list::-webkit-scrollbar {
+          width: 3px;
+        }
+        .kente-icon-rail-list::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .kente-icon-rail-list::-webkit-scrollbar-thumb {
+          background: var(--color-border-2);
+          border-radius: 2px;
+        }
+        .kente-icon-rail-list::-webkit-scrollbar-thumb:hover {
+          background: var(--color-text-muted);
+        }
+      `}</style>
     </div>
   );
 }
 
-/* ─── Individual rail icon ─── */
+/* Individual rail icon */
 
 function RailIcon({
   feature,
@@ -103,7 +133,7 @@ function RailIcon({
   );
 }
 
-/* ─── Reusable rail icon button ─── */
+/* Reusable rail icon button */
 
 function RailIconButton({
   icon,
@@ -151,7 +181,7 @@ function RailIconButton({
 
   return (
     <div
-      style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}
+      style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', flexShrink: 0 }}
     >
       {/* Active accent bar — 3px left strip */}
       {isActive && (
@@ -245,7 +275,7 @@ function RailIconButton({
   );
 }
 
-/* ─── Helpers ─── */
+/* Helpers */
 
 /** Convert a CSS color to rgba string. Handles hex and css var fallback. */
 function hexToRgba(color: string, alpha: number): string {
