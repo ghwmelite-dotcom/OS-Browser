@@ -3,641 +3,637 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OS Browser — Ghana's Purpose-Built Desktop Browser</title>
-  <meta name="description" content="Download OS Browser — 12 purpose-built features organized by the Kente System. Data Saver, Dumsor Guard, Gov Services Hub, Encrypted Messenger, Mobile Money, Digital Literacy AI, and more." />
-  <meta name="theme-color" content="#0f1117" />
+  <title>OS Browser — Ghana's AI-Powered Desktop Browser</title>
+  <meta name="description" content="Download OS Browser — 12 purpose-built features organized by the Kente System. E2E Encrypted Messenger, Gov Services Hub, Dumsor Guard, Mobile Money, and more." />
+  <meta name="theme-color" content="#0a0a0f" />
   <link rel="canonical" href="https://www.osbrowser.askozzy.work" />
-  <meta property="og:title" content="OS Browser — Ghana's Purpose-Built Desktop Browser" />
-  <meta property="og:description" content="12 purpose-built features organized by the Kente System. Data Saver, Dumsor Guard, Gov Services, Encrypted Messenger, Mobile Money, and more." />
+  <meta property="og:title" content="OS Browser — Ghana's AI-Powered Desktop Browser" />
+  <meta property="og:description" content="12 purpose-built features for Ghana's civil servants. E2E encrypted messaging, 25+ gov portals, 7 languages, offline-first." />
   <meta property="og:url" content="https://www.osbrowser.askozzy.work" />
   <meta property="og:type" content="website" />
   <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+
+    @font-face {
+      font-family: 'Bookman Old Style';
+      src: local('Bookman Old Style'), local('Bookman'), local('URW Bookman L');
+      font-weight: 400;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Bookman Old Style';
+      src: local('Bookman Old Style Bold'), local('Bookman Bold');
+      font-weight: 700;
+      font-style: normal;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #faf7f0;
+      --bg-dark: #0a0a0f;
+      --bg-warm: #faf5eb;
+      --bg-cream: #f7f0e3;
       --surface: #ffffff;
-      --surface-2: #f5f1e8;
-      --border: #e8e2d6;
-      --text: #1a1814;
-      --text-2: #5a5244;
-      --text-3: #9c8e78;
+      --surface-dark: #12121a;
+      --surface-dark-2: #1a1a26;
       --gold: #D4A017;
-      --gold-light: #F2C94C;
+      --gold-glow: #F2C94C;
+      --gold-deep: #9B7610;
       --red: #CE1126;
       --green: #006B3F;
-      --accent: #D4A017;
-      --dark: #0f1117;
-      --dark-2: #171921;
-      --kente-infra: #3DDC84;
-      --kente-gov: #006B3F;
-      --kente-prod: #D85A30;
-      --kente-comm: #5DCAA5;
-      --kente-fin: #BA7517;
-      --kente-intel: #FCD116;
+      --green-light: #00A86B;
+      --text-light: #f5f0e5;
+      --text-dark: #1a1610;
+      --text-muted: #7a7060;
+      --border-gold: rgba(212, 160, 23, 0.2);
+      --font-display: 'Bookman Old Style', 'Lora', 'Georgia', 'Palatino', serif;
+      --font-body: 'Bookman Old Style', 'Lora', 'Georgia', serif;
     }
 
     html { scroll-behavior: smooth; }
 
     body {
-      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
+      font-family: var(--font-body);
+      background: var(--bg-dark);
+      color: var(--text-light);
+      line-height: 1.7;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
     }
 
-    ::selection { background: rgba(212,160,23,0.2); }
+    ::selection { background: rgba(212, 160, 23, 0.35); color: #fff; }
 
-    /* ─── Nav ─── */
+    /* ═══════════════ GOLD PARTICLES ═══════════════ */
+    #particles {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 1;
+    }
+
+    /* ═══════════════ KENTE GEOMETRIC BG ═══════════════ */
+    .kente-bg {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 0; opacity: 0.03;
+      background-image:
+        repeating-linear-gradient(0deg, var(--gold) 0px, var(--gold) 1px, transparent 1px, transparent 40px),
+        repeating-linear-gradient(90deg, var(--gold) 0px, var(--gold) 1px, transparent 1px, transparent 40px),
+        repeating-linear-gradient(45deg, var(--red) 0px, var(--red) 1px, transparent 1px, transparent 56px),
+        repeating-linear-gradient(-45deg, var(--green) 0px, var(--green) 1px, transparent 1px, transparent 56px);
+    }
+
+    /* ═══════════════ NAV ═══════════════ */
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      backdrop-filter: blur(20px) saturate(1.4);
-      -webkit-backdrop-filter: blur(20px) saturate(1.4);
-      background: rgba(250,247,240,0.85);
-      border-bottom: 1px solid var(--border);
-      padding: 0 40px;
-      height: 56px;
+      padding: 0 48px; height: 64px;
       display: flex; align-items: center; justify-content: space-between;
+      background: rgba(10, 10, 15, 0.6);
+      backdrop-filter: blur(24px) saturate(1.5);
+      -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      border-bottom: 1px solid rgba(212, 160, 23, 0.08);
+      transition: background 0.4s;
     }
-    .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; color: var(--text); text-decoration: none; }
-    .nav-brand svg { width: 32px; height: 32px; border-radius: 8px; }
-    .nav-links { display: flex; gap: 32px; align-items: center; }
-    .nav-links a { color: var(--text-2); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.15s; }
+    nav.scrolled { background: rgba(10, 10, 15, 0.92); }
+
+    .nav-brand {
+      display: flex; align-items: center; gap: 12px;
+      font-family: var(--font-display); font-weight: 700; font-size: 17px;
+      color: var(--text-light); text-decoration: none; letter-spacing: 0.01em;
+    }
+    .nav-logo {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--red), var(--gold), var(--green));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; color: #fff;
+      box-shadow: 0 0 20px rgba(212, 160, 23, 0.2);
+    }
+    .nav-links { display: flex; gap: 36px; align-items: center; }
+    .nav-links a {
+      color: rgba(245, 240, 229, 0.6); text-decoration: none;
+      font-size: 14px; font-weight: 500; transition: color 0.2s;
+      font-family: var(--font-body);
+    }
     .nav-links a:hover { color: var(--gold); }
     .nav-cta {
-      background: var(--gold); color: #fff; border: none; padding: 8px 20px;
-      border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
-      transition: all 0.15s; text-decoration: none;
+      background: var(--gold); color: #0a0a0f; border: none;
+      padding: 10px 24px; border-radius: 10px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      font-family: var(--font-display); letter-spacing: 0.02em;
+      transition: all 0.2s; text-decoration: none;
+      box-shadow: 0 0 24px rgba(212, 160, 23, 0.15);
     }
-    .nav-cta:hover { filter: brightness(1.1); box-shadow: 0 4px 16px rgba(212,160,23,0.3); }
-
-    /* ─── Announcement Bar ─── */
-    .announce {
-      margin-top: 56px; padding: 10px 20px;
-      background: linear-gradient(90deg, var(--red), var(--gold), var(--green));
-      text-align: center; font-size: 13px; font-weight: 600; color: #fff;
-      letter-spacing: 0.02em;
+    .nav-cta:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 32px rgba(212, 160, 23, 0.35);
     }
 
-    /* ─── Hero ─── */
+    /* ═══════════════ HERO ═══════════════ */
     .hero {
-      padding: 80px 40px 40px;
-      text-align: center;
-      max-width: 800px; margin: 0 auto;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 120px 40px 80px;
+      position: relative; z-index: 2;
     }
-    .hero-icon {
-      width: 72px; height: 72px; margin: 0 auto 24px; border-radius: 18px;
-      overflow: hidden;
+    .hero::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 30%, rgba(212, 160, 23, 0.06) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 40% at 30% 70%, rgba(206, 17, 38, 0.03) 0%, transparent 60%),
+                  radial-gradient(ellipse 50% 50% at 80% 60%, rgba(0, 107, 63, 0.03) 0%, transparent 60%);
+      pointer-events: none;
     }
-    .hero-icon svg { width: 100%; height: 100%; }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 16px 6px 8px; border-radius: 100px;
+      background: rgba(212, 160, 23, 0.08);
+      border: 1px solid rgba(212, 160, 23, 0.15);
+      font-size: 12px; color: var(--gold); font-weight: 600;
+      margin-bottom: 32px; letter-spacing: 0.04em;
+      text-transform: uppercase;
+      animation: fadeUp 0.8s ease-out 0.2s both;
+    }
+    .hero-badge .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green-light);
+      box-shadow: 0 0 8px var(--green-light);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
     .hero h1 {
-      font-size: 52px; font-weight: 800; letter-spacing: -0.03em;
-      line-height: 1.08; margin-bottom: 16px;
+      font-family: var(--font-display);
+      font-size: clamp(42px, 7vw, 84px);
+      font-weight: 700; line-height: 1.05;
+      letter-spacing: -0.03em;
+      margin-bottom: 24px;
+      animation: fadeUp 0.8s ease-out 0.4s both;
     }
-    .hero h1 span { color: var(--gold); }
-    .hero .hero-sub {
-      font-size: 18px; color: var(--text-2); max-width: 640px;
-      margin: 0 auto 20px; line-height: 1.7;
-    }
-    .hero .hero-stats {
-      display: flex; gap: 32px; justify-content: center; margin-bottom: 40px;
-      flex-wrap: wrap;
-    }
-    .hero .hero-stat { text-align: center; }
-    .hero .hero-stat strong { display: block; font-size: 28px; font-weight: 800; color: var(--gold); }
-    .hero .hero-stat span { font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
-
-    /* ─── Download Cards ─── */
-    .download-row {
-      display: flex; gap: 32px; justify-content: center;
-      flex-wrap: wrap; margin-bottom: 60px;
-    }
-    .dl-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 16px; padding: 32px 48px; text-align: center;
-      min-width: 220px;
-      transition: all 0.2s;
-    }
-    .dl-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.08); transform: translateY(-2px); }
-    .dl-icon { font-size: 36px; margin-bottom: 12px; }
-    .dl-label { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
-    .dl-buttons { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-    .dl-btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
-      text-decoration: none; transition: all 0.15s; cursor: pointer; border: none;
-    }
-    .dl-btn-primary { background: var(--text); color: #fff; }
-    .dl-btn-primary:hover { background: #333; }
-    .dl-btn-gold { background: var(--gold); color: #fff; }
-    .dl-btn-gold:hover { filter: brightness(1.1); box-shadow: 0 4px 16px rgba(212,160,23,0.3); }
-    .dl-btn svg { width: 14px; height: 14px; }
-
-    /* ─── Browser Mockup ─── */
-    .mockup-section {
-      padding: 0 40px 80px;
-      max-width: 1000px; margin: 0 auto;
-    }
-    .mockup-frame {
-      background: #0f1117;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.15), 0 8px 32px rgba(0,0,0,0.1);
-      border: 1px solid rgba(255,255,255,0.08);
-    }
-    .mockup-titlebar {
-      height: 36px; background: #171921;
-      display: flex; align-items: center; padding: 0 14px; gap: 7px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-    .dot { width: 10px; height: 10px; border-radius: 50%; }
-    .dot-r { background: #ff5f57; }
-    .dot-y { background: #febc2e; }
-    .dot-g { background: #28c840; }
-    .mockup-content {
-      aspect-ratio: 16/9;
-      background: linear-gradient(180deg, #0f1117 0%, #141620 100%);
-      display: flex; align-items: center; justify-content: center;
-      position: relative; overflow: hidden;
-    }
-    .mockup-content::before {
-      content: '';
-      position: absolute; inset: 0;
-      background:
-        radial-gradient(ellipse 100% 60% at 50% -5%, rgba(212,160,23,0.12) 0%, transparent 55%),
-        radial-gradient(ellipse 70% 50% at 90% 90%, rgba(0,107,63,0.08) 0%, transparent 45%),
-        radial-gradient(ellipse 50% 40% at 5% 85%, rgba(206,17,38,0.05) 0%, transparent 40%);
-    }
-    .mockup-inner {
-      position: relative; z-index: 1; text-align: center; color: #e8e8ec;
-    }
-    .mockup-inner h2 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
-    .mockup-inner h2 span { color: var(--gold); }
-    .mockup-inner p { color: #9ca0ae; font-size: 14px; }
-    .mockup-grid {
-      display: grid; grid-template-columns: repeat(5, 1fr);
-      gap: 12px; margin-top: 24px; padding: 0 40px;
-    }
-    .mockup-portal {
-      background: rgba(23,25,33,0.9); border: 1px solid rgba(46,51,64,0.5);
-      border-radius: 12px; padding: 16px 8px; text-align: center;
-    }
-    .mockup-portal-icon {
-      width: 36px; height: 36px; border-radius: 10px;
-      background: rgba(212,160,23,0.12);
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 8px; font-weight: 700; color: var(--gold); font-size: 14px;
-    }
-    .mockup-portal span { font-size: 10px; color: #9ca0ae; }
-
-    /* ─── Section Headings ─── */
-    .section-heading {
-      text-align: center; margin-bottom: 56px;
-    }
-    .section-label {
-      display: inline-block; font-size: 12px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.1em;
-      padding: 4px 14px; border-radius: 100px; margin-bottom: 16px;
-    }
-    .label-gold { background: rgba(212,160,23,0.12); color: var(--gold); }
-    .label-green { background: rgba(0,107,63,0.12); color: var(--green); }
-    .label-red { background: rgba(206,17,38,0.12); color: var(--red); }
-    .section-heading h2 {
-      font-size: 36px; font-weight: 800;
-      margin-bottom: 12px; letter-spacing: -0.02em;
-    }
-    .section-heading p {
-      color: var(--text-2); font-size: 16px; max-width: 560px; margin: 0 auto;
-    }
-
-    /* ─── Stats Row ─── */
-    .stats-row {
-      padding: 48px 40px;
-      max-width: 1100px; margin: 0 auto;
-    }
-    .stats-row-inner {
-      display: flex; justify-content: center; align-items: center;
-      gap: 0; flex-wrap: wrap;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
-    }
-    .stat-item {
-      flex: 1; min-width: 160px;
-      padding: 32px 24px;
-      text-align: center;
-      border-right: 1px solid var(--border);
-    }
-    .stat-item:last-child { border-right: none; }
-    .stat-item strong {
-      display: block; font-size: 32px; font-weight: 800;
-      background: linear-gradient(135deg, var(--gold), var(--red));
+    .hero h1 .gold { color: var(--gold); }
+    .hero h1 .line {
+      display: block;
+      background: linear-gradient(135deg, var(--text-light) 0%, rgba(245,240,229,0.7) 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 4px;
-    }
-    .stat-item span {
-      font-size: 13px; color: var(--text-3); font-weight: 500;
     }
 
-    /* ─── Kente Features Section ─── */
-    .kente-features {
-      padding: 96px 40px;
-      max-width: 1100px; margin: 0 auto;
+    .hero-sub {
+      font-size: clamp(16px, 2vw, 20px);
+      color: rgba(245, 240, 229, 0.5);
+      max-width: 600px; line-height: 1.8;
+      margin-bottom: 40px;
+      font-weight: 400; font-style: italic;
+      animation: fadeUp 0.8s ease-out 0.6s both;
     }
+
+    .hero-actions {
+      display: flex; gap: 16px; align-items: center;
+      animation: fadeUp 0.8s ease-out 0.8s both;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-deep) 100%);
+      color: #0a0a0f; border: none; padding: 16px 36px;
+      border-radius: 14px; font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: var(--font-display);
+      text-decoration: none; display: inline-flex; align-items: center; gap: 10px;
+      transition: all 0.3s; letter-spacing: 0.02em;
+      box-shadow: 0 4px 24px rgba(212, 160, 23, 0.2), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(212, 160, 23, 0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .btn-primary svg { transition: transform 0.2s; }
+    .btn-primary:hover svg { transform: translateX(3px); }
+    .btn-secondary {
+      color: rgba(245, 240, 229, 0.6); border: 1px solid rgba(245, 240, 229, 0.12);
+      padding: 15px 32px; border-radius: 14px;
+      font-size: 15px; font-weight: 500; cursor: pointer;
+      font-family: var(--font-display); text-decoration: none;
+      transition: all 0.2s; background: transparent;
+    }
+    .btn-secondary:hover {
+      border-color: var(--gold); color: var(--gold);
+      background: rgba(212, 160, 23, 0.05);
+    }
+
+    /* ═══════════════ STATS RIBBON ═══════════════ */
+    .stats-ribbon {
+      display: flex; justify-content: center; gap: 0;
+      padding: 0 40px; position: relative; z-index: 2;
+      animation: fadeUp 0.8s ease-out 1s both;
+    }
+    .stat-item {
+      padding: 24px 48px; text-align: center;
+      border-right: 1px solid rgba(212, 160, 23, 0.1);
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 28px; font-weight: 700; color: var(--gold);
+      line-height: 1; margin-bottom: 6px;
+    }
+    .stat-label {
+      font-size: 12px; color: rgba(245, 240, 229, 0.35);
+      text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500;
+    }
+
+    /* ═══════════════ FLAG DIVIDER ═══════════════ */
+    .flag-divider {
+      height: 3px; margin: 80px 0;
+      background: linear-gradient(90deg, transparent, var(--red) 20%, var(--gold) 50%, var(--green) 80%, transparent);
+      position: relative; z-index: 2;
+    }
+
+    /* ═══════════════ SECTION COMMON ═══════════════ */
+    .section { position: relative; z-index: 2; padding: 100px 40px; }
+    .section-dark { background: var(--bg-dark); }
+    .section-warm {
+      background: var(--bg-warm);
+      color: var(--text-dark);
+    }
+    .section-cream {
+      background: var(--bg-cream);
+      color: var(--text-dark);
+    }
+
+    .section-header {
+      text-align: center; max-width: 700px; margin: 0 auto 64px;
+    }
+    .section-eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
+      text-transform: uppercase; margin-bottom: 16px;
+      color: var(--gold);
+    }
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 700; letter-spacing: -0.02em;
+      line-height: 1.15; margin-bottom: 16px;
+    }
+    .section-desc {
+      font-size: 16px; line-height: 1.8;
+      opacity: 0.55; font-style: italic;
+    }
+
+    /* ═══════════════ KENTE FEATURES ═══════════════ */
+    .kente-features { max-width: 1100px; margin: 0 auto; }
 
     .kente-category {
-      margin-bottom: 48px;
-      opacity: 0; transform: translateY(24px);
-      transition: all 0.6s cubic-bezier(0.22,1,0.36,1);
+      margin-bottom: 64px;
+      opacity: 0; transform: translateY(40px);
+      transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .kente-category.visible {
       opacity: 1; transform: translateY(0);
     }
 
-    .kente-category-header {
+    .category-header {
       display: flex; align-items: center; gap: 16px;
-      margin-bottom: 20px; padding-left: 20px;
-      position: relative;
+      margin-bottom: 24px; padding-left: 20px;
+      border-left: 4px solid var(--cat-color, var(--gold));
     }
-    .kente-category-header::before {
-      content: '';
-      position: absolute; left: 0; top: 0; bottom: 0;
-      width: 4px; border-radius: 2px;
-    }
-    .kente-cat-infra .kente-category-header::before { background: var(--kente-infra); }
-    .kente-cat-gov .kente-category-header::before { background: var(--kente-gov); }
-    .kente-cat-prod .kente-category-header::before { background: var(--kente-prod); }
-    .kente-cat-comm .kente-category-header::before { background: var(--kente-comm); }
-    .kente-cat-fin .kente-category-header::before { background: var(--kente-fin); }
-    .kente-cat-intel .kente-category-header::before { background: var(--kente-intel); }
-
-    .kente-cat-icon {
-      width: 40px; height: 40px; border-radius: 10px;
+    .category-icon {
+      width: 40px; height: 40px; border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
+      background: color-mix(in srgb, var(--cat-color, var(--gold)) 10%, transparent);
+      color: var(--cat-color, var(--gold));
+      font-size: 18px; flex-shrink: 0;
     }
-    .kente-cat-icon svg { width: 20px; height: 20px; }
-    .kente-cat-infra .kente-cat-icon { background: rgba(61,220,132,0.12); color: var(--kente-infra); }
-    .kente-cat-gov .kente-cat-icon { background: rgba(0,107,63,0.12); color: var(--kente-gov); }
-    .kente-cat-prod .kente-cat-icon { background: rgba(216,90,48,0.12); color: var(--kente-prod); }
-    .kente-cat-comm .kente-cat-icon { background: rgba(93,202,165,0.12); color: var(--kente-comm); }
-    .kente-cat-fin .kente-cat-icon { background: rgba(186,117,23,0.12); color: var(--kente-fin); }
-    .kente-cat-intel .kente-cat-icon { background: rgba(252,209,22,0.15); color: #b89400; }
-
-    .kente-cat-info h3 {
-      font-size: 18px; font-weight: 700; margin-bottom: 2px;
+    .category-name {
+      font-family: var(--font-display);
+      font-size: 20px; font-weight: 700;
+      letter-spacing: -0.01em;
     }
-    .kente-cat-info p {
-      font-size: 13px; color: var(--text-3); font-weight: 400;
+    .category-desc {
+      font-size: 13px; opacity: 0.45; margin-top: 2px;
     }
 
-    .kente-cards {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px; padding-left: 20px;
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px; padding-left: 24px;
     }
 
-    .kente-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 24px;
-      transition: all 0.25s cubic-bezier(0.22,1,0.36,1);
-      position: relative;
-      cursor: default;
-    }
-    .kente-card:hover {
-      box-shadow: 0 8px 32px rgba(0,0,0,0.07), 0 2px 8px rgba(0,0,0,0.04);
-      transform: translateY(-3px);
-      border-color: transparent;
-    }
-
-    .kente-card-top {
-      display: flex; align-items: flex-start; gap: 14px; margin-bottom: 10px;
-    }
-    .kente-card-icon {
-      width: 40px; height: 40px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .kente-card-icon svg { width: 20px; height: 20px; }
-    .kente-card-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      flex-shrink: 0; margin-top: 7px;
-    }
-    .kente-card h4 {
-      font-size: 14px; font-weight: 700; line-height: 1.3;
-    }
-    .kente-card p {
-      font-size: 13px; color: var(--text-2); line-height: 1.55;
-    }
-
-    /* Card icon colors per category */
-    .kente-cat-infra .kente-card-icon { background: rgba(61,220,132,0.1); color: #2aae68; }
-    .kente-cat-infra .kente-card-dot { background: var(--kente-infra); }
-    .kente-cat-gov .kente-card-icon { background: rgba(0,107,63,0.1); color: var(--kente-gov); }
-    .kente-cat-gov .kente-card-dot { background: var(--kente-gov); }
-    .kente-cat-prod .kente-card-icon { background: rgba(216,90,48,0.1); color: var(--kente-prod); }
-    .kente-cat-prod .kente-card-dot { background: var(--kente-prod); }
-    .kente-cat-comm .kente-card-icon { background: rgba(93,202,165,0.1); color: #3a9e7f; }
-    .kente-cat-comm .kente-card-dot { background: var(--kente-comm); }
-    .kente-cat-fin .kente-card-icon { background: rgba(186,117,23,0.1); color: var(--kente-fin); }
-    .kente-cat-fin .kente-card-dot { background: var(--kente-fin); }
-    .kente-cat-intel .kente-card-icon { background: rgba(252,209,22,0.12); color: #9e8400; }
-    .kente-cat-intel .kente-card-dot { background: var(--kente-intel); }
-
-    /* ─── Kente System Explainer ─── */
-    .kente-system {
-      padding: 96px 40px;
-      max-width: 1100px; margin: 0 auto;
-    }
-    .kente-surfaces {
-      display: grid; grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
-    }
-    .kente-surface {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 28px 24px;
-      text-align: center;
-      transition: all 0.25s;
-    }
-    .kente-surface:hover {
-      box-shadow: 0 8px 32px rgba(0,0,0,0.06);
-      transform: translateY(-2px);
-    }
-    .kente-surface-icon {
-      width: 48px; height: 48px; border-radius: 12px;
-      background: rgba(212,160,23,0.08);
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 14px;
-      color: var(--gold);
-    }
-    .kente-surface-icon svg { width: 22px; height: 22px; }
-    .kente-surface h4 {
-      font-size: 15px; font-weight: 700; margin-bottom: 6px;
-    }
-    .kente-surface p {
-      font-size: 12px; color: var(--text-3); line-height: 1.5;
-    }
-    .kente-surface kbd {
-      display: inline-block; background: var(--surface-2);
-      border: 1px solid var(--border); border-radius: 5px;
-      padding: 2px 8px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-      font-size: 10px; font-weight: 600; color: var(--text);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-      margin-top: 8px;
-    }
-
-    /* ─── Encrypted Messenger Section (Dark) ─── */
-    .messenger-section {
-      background: var(--dark);
-      padding: 96px 40px;
-      color: #e8e8ec;
-      position: relative;
-      overflow: hidden;
-    }
-    .messenger-section::before {
-      content: '';
-      position: absolute; inset: 0;
-      background:
-        radial-gradient(ellipse 80% 50% at 20% 0%, rgba(93,202,165,0.08) 0%, transparent 50%),
-        radial-gradient(ellipse 60% 60% at 80% 100%, rgba(0,107,63,0.06) 0%, transparent 50%);
-    }
-    .messenger-inner {
-      max-width: 1100px; margin: 0 auto; position: relative; z-index: 1;
-    }
-    .messenger-section .section-heading h2 { color: #e8e8ec; }
-    .messenger-section .section-heading p { color: #9ca0ae; }
-
-    .messenger-grid {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 48px; align-items: center;
-    }
-    .messenger-features {
-      display: flex; flex-direction: column; gap: 20px;
-    }
-    .messenger-feat {
-      display: flex; align-items: flex-start; gap: 16px;
-    }
-    .messenger-feat-icon {
-      width: 40px; height: 40px; border-radius: 10px;
-      background: rgba(93,202,165,0.12);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; color: var(--kente-comm);
-    }
-    .messenger-feat-icon svg { width: 18px; height: 18px; }
-    .messenger-feat h4 { font-size: 15px; font-weight: 700; color: #e8e8ec; margin-bottom: 3px; }
-    .messenger-feat p { font-size: 13px; color: #9ca0ae; line-height: 1.5; }
-
-    .messenger-visual {
-      position: relative;
-      padding: 32px;
-    }
-    .chat-mockup {
-      background: rgba(23,25,33,0.9);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 16px;
-      padding: 24px;
-      max-width: 360px;
-      margin: 0 auto;
-    }
-    .chat-header {
-      display: flex; align-items: center; gap: 10px;
-      padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
-      margin-bottom: 16px;
-    }
-    .chat-avatar {
-      width: 32px; height: 32px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--kente-comm), var(--green));
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: 700; color: #fff;
-    }
-    .chat-name { font-size: 13px; font-weight: 600; color: #e8e8ec; }
-    .chat-status { font-size: 10px; color: var(--kente-comm); }
-    .chat-bubble {
-      padding: 10px 14px; border-radius: 12px;
-      font-size: 13px; line-height: 1.5;
-      margin-bottom: 10px; max-width: 85%;
-      position: relative;
-    }
-    .chat-bubble-in {
-      background: rgba(93,202,165,0.15);
-      color: #d0d5dd;
-      border-bottom-left-radius: 4px;
-    }
-    .chat-bubble-out {
-      background: rgba(212,160,23,0.15);
-      color: #d0d5dd;
-      margin-left: auto;
-      border-bottom-right-radius: 4px;
-    }
-    .chat-lock {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 10px; color: #5a5f6e;
-      margin-top: 16px; justify-content: center;
-    }
-    .chat-lock svg { width: 12px; height: 12px; }
-
-    .encryption-badges {
-      display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px;
-      justify-content: center;
-    }
-    .enc-badge {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 100px;
-      padding: 6px 14px;
-      font-size: 11px; font-weight: 600; color: #9ca0ae;
-    }
-
-    /* ─── Keyboard Shortcuts Section ─── */
-    .shortcuts-section {
-      padding: 80px 40px;
-      max-width: 800px; margin: 0 auto;
-    }
-    .shortcut-list {
-      display: grid; grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-    }
-    .shortcut-item {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 16px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      font-size: 13px;
-    }
-    .shortcut-item span { color: var(--text-2); }
-    kbd {
-      display: inline-block; background: var(--surface-2);
-      border: 1px solid var(--border); border-radius: 5px;
-      padding: 2px 8px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-      font-size: 11px; font-weight: 600; color: var(--text);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-    }
-
-    /* ─── Ghana Banner ─── */
-    .ghana-banner {
-      margin: 0 40px 80px;
-      max-width: 1020px; margin-left: auto; margin-right: auto;
-      background: linear-gradient(135deg, #CE1126 0%, #D4A017 50%, #006B3F 100%);
-      border-radius: 20px; padding: 56px 48px; text-align: center; color: #fff;
+    .feature-card {
+      background: var(--surface-dark-2);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 16px; padding: 28px;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative; overflow: hidden;
     }
-    .ghana-banner::before {
-      content: ''; position: absolute; inset: 0;
-      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-      opacity: 0.04;
-    }
-    .ghana-banner h2 { font-size: 32px; font-weight: 800; margin-bottom: 12px; position: relative; }
-    .ghana-banner p { font-size: 16px; opacity: 0.9; margin-bottom: 8px; position: relative; }
-
-    /* ─── Bottom CTA ─── */
-    .bottom-cta {
-      padding: 96px 40px;
-      text-align: center;
+    .section-warm .feature-card,
+    .section-cream .feature-card {
       background: var(--surface);
-      border-top: 1px solid var(--border);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    .bottom-cta h2 {
-      font-size: 40px; font-weight: 800; margin-bottom: 12px;
-      letter-spacing: -0.02em;
+    .feature-card::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 100%; height: 3px;
+      background: linear-gradient(90deg, var(--card-color, var(--gold)), transparent);
+      opacity: 0; transition: opacity 0.3s;
     }
-    .bottom-cta h2 span { color: var(--gold); }
-    .bottom-cta p {
-      color: var(--text-2); font-size: 16px; margin-bottom: 40px;
-      max-width: 600px; margin-left: auto; margin-right: auto;
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(212, 160, 23, 0.12);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+    }
+    .section-warm .feature-card:hover,
+    .section-cream .feature-card:hover {
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.08);
+    }
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px; font-size: 20px;
+      background: color-mix(in srgb, var(--card-color, var(--gold)) 8%, transparent);
+      color: var(--card-color, var(--gold));
+    }
+    .feature-name {
+      font-family: var(--font-display);
+      font-size: 16px; font-weight: 700;
+      margin-bottom: 8px; letter-spacing: -0.01em;
+    }
+    .feature-desc {
+      font-size: 14px; line-height: 1.7;
+      opacity: 0.5;
     }
 
-    /* ─── Footer ─── */
-    footer {
-      padding: 48px 40px 32px;
-      border-top: 1px solid var(--border);
+    /* ═══════════════ KENTE SYSTEM EXPLAINER ═══════════════ */
+    .surfaces-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 20px; max-width: 1000px; margin: 0 auto;
+    }
+    .surface-card {
+      text-align: center; padding: 32px 24px;
+      border-radius: 16px;
+      background: var(--surface);
+      border: 1px solid rgba(0,0,0,0.06);
+      transition: all 0.3s;
+    }
+    .surface-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 36px rgba(0,0,0,0.06);
+    }
+    .surface-icon {
+      width: 56px; height: 56px; border-radius: 16px;
+      background: linear-gradient(135deg, rgba(212,160,23,0.08), rgba(0,107,63,0.05));
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px; font-size: 24px; color: var(--gold);
+    }
+    .surface-name {
+      font-family: var(--font-display);
+      font-size: 15px; font-weight: 700; margin-bottom: 6px;
+      color: var(--text-dark);
+    }
+    .surface-desc {
+      font-size: 13px; color: var(--text-muted); line-height: 1.6;
+    }
+    .surface-key {
+      display: inline-block; margin-top: 10px;
+      padding: 3px 10px; border-radius: 6px;
+      background: rgba(0,0,0,0.04); font-size: 11px;
+      font-weight: 600; color: var(--text-muted);
+      letter-spacing: 0.03em;
+    }
+
+    /* ═══════════════ MESSENGER SECTION ═══════════════ */
+    .messenger-section {
+      background: linear-gradient(180deg, #0a0a0f 0%, #0f1118 50%, #0a0a0f 100%);
+      position: relative; overflow: hidden;
+    }
+    .messenger-section::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse 60% 50% at 30% 50%, rgba(0, 107, 63, 0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .messenger-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 80px; align-items: center;
       max-width: 1100px; margin: 0 auto;
     }
-    .footer-grid {
-      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
-      gap: 40px; margin-bottom: 40px;
+    .messenger-features { display: flex; flex-direction: column; gap: 24px; }
+    .msg-feature {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: 20px; border-radius: 14px;
+      border: 1px solid rgba(0, 107, 63, 0.08);
+      background: rgba(0, 107, 63, 0.03);
+      transition: all 0.3s;
     }
-    .footer-brand { font-weight: 700; font-size: 16px; margin-bottom: 8px; }
-    .footer-brand-desc { font-size: 13px; color: var(--text-3); line-height: 1.6; }
-    .footer-col h4 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-bottom: 12px; }
-    .footer-col a { display: block; font-size: 13px; color: var(--text-2); text-decoration: none; margin-bottom: 8px; transition: color 0.15s; }
-    .footer-col a:hover { color: var(--gold); }
-    .footer-bottom {
-      padding-top: 24px; border-top: 1px solid var(--border);
+    .msg-feature:hover {
+      border-color: rgba(0, 107, 63, 0.2);
+      background: rgba(0, 107, 63, 0.06);
+      transform: translateX(4px);
+    }
+    .msg-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: rgba(0, 168, 107, 0.1);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--green-light); font-size: 18px; flex-shrink: 0;
+    }
+    .msg-title {
+      font-family: var(--font-display);
+      font-size: 14px; font-weight: 700; margin-bottom: 4px;
+    }
+    .msg-desc { font-size: 13px; opacity: 0.45; line-height: 1.6; }
+
+    /* Chat mockup */
+    .chat-mockup {
+      background: var(--surface-dark-2);
+      border-radius: 20px; border: 1px solid rgba(255,255,255,0.06);
+      padding: 24px; max-width: 380px; margin: 0 auto;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+    }
+    .chat-header {
+      display: flex; align-items: center; gap: 12px;
+      padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 20px;
+    }
+    .chat-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--red), var(--gold));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: #fff;
+    }
+    .chat-name { font-size: 14px; font-weight: 700; }
+    .chat-dept { font-size: 11px; opacity: 0.4; }
+    .chat-badge {
+      margin-left: auto; display: flex; align-items: center; gap: 4px;
+      font-size: 10px; color: var(--green-light); font-weight: 600;
+    }
+    .chat-messages { display: flex; flex-direction: column; gap: 10px; }
+    .chat-bubble {
+      max-width: 85%; padding: 10px 14px;
+      font-size: 13px; line-height: 1.5;
+    }
+    .chat-bubble.sent {
+      align-self: flex-end; border-radius: 14px 14px 4px 14px;
+      background: var(--green); color: #fff;
+    }
+    .chat-bubble.received {
+      align-self: flex-start; border-radius: 14px 14px 14px 4px;
+      background: rgba(255,255,255,0.06); color: var(--text-light);
+    }
+    .chat-time {
+      font-size: 10px; opacity: 0.4; margin-top: 4px;
+      text-align: right;
+    }
+    .chat-encrypt {
+      margin-top: 16px; padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      font-size: 10px; color: var(--green-light); font-weight: 600;
+    }
+
+    /* ═══════════════ DOWNLOAD CTA ═══════════════ */
+    .cta-section {
+      text-align: center; padding: 120px 40px;
+      position: relative; z-index: 2;
+      background: var(--bg-dark);
+    }
+    .cta-section::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse 70% 60% at 50% 60%, rgba(212, 160, 23, 0.05) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .cta-title {
+      font-family: var(--font-display);
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 700; letter-spacing: -0.03em;
+      line-height: 1.1; margin-bottom: 16px;
+    }
+    .cta-sub {
+      font-size: 18px; opacity: 0.4; font-style: italic;
+      margin-bottom: 40px; max-width: 500px; margin-left: auto; margin-right: auto;
+    }
+    .cta-download {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-deep) 100%);
+      color: #0a0a0f; padding: 18px 44px; border-radius: 16px;
+      font-size: 17px; font-weight: 700; font-family: var(--font-display);
+      text-decoration: none; transition: all 0.3s; border: none; cursor: pointer;
+      box-shadow: 0 4px 32px rgba(212, 160, 23, 0.2);
+      letter-spacing: 0.02em;
+    }
+    .cta-download:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 16px 56px rgba(212, 160, 23, 0.35);
+    }
+    .cta-platform {
+      display: flex; justify-content: center; gap: 24px;
+      margin-top: 16px; font-size: 13px; opacity: 0.3;
+    }
+
+    /* ═══════════════ FOOTER ═══════════════ */
+    footer {
+      padding: 48px 40px 32px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      position: relative; z-index: 2;
+      background: var(--bg-dark);
+    }
+    .footer-inner {
+      max-width: 1100px; margin: 0 auto;
       display: flex; justify-content: space-between; align-items: center;
-      font-size: 12px; color: var(--text-3);
     }
-    .footer-bottom a { color: var(--gold); text-decoration: none; }
-    .footer-bottom a:hover { text-decoration: underline; }
-
-    /* ─── Animations ─── */
-    .fade-up {
-      opacity: 0; transform: translateY(24px);
-      animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) forwards;
+    .footer-brand {
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 15px; color: var(--text-light);
     }
-    .delay-1 { animation-delay: 0.1s; }
-    .delay-2 { animation-delay: 0.2s; }
-    .delay-3 { animation-delay: 0.3s; }
-    .delay-4 { animation-delay: 0.4s; }
-    .delay-5 { animation-delay: 0.5s; }
+    .footer-links { display: flex; gap: 28px; }
+    .footer-links a {
+      color: rgba(245, 240, 229, 0.3); text-decoration: none;
+      font-size: 13px; transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--gold); }
+    .footer-copy {
+      text-align: center; margin-top: 32px; padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      font-size: 12px; opacity: 0.2;
+      max-width: 1100px; margin-left: auto; margin-right: auto;
+    }
 
+    /* ═══════════════ ANIMATIONS ═══════════════ */
     @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
-    /* ─── Responsive ─── */
-    @media (max-width: 768px) {
-      .hero h1 { font-size: 32px; }
-      .hero .hero-sub { font-size: 15px; }
-      .hero .hero-stats { gap: 20px; }
-      .hero .hero-stat strong { font-size: 22px; }
-      .kente-cards { grid-template-columns: 1fr; }
-      .kente-surfaces { grid-template-columns: repeat(2, 1fr); }
-      .messenger-grid { grid-template-columns: 1fr; }
-      .shortcut-list { grid-template-columns: 1fr; }
-      .mockup-grid { grid-template-columns: repeat(3, 1fr); }
-      .download-row { flex-direction: column; align-items: center; }
-      nav { padding: 0 20px; }
-      .nav-links { display: none; }
-      .hero, .kente-features, .kente-system, .messenger-section, .shortcuts-section, .bottom-cta { padding-left: 20px; padding-right: 20px; }
-      .footer-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
-      .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
-      .ghana-banner { margin-left: 20px; margin-right: 20px; padding: 32px 24px; }
-      .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
-      .stat-item:last-child { border-bottom: none; }
-      .stats-row-inner { flex-direction: column; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
     }
 
+    .reveal {
+      opacity: 0; transform: translateY(32px);
+      transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.visible {
+      opacity: 1; transform: translateY(0);
+    }
+
+    /* Stagger children */
+    .stagger > * { opacity: 0; transform: translateY(20px); transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+    .stagger.visible > *:nth-child(1) { opacity: 1; transform: none; transition-delay: 0s; }
+    .stagger.visible > *:nth-child(2) { opacity: 1; transform: none; transition-delay: 0.08s; }
+    .stagger.visible > *:nth-child(3) { opacity: 1; transform: none; transition-delay: 0.16s; }
+    .stagger.visible > *:nth-child(4) { opacity: 1; transform: none; transition-delay: 0.24s; }
+
+    /* Gold shimmer text */
+    .shimmer-text {
+      background: linear-gradient(90deg, var(--gold) 0%, var(--gold-glow) 40%, var(--gold) 60%, var(--gold-glow) 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 4s linear infinite;
+    }
+
+    /* ═══════════════ RESPONSIVE ═══════════════ */
+    @media (max-width: 900px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      .hero { padding: 100px 24px 60px; }
+      .stats-ribbon { flex-wrap: wrap; }
+      .stat-item { padding: 16px 24px; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .surfaces-grid { grid-template-columns: 1fr 1fr; }
+      .messenger-grid { grid-template-columns: 1fr; gap: 40px; }
+      .footer-inner { flex-direction: column; gap: 20px; text-align: center; }
+      .footer-links { flex-wrap: wrap; justify-content: center; }
+    }
     @media (max-width: 480px) {
-      .kente-surfaces { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 36px; }
+      .hero-actions { flex-direction: column; width: 100%; }
+      .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
+      .surfaces-grid { grid-template-columns: 1fr; }
+      .stat-item { flex: 1 1 50%; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .fade-up { opacity: 1; transform: none; animation: none; }
-      .kente-category { opacity: 1; transform: none; transition: none; }
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+      .reveal, .kente-category, .stagger > * { opacity: 1; transform: none; }
     }
   </style>
 </head>
 <body>
 
-<!-- Nav -->
+<!-- Kente geometric background -->
+<div class="kente-bg"></div>
+
+<!-- Gold particles -->
+<canvas id="particles"></canvas>
+
+<!-- ═══════════════ NAV ═══════════════ -->
 <nav>
-  <a href="https://www.osbrowser.askozzy.work" class="nav-brand">
-    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-      <defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#CE1126"/><stop offset="50%" stop-color="#FCD116"/><stop offset="100%" stop-color="#006B3F"/></linearGradient><linearGradient id="sh" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="#FCD116"/></linearGradient></defs>
-      <rect width="512" height="512" rx="108" fill="url(#bg)"/><path d="M256 90L370 140V270Q370 370 256 430Q142 370 142 270V140Z" fill="url(#sh)" stroke="#000" stroke-width="4" opacity=".95"/><text x="256" y="310" text-anchor="middle" font-family="Georgia,serif" font-weight="900" font-size="160" fill="#0f1117" letter-spacing="-8">OS</text>
-    </svg>
+  <a href="#" class="nav-brand">
+    <div class="nav-logo">OS</div>
     OS Browser
   </a>
   <div class="nav-links">
@@ -645,664 +641,475 @@
     <a href="#kente-system">Kente System</a>
     <a href="#messenger">Messenger</a>
     <a href="#download">Download</a>
-    <a href="https://github.com/ghwmelite-dotcom/OS-Browser" target="_blank">GitHub</a>
   </div>
-  <a href="#download" class="nav-cta">Download Now</a>
+  <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/latest/download/OS.Browser.Setup.1.0.0.exe" class="nav-cta">
+    Download for Windows
+  </a>
 </nav>
 
-<!-- Announcement -->
-<div class="announce">
-  12 purpose-built features &mdash; Data Saver, Dumsor Guard, Gov Services, Encrypted Messenger, Mobile Money &amp; more &mdash; organized by the Kente System
-</div>
-
-<!-- Hero -->
+<!-- ═══════════════ HERO ═══════════════ -->
 <section class="hero">
-  <div class="hero-icon fade-up">
-    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-      <defs><linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#CE1126"/><stop offset="50%" stop-color="#FCD116"/><stop offset="100%" stop-color="#006B3F"/></linearGradient><linearGradient id="sh2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="#FCD116"/></linearGradient></defs>
-      <rect width="512" height="512" rx="108" fill="url(#bg2)"/><path d="M256 90L370 140V270Q370 370 256 430Q142 370 142 270V140Z" fill="url(#sh2)" stroke="#000" stroke-width="4" opacity=".95"/><text x="256" y="310" text-anchor="middle" font-family="Georgia,serif" font-weight="900" font-size="160" fill="#0f1117" letter-spacing="-8">OS</text>
-    </svg>
+  <div class="hero-badge">
+    <span class="dot"></span>
+    Version 1.0 is live
   </div>
-  <h1 class="fade-up delay-1">
-    <span>OS Browser</span><br />Ghana's Purpose-Built<br />Desktop Browser
+
+  <h1>
+    <span class="line">A browser built for</span>
+    <span class="gold">Ghana's future</span>
   </h1>
-  <p class="hero-sub fade-up delay-2">
-    12 features woven into the Kente System. Data Saver with carrier plans. Dumsor Guard for power outages. 25+ government portals. E2E encrypted messaging. Mobile Money integration. Digital Literacy AI. Everything Ghana needs, built in.
+
+  <p class="hero-sub">
+    12 purpose-built features woven into a single, elegant experience.
+    Encrypted messaging, 25 government portals, 7 local languages,
+    offline resilience &mdash; organized by the Kente System.
   </p>
 
-  <div class="hero-stats fade-up delay-2">
-    <div class="hero-stat">
-      <strong>12</strong>
-      <span>Features</span>
-    </div>
-    <div class="hero-stat">
-      <strong>25+</strong>
-      <span>Gov Services</span>
-    </div>
-    <div class="hero-stat">
-      <strong>7</strong>
-      <span>Languages</span>
-    </div>
-    <div class="hero-stat">
-      <strong>E2E</strong>
-      <span>Encrypted</span>
-    </div>
-  </div>
-
-  <!-- Download Buttons -->
-  <div class="download-row fade-up delay-3" id="download">
-    <div class="dl-card">
-      <div class="dl-icon">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/><path d="M15.5 8.5c-.828 0-1.5.895-1.5 2s.672 2 1.5 2M8.5 8.5c.828 0 1.5.895 1.5 2s-.672 2-1.5 2M12 17.5c1.38 0 2.5-.672 2.5-1.5h-5c0 .828 1.12 1.5 2.5 1.5z"/></svg>
-      </div>
-      <div class="dl-label">macOS</div>
-      <div class="dl-buttons">
-        <button class="dl-btn dl-btn-primary" disabled title="Coming soon">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
-          Apple Silicon
-        </button>
-        <button class="dl-btn dl-btn-primary" disabled title="Coming soon">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
-          Intel
-        </button>
-      </div>
-      <div style="font-size:11px;color:var(--text-3);margin-top:8px;">Coming Soon</div>
-    </div>
-
-    <div class="dl-card">
-      <div class="dl-icon">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
-      </div>
-      <div class="dl-label">Windows</div>
-      <div class="dl-buttons">
-        <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/latest/download/OS.Browser.Setup.1.0.0.exe" class="dl-btn dl-btn-gold" download="OS-Browser-Setup.exe">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download
-        </a>
-      </div>
-      <div style="font-size:11px;color:var(--text-3);margin-top:8px;">Windows 10/11 &bull; 64-bit</div>
-    </div>
+  <div class="hero-actions">
+    <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/latest/download/OS.Browser.Setup.1.0.0.exe" class="btn-primary">
+      Download for Windows
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    </a>
+    <a href="#features" class="btn-secondary">Explore Features</a>
   </div>
 </section>
 
-<!-- Browser Mockup -->
-<section class="mockup-section fade-up delay-4">
-  <div class="mockup-frame">
-    <div class="mockup-titlebar">
-      <div class="dot dot-r"></div>
-      <div class="dot dot-y"></div>
-      <div class="dot dot-g"></div>
-    </div>
-    <div class="mockup-content">
-      <div class="mockup-inner">
-        <h2><span>OS Browser</span></h2>
-        <p>12 Features. 6 Categories. The Kente System.</p>
-        <div class="mockup-grid">
-          <div class="mockup-portal"><div class="mockup-portal-icon">G</div><span>Ghana.gov</span></div>
-          <div class="mockup-portal"><div class="mockup-portal-icon">G</div><span>GIFMIS</span></div>
-          <div class="mockup-portal"><div class="mockup-portal-icon">C</div><span>CAGD</span></div>
-          <div class="mockup-portal"><div class="mockup-portal-icon">G</div><span>GRA Tax</span></div>
-          <div class="mockup-portal"><div class="mockup-portal-icon">O</div><span>OHCS</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- STATS ROW                                                    -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section class="stats-row">
-  <div class="stats-row-inner fade-up">
-    <div class="stat-item">
-      <strong>25+</strong>
-      <span>Gov Services</span>
-    </div>
-    <div class="stat-item">
-      <strong>7</strong>
-      <span>Languages</span>
-    </div>
-    <div class="stat-item">
-      <strong>12</strong>
-      <span>Features</span>
-    </div>
-    <div class="stat-item">
-      <strong>E2E</strong>
-      <span>Encrypted</span>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- KENTE FEATURES — 12 Features in 6 Categories                -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section class="kente-features" id="features">
-  <div class="section-heading fade-up">
-    <span class="section-label label-gold">The Kente System</span>
-    <h2>Everything Ghana needs in a browser</h2>
-    <p>12 purpose-built features organized by the Kente System &mdash; each one a thread in the weave</p>
-  </div>
-
-  <!-- ── Infrastructure ── -->
-  <div class="kente-category kente-cat-infra">
-    <div class="kente-category-header">
-      <div class="kente-cat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-      </div>
-      <div class="kente-cat-info">
-        <h3>Infrastructure</h3>
-        <p>Keeps the browser running on Ghana's networks</p>
-      </div>
-    </div>
-    <div class="kente-cards">
-      <!-- Data Saver -->
-      <div class="kente-card">
-        <div class="kente-card-top">
-          <div class="kente-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-          </div>
-          <div class="kente-card-dot"></div>
-        </div>
-        <h4>Data Saver</h4>
-        <p>Track data usage in GH&#8373;. MTN, Telecel, AT carrier plans. Budget alerts and Lite Mode.</p>
-      </div>
-      <!-- Dumsor Guard -->
-      <div class="kente-card">
-        <div class="kente-card-top">
-          <div class="kente-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z"/></svg>
-          </div>
-          <div class="kente-card-dot"></div>
-        </div>
-        <h4>Dumsor Guard</h4>
-        <p>Power outage recovery. Auto-saves tabs, forms, and scroll positions every 30 seconds.</p>
-      </div>
-      <!-- Network Manager -->
-      <div class="kente-card">
-        <div class="kente-card-top">
-          <div class="kente-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1"/></svg>
-          </div>
-          <div class="kente-card-dot"></div>
-        </div>
-        <h4>Network Manager</h4>
-        <p>Monitor connection quality. Auto-suspend background tabs on slow connections.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Government ── -->
-  <div class="kente-category kente-cat-gov">
-    <div class="kente-category-header">
-      <div class="kente-cat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
-      </div>
-      <div class="kente-cat-info">
-        <h3>Government</h3>
-        <p>Civil service tools for Ghana's public sector</p>
-      </div>
-    </div>
-    <div class="kente-cards">
-      <!-- Gov Services Hub -->
-      <div class="kente-card">
-        <div class="kente-card-top">
-          <div class="kente-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          </div>
-          <div class="kente-card-dot"></div>
-        </div>
-        <h4>Gov Services Hub</h4>
-        <p>25+ government portals with search, categories, health monitoring, and pinning.</p>
-      </div>
-      <!-- GhanaCard Identity -->
-      <div class="kente-card">
-        <div class="kente-card-top">
-          <div class="kente-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/><path d="M14 15h4"/></svg>
-          </div>
-          <div class="kente-card-dot"></div>
-        </div>
-        <h4>GhanaCard Identity</h4>
-        <p>Store GhanaCard and civil service credentials for auto-fill on gov portals.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Productivity ── -->
-  <div class="kente-category kente-cat-prod">
-    <div class="kente-category-header">
-      <div class="kente-cat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
-      </div>
-      <div class="kente-cat-info">
-        <h3>Productivity</h3>
-        <p>Work tools for documents, offline access, and reporting</p>
-      </div>
-    </div>
-    <div class="kente-cards">
-      <!-- Document Workspace -->
-      <div class="kente-card">
-        <div class="kente-card-top">
-          <div class="kente-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-          </div>
-          <div class="kente-card-dot"></div>
-        </div>
-        <h4>Document Workspace</h4>
-        <p>View, organize, and annotate government documents and PDFs.</p>
-      </div>
-      <!-- Offline Library -->
-      <div class="kente-card">
-        <div class="kente-card-top">
-          <div class="kente-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          </div>
-          <div class="kente-card-dot"></div>
-        </div>
-        <h4>Offline Library</h4>
-        <p>Save pages, auto-cache .gov.gh sites, queue form submissions for offline use.</p>
-      </div>
-      <!-- Screenshot-to-Report -->
-      <div class="kente-card">
-        <div class="kente-card-top">
-          <div class="kente-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          </div>
-          <div class="kente-card-dot"></div>
-        </div>
-        <h4>Screenshot-to-Report</h4>
-        <p>Capture, annotate, and generate official PDF reports with stamps.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Communication ── -->
-  <div class="kente-category kente-cat-comm">
-    <div class="kente-category-header">
-      <div class="kente-cat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-      </div>
-      <div class="kente-cat-info">
-        <h3>Communication</h3>
-        <p>Connecting people across languages and channels</p>
-      </div>
-    </div>
-    <div class="kente-cards">
-      <!-- Multi-Language Translation -->
-      <div class="kente-card">
-        <div class="kente-card-top">
-          <div class="kente-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M8 7h8"/><path d="M8 11h6"/></svg>
-          </div>
-          <div class="kente-card-dot"></div>
-        </div>
-        <h4>Multi-Language Translation</h4>
-        <p>7 languages: English, Twi, Ga, Ewe, Dagbani, Hausa, Fante with offline dictionaries.</p>
-      </div>
-      <!-- Encrypted Messenger -->
-      <div class="kente-card">
-        <div class="kente-card-top">
-          <div class="kente-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1"/></svg>
-          </div>
-          <div class="kente-card-dot"></div>
-        </div>
-        <h4>Encrypted Messenger</h4>
-        <p>Real-time E2E encrypted messaging for .gov.gh email holders with WebSocket.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Finance ── -->
-  <div class="kente-category kente-cat-fin">
-    <div class="kente-category-header">
-      <div class="kente-cat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-      </div>
-      <div class="kente-cat-info">
-        <h3>Finance</h3>
-        <p>Money tools for mobile payments and budgeting</p>
-      </div>
-    </div>
-    <div class="kente-cards">
-      <!-- Mobile Money Quick Pay -->
-      <div class="kente-card">
-        <div class="kente-card-top">
-          <div class="kente-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><path d="M7 15h2"/><path d="M13 15h4"/></svg>
-          </div>
-          <div class="kente-card-dot"></div>
-        </div>
-        <h4>Mobile Money Quick Pay</h4>
-        <p>MTN MoMo, Telecel, AT accounts. Payment receipts, monthly statements, budget tracking.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Intelligence ── -->
-  <div class="kente-category kente-cat-intel">
-    <div class="kente-category-header">
-      <div class="kente-cat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5"/></svg>
-      </div>
-      <div class="kente-cat-info">
-        <h3>Intelligence</h3>
-        <p>Smart features powered by AI</p>
-      </div>
-    </div>
-    <div class="kente-cards">
-      <!-- Digital Literacy AI -->
-      <div class="kente-card">
-        <div class="kente-card-top">
-          <div class="kente-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-          </div>
-          <div class="kente-card-dot"></div>
-        </div>
-        <h4>Digital Literacy AI</h4>
-        <p>Page explainer, form filling guides, phishing detection, and 5 government tutorials.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- THE KENTE SYSTEM — 4 Surfaces Explainer                     -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section class="kente-system" id="kente-system">
-  <div class="section-heading fade-up">
-    <span class="section-label label-gold">Architecture</span>
-    <h2>Every feature has a home</h2>
-    <p>The Kente System organizes 12 features across 4 surfaces, so everything is exactly where you expect it.</p>
-  </div>
-
-  <div class="kente-surfaces fade-up delay-1">
-    <div class="kente-surface">
-      <div class="kente-surface-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-      </div>
-      <h4>Sidebar</h4>
-      <p>Icon rail for feature panels. Data Saver, Gov Hub, Messenger, and more live here.</p>
-      <kbd>Click icons</kbd>
-    </div>
-    <div class="kente-surface">
-      <div class="kente-surface-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
-      </div>
-      <h4>Toolbar</h4>
-      <p>Page-level actions. Screenshot, Document Workspace, Reading Mode, and translations.</p>
-      <kbd>Toolbar buttons</kbd>
-    </div>
-    <div class="kente-surface">
-      <div class="kente-surface-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      </div>
-      <h4>Command Bar</h4>
-      <p>Search features, switch tabs, run commands. The fastest way to access anything.</p>
-      <kbd>Ctrl + K</kbd>
-    </div>
-    <div class="kente-surface">
-      <div class="kente-surface-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="17" x2="21" y2="17"/></svg>
-      </div>
-      <h4>Status Bar</h4>
-      <p>Always-on monitoring. Data usage, network quality, Dumsor Guard status, and battery.</p>
-      <kbd>Always visible</kbd>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- ENCRYPTED MESSENGER SECTION (Dark)                          -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section class="messenger-section" id="messenger">
-  <div class="messenger-inner">
-    <div class="section-heading fade-up">
-      <span class="section-label label-green">Encrypted</span>
-      <h2>Your messages, your keys</h2>
-      <p>End-to-end encrypted messaging built for Ghana's civil service. The server never sees your plaintext.</p>
-    </div>
-
-    <div class="messenger-grid">
-      <div class="messenger-features fade-up delay-1">
-        <div class="messenger-feat">
-          <div class="messenger-feat-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-          </div>
-          <div>
-            <h4>ECDH P-256 + AES-GCM 256-bit</h4>
-            <p>Military-grade encryption using elliptic curve Diffie-Hellman key exchange and AES-GCM symmetric encryption.</p>
-          </div>
-        </div>
-        <div class="messenger-feat">
-          <div class="messenger-feat-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </div>
-          <div>
-            <h4>.gov.gh email verification</h4>
-            <p>Only verified government email holders can access the messenger. Identity tied to your civil service credentials.</p>
-          </div>
-        </div>
-        <div class="messenger-feat">
-          <div class="messenger-feat-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-          </div>
-          <div>
-            <h4>Server never sees plaintext</h4>
-            <p>Messages are encrypted on your device before transmission. The server only handles encrypted blobs.</p>
-          </div>
-        </div>
-        <div class="messenger-feat">
-          <div class="messenger-feat-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z"/></svg>
-          </div>
-          <div>
-            <h4>Real-time WebSocket</h4>
-            <p>Instant message delivery via WebSocket connections. No polling. No delays. Real-time conversations.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="messenger-visual fade-up delay-2">
-        <div class="chat-mockup">
-          <div class="chat-header">
-            <div class="chat-avatar">AK</div>
-            <div>
-              <div class="chat-name">Ama Kofi</div>
-              <div class="chat-status">Online &bull; Verified .gov.gh</div>
-            </div>
-          </div>
-          <div class="chat-bubble chat-bubble-in">The quarterly report is ready for review. Can you check section 3?</div>
-          <div class="chat-bubble chat-bubble-out">Reviewing now. Will send feedback by 3pm.</div>
-          <div class="chat-bubble chat-bubble-in">Perfect. The minister needs it signed by Friday.</div>
-          <div class="chat-lock">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-            End-to-end encrypted
-          </div>
-        </div>
-        <div class="encryption-badges">
-          <div class="enc-badge">ECDH P-256</div>
-          <div class="enc-badge">AES-GCM 256</div>
-          <div class="enc-badge">Forward Secrecy</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Ghana Banner -->
-<div class="ghana-banner fade-up">
-  <h2>Built for Ghana. By Ghana.</h2>
-  <p>Your data stays on your device. Sovereign. Private. Yours.</p>
-  <p>12 features across 6 categories, woven together by the Kente System.</p>
-  <p style="font-size:13px;opacity:0.75;margin-top:8px;">Powered by OHCS</p>
+<!-- ═══════════════ STATS ═══════════════ -->
+<div class="stats-ribbon">
+  <div class="stat-item"><div class="stat-value">12</div><div class="stat-label">Features</div></div>
+  <div class="stat-item"><div class="stat-value">25+</div><div class="stat-label">Gov Services</div></div>
+  <div class="stat-item"><div class="stat-value">7</div><div class="stat-label">Languages</div></div>
+  <div class="stat-item"><div class="stat-value">E2E</div><div class="stat-label">Encrypted</div></div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- KEYBOARD SHORTCUTS                                          -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section class="shortcuts-section">
-  <div class="section-heading fade-up">
-    <span class="section-label label-gold">Productivity</span>
-    <h2>Keyboard-First Design</h2>
-    <p>Power-user shortcuts to keep your hands on the keyboard and your workflow fast.</p>
+<div class="flag-divider"></div>
+
+<!-- ═══════════════ FEATURES ═══════════════ -->
+<section id="features" class="section section-dark">
+  <div class="section-header reveal">
+    <div class="section-eyebrow">The Kente Weave</div>
+    <h2 class="section-title">Every thread has a purpose</h2>
+    <p class="section-desc">
+      12 features, 6 categories &mdash; each one a coloured strip in the weave.
+      Together, they form something no other browser offers.
+    </p>
   </div>
 
-  <div class="shortcut-list fade-up delay-1">
-    <div class="shortcut-item">
-      <span>Command Bar</span>
-      <kbd>Ctrl + K</kbd>
+  <div class="kente-features">
+
+    <!-- Infrastructure -->
+    <div class="kente-category" style="--cat-color: #3DDC84;">
+      <div class="category-header">
+        <div class="category-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <div class="category-name">Infrastructure</div>
+          <div class="category-desc">Keeps your browser running, even when Ghana's grid doesn't</div>
+        </div>
+      </div>
+      <div class="feature-grid stagger">
+        <div class="feature-card" style="--card-color: #639922;">
+          <div class="feature-icon" style="--card-color: #639922;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          </div>
+          <div class="feature-name">Data Saver</div>
+          <div class="feature-desc">Track usage in GH&cent;, set budgets for MTN, Telecel, or AT bundles. Lite Mode compresses heavy content.</div>
+        </div>
+        <div class="feature-card" style="--card-color: #3DDC84;">
+          <div class="feature-icon" style="--card-color: #3DDC84;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+          <div class="feature-name">Dumsor Guard</div>
+          <div class="feature-desc">Auto-saves your tabs, forms, and scroll positions every 30 seconds. Power goes out? Your work doesn't.</div>
+        </div>
+        <div class="feature-card" style="--card-color: #2DA06B;">
+          <div class="feature-icon" style="--card-color: #2DA06B;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>
+          </div>
+          <div class="feature-name">Network Manager</div>
+          <div class="feature-desc">Monitors connection quality in real-time. Auto-suspends background tabs on slow connections to save bandwidth.</div>
+        </div>
+      </div>
     </div>
-    <div class="shortcut-item">
-      <span>Toggle Sidebar</span>
-      <kbd>Ctrl + \</kbd>
+
+    <!-- Government -->
+    <div class="kente-category" style="--cat-color: #006B3F;">
+      <div class="category-header">
+        <div class="category-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20"/><path d="M5 20V8l7-5 7 5v12"/><path d="M9 20v-4h6v4"/></svg>
+        </div>
+        <div>
+          <div class="category-name">Government</div>
+          <div class="category-desc">Direct access to Ghana's civil service infrastructure</div>
+        </div>
+      </div>
+      <div class="feature-grid stagger">
+        <div class="feature-card" style="--card-color: #006B3F;">
+          <div class="feature-icon" style="--card-color: #006B3F;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20"/><path d="M5 20V8l7-5 7 5v12"/><path d="M9 20v-4h6v4"/></svg>
+          </div>
+          <div class="feature-name">Gov Services Hub</div>
+          <div class="feature-desc">25+ government portals &mdash; GIFMIS, GRA, SSNIT, NIA, CAGD &mdash; searchable, pinnable, with live health monitoring.</div>
+        </div>
+        <div class="feature-card" style="--card-color: #7F77DD;">
+          <div class="feature-icon" style="--card-color: #7F77DD;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          </div>
+          <div class="feature-name">GhanaCard Identity</div>
+          <div class="feature-desc">Store your GhanaCard and staff credentials securely. Auto-fills identity fields on .gov.gh portals.</div>
+        </div>
+      </div>
     </div>
-    <div class="shortcut-item">
-      <span>New Tab</span>
-      <kbd>Ctrl + T</kbd>
+
+    <!-- Productivity -->
+    <div class="kente-category" style="--cat-color: #D85A30;">
+      <div class="category-header">
+        <div class="category-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3h-8l-2 4h12l-2-4z"/></svg>
+        </div>
+        <div>
+          <div class="category-name">Productivity</div>
+          <div class="category-desc">Tools that help civil servants get work done</div>
+        </div>
+      </div>
+      <div class="feature-grid stagger">
+        <div class="feature-card" style="--card-color: #D85A30;">
+          <div class="feature-icon" style="--card-color: #D85A30;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div class="feature-name">Document Workspace</div>
+          <div class="feature-desc">View, organize, and annotate government PDFs. Collections, stamps (Approved/Rejected/Draft), full-text search.</div>
+        </div>
+        <div class="feature-card" style="--card-color: #1D9E75;">
+          <div class="feature-icon" style="--card-color: #1D9E75;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          </div>
+          <div class="feature-name">Offline Library</div>
+          <div class="feature-desc">Save pages for offline reading. Auto-caches .gov.gh sites. Queue form submissions &mdash; they send when you're back online.</div>
+        </div>
+        <div class="feature-card" style="--card-color: #D4537E;">
+          <div class="feature-icon" style="--card-color: #D4537E;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+          <div class="feature-name">Screenshot-to-Report</div>
+          <div class="feature-desc">Capture, annotate, stamp (Approved/Reviewed/Confidential), and generate official PDF reports with metadata.</div>
+        </div>
+      </div>
     </div>
-    <div class="shortcut-item">
-      <span>Close Tab</span>
-      <kbd>Ctrl + W</kbd>
+
+    <!-- Communication -->
+    <div class="kente-category" style="--cat-color: #5DCAA5;">
+      <div class="category-header">
+        <div class="category-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div>
+          <div class="category-name">Communication</div>
+          <div class="category-desc">Connect across languages and departments</div>
+        </div>
+      </div>
+      <div class="feature-grid stagger">
+        <div class="feature-card" style="--card-color: #5DCAA5;">
+          <div class="feature-icon" style="--card-color: #5DCAA5;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+          </div>
+          <div class="feature-name">Translation</div>
+          <div class="feature-desc">7 languages: English, Twi, Ga, Ewe, Dagbani, Hausa, Fante. 45+ offline phrases per language pair.</div>
+        </div>
+        <div class="feature-card" style="--card-color: #3B8BD4;">
+          <div class="feature-icon" style="--card-color: #3B8BD4;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><circle cx="12" cy="10" r="1"/><circle cx="8" cy="10" r="1"/><circle cx="16" cy="10" r="1"/></svg>
+          </div>
+          <div class="feature-name">Encrypted Messenger</div>
+          <div class="feature-desc">Real-time E2E encrypted chat for .gov.gh email holders. ECDH key exchange, AES-GCM 256-bit. Server never sees plaintext.</div>
+        </div>
+      </div>
     </div>
-    <div class="shortcut-item">
-      <span>AI Sidebar</span>
-      <kbd>Ctrl + J</kbd>
+
+    <!-- Finance -->
+    <div class="kente-category" style="--cat-color: #BA7517;">
+      <div class="category-header">
+        <div class="category-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M6 10h.01"/><path d="M18 10h.01"/></svg>
+        </div>
+        <div>
+          <div class="category-name">Finance</div>
+          <div class="category-desc">Mobile money and payment tracking for civil servants</div>
+        </div>
+      </div>
+      <div class="feature-grid stagger">
+        <div class="feature-card" style="--card-color: #BA7517;">
+          <div class="feature-icon" style="--card-color: #BA7517;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M6 10h.01"/><path d="M18 10h.01"/></svg>
+          </div>
+          <div class="feature-name">Mobile Money Quick Pay</div>
+          <div class="feature-desc">MTN MoMo, Telecel Cash, AirtelTigo Money. Payment receipts, monthly statements, budget tracking with GH&cent; formatting.</div>
+        </div>
+      </div>
     </div>
-    <div class="shortcut-item">
-      <span>Focus Mode</span>
-      <kbd>Ctrl + Shift + F</kbd>
+
+    <!-- Intelligence -->
+    <div class="kente-category" style="--cat-color: #FCD116;">
+      <div class="category-header">
+        <div class="category-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+        </div>
+        <div>
+          <div class="category-name">Intelligence</div>
+          <div class="category-desc">AI that helps you understand the web</div>
+        </div>
+      </div>
+      <div class="feature-grid stagger">
+        <div class="feature-card" style="--card-color: #FCD116;">
+          <div class="feature-icon" style="--card-color: #FCD116;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+          </div>
+          <div class="feature-name">Digital Literacy AI</div>
+          <div class="feature-desc">Page explainer, form filling guides, phishing detection with traffic-light rating. 5 pre-built tutorials for gov services.</div>
+        </div>
+      </div>
     </div>
-    <div class="shortcut-item">
-      <span>Split Screen</span>
-      <kbd>Ctrl + Shift + S</kbd>
+
+  </div>
+</section>
+
+<!-- ═══════════════ KENTE SYSTEM ═══════════════ -->
+<section id="kente-system" class="section section-warm">
+  <div class="section-header reveal">
+    <div class="section-eyebrow" style="color: var(--gold-deep);">The Kente System</div>
+    <h2 class="section-title" style="color: var(--text-dark);">Every feature has a home</h2>
+    <p class="section-desc" style="color: var(--text-muted);">
+      Four surfaces, one registry. Features appear exactly where you need them &mdash;
+      and when you add the next one, the system absorbs it.
+    </p>
+  </div>
+
+  <div class="surfaces-grid reveal stagger">
+    <div class="surface-card">
+      <div class="surface-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+      </div>
+      <div class="surface-name">Kente Sidebar</div>
+      <div class="surface-desc">Icon rail with expandable panels. Each feature gets a coloured accent strip.</div>
+      <span class="surface-key">Always visible</span>
     </div>
-    <div class="shortcut-item">
-      <span>Reading Mode</span>
-      <kbd>Ctrl + Shift + R</kbd>
+    <div class="surface-card">
+      <div class="surface-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="3" rx="1"/><path d="M8 10v4"/><path d="M12 10v4"/><path d="M16 10v4"/></svg>
+      </div>
+      <div class="surface-name">Toolbar</div>
+      <div class="surface-desc">Page-level actions in the address bar. Screenshot, save offline, translate.</div>
+      <span class="surface-key">Contextual</span>
     </div>
-    <div class="shortcut-item">
-      <span>Screenshot</span>
-      <kbd>Ctrl + Shift + X</kbd>
+    <div class="surface-card">
+      <div class="surface-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </div>
+      <div class="surface-name">Command Bar</div>
+      <div class="surface-desc">Type to find any feature, command, or government service instantly.</div>
+      <span class="surface-key">Ctrl + K</span>
     </div>
-    <div class="shortcut-item">
-      <span>Private Browsing</span>
-      <kbd>Ctrl + Shift + N</kbd>
-    </div>
-    <div class="shortcut-item">
-      <span>Downloads</span>
-      <kbd>Ctrl + Shift + D</kbd>
-    </div>
-    <div class="shortcut-item">
-      <span>Translate Page</span>
-      <kbd>Ctrl + Shift + T</kbd>
+    <div class="surface-card">
+      <div class="surface-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="18" width="20" height="4" rx="1"/><path d="M6 20h.01"/><path d="M12 20h.01"/><path d="M18 20h.01"/></svg>
+      </div>
+      <div class="surface-name">Status Bar</div>
+      <div class="surface-desc">Passive monitoring &mdash; data budget, network health, session protection.</div>
+      <span class="surface-key">Glance</span>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- BOTTOM CTA                                                  -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section class="bottom-cta">
-  <h2 class="fade-up">Download <span>OS Browser</span> Today</h2>
-  <p class="fade-up delay-1">12 Features. 6 Categories. The Kente System. Made for Ghana.</p>
+<!-- ═══════════════ MESSENGER ═══════════════ -->
+<section id="messenger" class="section messenger-section">
+  <div class="section-header reveal">
+    <div class="section-eyebrow">End-to-End Encrypted</div>
+    <h2 class="section-title">Your messages,<br>your keys</h2>
+    <p class="section-desc">
+      Real-time encrypted messaging built for government communication.
+      The server never sees your plaintext &mdash; ever.
+    </p>
+  </div>
 
-  <div class="download-row fade-up delay-2">
-    <div class="dl-card">
-      <div class="dl-icon">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/><path d="M15.5 8.5c-.828 0-1.5.895-1.5 2s.672 2 1.5 2M8.5 8.5c.828 0 1.5.895 1.5 2s-.672 2-1.5 2"/></svg>
+  <div class="messenger-grid">
+    <div class="messenger-features reveal stagger">
+      <div class="msg-feature">
+        <div class="msg-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div>
+          <div class="msg-title">ECDH P-256 + AES-GCM 256-bit</div>
+          <div class="msg-desc">Industry-standard elliptic curve key exchange with military-grade symmetric encryption.</div>
+        </div>
       </div>
-      <div class="dl-label">macOS</div>
-      <div class="dl-buttons">
-        <button class="dl-btn dl-btn-primary" disabled>Apple Silicon</button>
-        <button class="dl-btn dl-btn-primary" disabled>Intel</button>
+      <div class="msg-feature">
+        <div class="msg-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <div>
+          <div class="msg-title">.gov.gh email auto-approve</div>
+          <div class="msg-desc">Government domain is your identity. No codes, no passwords &mdash; instant access for civil servants.</div>
+        </div>
       </div>
-      <div style="font-size:11px;color:var(--text-3);margin-top:8px;">Coming Soon</div>
+      <div class="msg-feature">
+        <div class="msg-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+        </div>
+        <div>
+          <div class="msg-title">Zero-plaintext server</div>
+          <div class="msg-desc">Cloudflare Durable Objects relay encrypted payloads. Keys stay on your device.</div>
+        </div>
+      </div>
+      <div class="msg-feature">
+        <div class="msg-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <div>
+          <div class="msg-title">Real-time WebSocket</div>
+          <div class="msg-desc">Typing indicators, read receipts, online/offline presence &mdash; all in real-time.</div>
+        </div>
+      </div>
     </div>
-    <div class="dl-card">
-      <div class="dl-icon">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+
+    <div class="reveal" style="animation-delay: 0.2s;">
+      <div class="chat-mockup">
+        <div class="chat-header">
+          <div class="chat-avatar">KM</div>
+          <div>
+            <div class="chat-name">Kwame Mensah</div>
+            <div class="chat-dept">Ministry of Finance</div>
+          </div>
+          <div class="chat-badge">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Encrypted
+          </div>
+        </div>
+        <div class="chat-messages">
+          <div class="chat-bubble received">Good morning! Have you reviewed the Q3 budget allocation?</div>
+          <div class="chat-bubble sent">Yes, I've gone through it. The GIFMIS figures match our projections.</div>
+          <div class="chat-bubble received">Excellent. Can you send the summary to the Deputy Minister before noon?</div>
+          <div class="chat-bubble sent">Already on it. I'll route it through E-SPAR for the sign-off.</div>
+          <div class="chat-time">10:34 AM</div>
+        </div>
+        <div class="chat-encrypt">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          End-to-end encrypted
+        </div>
       </div>
-      <div class="dl-label">Windows</div>
-      <div class="dl-buttons">
-        <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/latest/download/OS.Browser.Setup.1.0.0.exe" class="dl-btn dl-btn-gold" download="OS-Browser-Setup.exe">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download
-        </a>
-      </div>
-      <div style="font-size:11px;color:var(--text-3);margin-top:8px;">Windows 10/11 &bull; 64-bit</div>
     </div>
   </div>
 </section>
 
-<!-- Footer -->
+<!-- ═══════════════ DOWNLOAD CTA ═══════════════ -->
+<section id="download" class="cta-section">
+  <div class="reveal">
+    <h2 class="cta-title">
+      Ready to browse<br><span class="shimmer-text">differently?</span>
+    </h2>
+    <p class="cta-sub">
+      Free forever. Built in Ghana, for Ghana.
+    </p>
+    <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/latest/download/OS.Browser.Setup.1.0.0.exe" class="cta-download">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download OS Browser
+    </a>
+    <div class="cta-platform">
+      <span>Windows 10/11</span>
+      <span>&middot;</span>
+      <span>macOS coming soon</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
 <footer>
-  <div class="footer-grid">
-    <div>
-      <div class="footer-brand">OS Browser</div>
-      <p class="footer-brand-desc">Ghana's purpose-built desktop browser. 12 features woven by the Kente System. Data Saver, Dumsor Guard, Gov Services, Encrypted Messenger, Mobile Money, and Digital Literacy AI. Free and open source.</p>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="nav-logo" style="width:28px;height:28px;font-size:12px;border-radius:8px;">OS</div>
+      OS Browser
     </div>
-    <div class="footer-col">
-      <h4>Product</h4>
+    <div class="footer-links">
       <a href="#features">Features</a>
       <a href="#kente-system">Kente System</a>
       <a href="#messenger">Messenger</a>
-      <a href="#download">Download</a>
-    </div>
-    <div class="footer-col">
-      <h4>Resources</h4>
       <a href="https://github.com/ghwmelite-dotcom/OS-Browser" target="_blank">GitHub</a>
-      <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases" target="_blank">Releases</a>
-      <a href="https://github.com/ghwmelite-dotcom/OS-Browser/issues" target="_blank">Report a Bug</a>
-    </div>
-    <div class="footer-col">
-      <h4>Connect</h4>
-      <a href="https://www.osbrowser.askozzy.work" target="_blank">Website</a>
-      <a href="https://askozzy.ghwmelite.workers.dev" target="_blank">AskOzzy</a>
-      <a href="https://ohcs.gov.gh" target="_blank">OHCS</a>
     </div>
   </div>
-  <div class="footer-bottom">
-    <span>&copy; 2026 OHCS. Made with pride in Accra, Ghana.</span>
-    <a href="https://www.osbrowser.askozzy.work">www.osbrowser.askozzy.work</a>
+  <div class="footer-copy">
+    &copy; 2026 OS Browser &mdash; Built with pride in Accra, Ghana.
   </div>
 </footer>
 
+<!-- ═══════════════ SCRIPTS ═══════════════ -->
 <script>
-  // IntersectionObserver for Kente category animations
-  (function() {
-    const observer = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, {
-      threshold: 0.15,
-      rootMargin: '0px 0px -40px 0px'
-    });
+  // ── Nav scroll effect ──
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 60);
+  }, { passive: true });
 
-    document.querySelectorAll('.kente-category').forEach(function(el) {
-      observer.observe(el);
+  // ── Intersection Observer for reveals ──
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
     });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
-    // Also animate fade-up elements that are not in the initial viewport
-    const fadeObserver = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          entry.target.style.animationPlayState = 'running';
-          fadeObserver.unobserve(entry.target);
-        }
-      });
-    }, {
-      threshold: 0.1
-    });
+  document.querySelectorAll('.reveal, .kente-category, .stagger').forEach(el => {
+    observer.observe(el);
+  });
 
-    document.querySelectorAll('.fade-up').forEach(function(el) {
-      fadeObserver.observe(el);
+  // ── Gold floating particles ──
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  const PARTICLE_COUNT = 35;
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  function createParticle() {
+    return {
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 2 + 0.5,
+      speedX: (Math.random() - 0.5) * 0.3,
+      speedY: (Math.random() - 0.5) * 0.3,
+      opacity: Math.random() * 0.15 + 0.03,
+      hue: Math.random() > 0.7 ? 40 : 45, // gold tones
+    };
+  }
+
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push(createParticle());
+  }
+
+  function animateParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.x += p.speedX;
+      p.y += p.speedY;
+      if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${p.hue}, 80%, 55%, ${p.opacity})`;
+      ctx.fill();
     });
-  })();
+    requestAnimationFrame(animateParticles);
+  }
+
+  // Only animate if no motion preference
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    animateParticles();
+  }
 </script>
 
 </body>
