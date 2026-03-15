@@ -3,7 +3,8 @@ import {
   MoreVertical, Plus, Copy, Star, Clock, Download, Settings, Shield,
   Printer, ZoomIn, ZoomOut, Maximize, User, HelpCircle, Info,
   Sparkles, MessageSquare, BarChart3, Globe, Trash2, Key,
-  ChevronRight, Search, Languages, FileText, LogIn, BookOpen, Columns, DollarSign
+  ChevronRight, Search, Languages, FileText, LogIn, BookOpen, Columns, DollarSign,
+  AlignJustify, Camera
 } from 'lucide-react';
 import { useTabsStore } from '@/store/tabs';
 import { useSettingsStore } from '@/store/settings';
@@ -207,6 +208,12 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             <MenuItem icon={Languages} label="Translate to Twi" onClick={() => { close(); openPanel('ai'); }} />
             <MenuItem icon={BookOpen} label="Twi Dictionary" onClick={() => {
               window.dispatchEvent(new CustomEvent('os-browser:twi-dictionary'));
+            }} />
+            <MenuItem icon={AlignJustify} label="Reading Mode" onClick={() => {
+              window.dispatchEvent(new CustomEvent('os-browser:reading-mode'));
+            }} />
+            <MenuItem icon={Camera} label="Screenshot" onClick={() => {
+              // Screenshot is handled by the ScreenshotButton in NavigationBar
             }} />
             <MenuItem icon={FileText} label="Import bookmarks..." onClick={() => {
               window.osBrowser?.bookmarks?.list(); // Trigger import dialog in Electron
