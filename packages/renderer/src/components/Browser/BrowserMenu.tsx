@@ -187,11 +187,19 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
               <Search size={16} className="text-text-muted shrink-0" strokeWidth={1.5} />
               <span className="text-[13px] text-text-primary flex-1">Zoom</span>
               <div className="flex items-center gap-1">
-                <button onClick={() => setZoom(Math.max(25, zoom - 10))} className="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-2 transition-colors" aria-label="Zoom out">
+                <button onClick={() => {
+                  const newZoom = Math.max(25, zoom - 10);
+                  setZoom(newZoom);
+                  document.body.style.zoom = `${newZoom}%`;
+                }} className="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-2 transition-colors" aria-label="Zoom out">
                   <ZoomOut size={14} className="text-text-secondary" />
                 </button>
                 <span className="text-[12px] text-text-primary font-medium w-10 text-center">{zoom}%</span>
-                <button onClick={() => setZoom(Math.min(500, zoom + 10))} className="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-2 transition-colors" aria-label="Zoom in">
+                <button onClick={() => {
+                  const newZoom = Math.min(500, zoom + 10);
+                  setZoom(newZoom);
+                  document.body.style.zoom = `${newZoom}%`;
+                }} className="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-2 transition-colors" aria-label="Zoom in">
                   <ZoomIn size={14} className="text-text-secondary" />
                 </button>
                 <div className="w-px h-4 mx-1" style={{ background: 'var(--color-border-1)' }} />
@@ -204,7 +212,8 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
 
             {/* Utilities */}
             <MenuItem icon={Printer} label="Print..." shortcut="Ctrl+P" onClick={() => {
-              // Print is handled via keyboard shortcut in Electron
+              // Ctrl+P is handled natively by Electron/Chromium
+              window.print();
             }} />
             <MenuItem icon={Languages} label="Translate to Twi" onClick={() => { close(); openPanel('ai'); }} />
             <MenuItem icon={BookOpen} label="Twi Dictionary" onClick={() => {
@@ -214,10 +223,10 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
               window.dispatchEvent(new CustomEvent('os-browser:reading-mode'));
             }} />
             <MenuItem icon={Camera} label="Screenshot" onClick={() => {
-              // Screenshot is handled by the ScreenshotButton in NavigationBar
+              (window.osBrowser as any)?.captureScreenshot?.();
             }} />
             <MenuItem icon={FileText} label="Import bookmarks..." onClick={() => {
-              window.osBrowser?.bookmarks?.list(); // Trigger import dialog in Electron
+              // Import handled in Electron main process
             }} />
             <Separator />
 

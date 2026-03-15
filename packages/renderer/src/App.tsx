@@ -190,7 +190,7 @@ export function App() {
       const tabs = useTabsStore.getState().tabs;
       const active = tabs.find(t => t.id === useTabsStore.getState().activeTabId);
       if (active && !active.url?.startsWith('os-browser://')) {
-        setReadingMode({ active: true, content: '', title: active.title || '', url: active.url || '' });
+        setReadingMode({ active: true, content: 'Reading mode extracts content from the current page. This feature is being enhanced.', title: active.title || '', url: active.url || '' });
       }
     };
     window.addEventListener('os-browser:reading-mode', handleReadingMode);
@@ -205,7 +205,7 @@ export function App() {
         onOpenHistory={() => setShowHistory(true)}
         onOpenBookmarks={() => setShowBookmarks(true)}
         onOpenSettings={() => setShowSettings(true)}
-        onOpenStats={() => {}}
+        onOpenStats={() => useTabsStore.getState().createTab('os-browser://stats')}
       />
       <BookmarksBar />
 

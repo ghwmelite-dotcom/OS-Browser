@@ -67,7 +67,7 @@ export function FloatingAIBar() {
             key={action.label}
             onClick={() => {
               if (action.label === 'Save PDF') {
-                // Trigger print to PDF
+                window.print(); // Uses browser's print-to-PDF
                 return;
               }
               openPanel('ai');
