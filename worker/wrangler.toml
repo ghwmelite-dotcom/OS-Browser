@@ -1,0 +1,39 @@
+name = "os-browser-worker"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[durable_objects]
+bindings = [
+  { name = "CHAT_ROOM", class_name = "ChatRoom" },
+  { name = "USER_PRESENCE", class_name = "UserPresence" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["ChatRoom", "UserPresence"]
+
+[vars]
+ENVIRONMENT = "development"
+APP_NAME = "OS Browser"
+DEFAULT_MODEL = "@cf/meta/llama-3-8b-instruct"
+
+[[kv_namespaces]]
+binding = "RATE_LIMITS"
+id = "placeholder-rate-limits"
+
+[[kv_namespaces]]
+binding = "PAGE_CACHE"
+id = "placeholder-page-cache"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "placeholder-sessions"
+
+[[kv_namespaces]]
+binding = "MESSAGES"
+id = "placeholder-messages"
+
+# AI binding
+[ai]
+binding = "AI"

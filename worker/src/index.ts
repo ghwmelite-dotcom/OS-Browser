@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import type { Env } from './types';
 import { aiRoutes } from './routes/ai';
 import { healthRoutes } from './routes/health';
+import { messagingRoutes } from './routes/messaging';
 import { authMiddleware } from './middleware/auth';
 import { rateLimitMiddleware } from './middleware/rateLimit';
 
@@ -26,5 +27,10 @@ app.use('/api/v1/ai/*', authMiddleware);
 // Routes
 app.route('/api/v1', healthRoutes);
 app.route('/api/v1/ai', aiRoutes);
+app.route('/api/v1/messaging', messagingRoutes);
 
 export default app;
+
+// Durable Object exports
+export { ChatRoom } from './durable-objects/ChatRoom';
+export { UserPresence } from './durable-objects/UserPresence';
