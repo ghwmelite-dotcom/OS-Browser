@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Target, DollarSign, BookOpen, AlignJustify } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Target, DollarSign, BookOpen, AlignJustify, CreditCard } from 'lucide-react';
 import { ScreenshotButton } from '@/components/ScreenshotTool';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
@@ -92,9 +92,10 @@ interface NavigationBarProps {
   onOpenBookmarks: () => void;
   onOpenSettings: () => void;
   onOpenStats: () => void;
+  onToggleIdentityPanel: () => void;
 }
 
-export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, onOpenStats }: NavigationBarProps) {
+export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, onOpenStats, onToggleIdentityPanel }: NavigationBarProps) {
   const { canGoBack, canGoForward, isLoading, currentUrl } = useNavigationStore();
   const { goBack, goForward, reload, stop, navigate } = useNavigationStore();
   const { activeTabId } = useTabsStore();
@@ -225,6 +226,13 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
           />
           {openDropdown === 'focus' && <FocusSettings onClose={closeDropdown} />}
         </div>
+
+        {/* GhanaCard Identity */}
+        <NavButton
+          onClick={onToggleIdentityPanel}
+          icon={<CreditCard size={15} strokeWidth={1.8} className="text-text-secondary" />}
+          label="GhanaCard Identity"
+        />
 
         {/* Separator */}
         <div className="w-px h-5 bg-border-1/40 mx-0.5" />

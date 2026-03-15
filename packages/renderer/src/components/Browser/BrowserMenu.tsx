@@ -4,7 +4,7 @@ import {
   Printer, ZoomIn, ZoomOut, Maximize, User, HelpCircle, Info,
   Sparkles, MessageSquare, BarChart3, Globe, Trash2, Key,
   ChevronRight, Search, Languages, FileText, LogIn, BookOpen, Columns, DollarSign,
-  AlignJustify, Camera
+  AlignJustify, Camera, Building2
 } from 'lucide-react';
 import { useTabsStore } from '@/store/tabs';
 import { useSettingsStore } from '@/store/settings';
@@ -158,6 +158,7 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
               createTab('os-browser://downloads' as any);
             }} />
             <MenuItem icon={Star} label="Bookmarks and lists" shortcut="Ctrl+B" onClick={() => createTab('os-browser://bookmarks' as any)} sub />
+            <MenuItem icon={FileText} label="Documents" onClick={() => createTab('os-browser://documents' as any)} />
             <Separator />
 
             {/* AI features */}
@@ -169,8 +170,8 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             <MenuItem icon={DollarSign} label="GHS Currency & SSNIT Tools" onClick={() => {
               window.dispatchEvent(new CustomEvent('os-browser:currency-tools'));
             }} />
-            <MenuItem icon={Globe} label="Government Portals" onClick={() => {
-              if (activeTabId) navigate(activeTabId, 'os-browser://newtab');
+            <MenuItem icon={Building2} label="Government Hub" onClick={() => {
+              createTab('os-browser://gov' as any);
             }} />
             <Separator />
 
