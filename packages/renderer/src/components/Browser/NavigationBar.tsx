@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Mail } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Mail, Target } from 'lucide-react';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
 import { useSidebarStore } from '@/store/sidebar';
 import { useSettingsStore } from '@/store/settings';
+import { useFocusStore } from '@/store/focus';
+import { FocusSettings } from '@/components/FocusMode';
 import { OmniBar } from './OmniBar';
 import { BrowserMenu } from './BrowserMenu';
 
@@ -40,6 +42,8 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
   const { activeTabId } = useTabsStore();
   const { isOpen, toggleSidebar, openPanel, activePanel } = useSidebarStore();
   const { settings } = useSettingsStore();
+  const focusActive = useFocusStore(s => s.isActive);
+  const [showFocusSettings, setShowFocusSettings] = useState(false);
   const [showLoginMenu, _setShowLoginMenu] = useState(false);
   // Wrap setter to hide/show WebContentsViews
   const setShowLoginMenu = (v: boolean) => {
@@ -136,6 +140,23 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
         >
           <MessageSquare size={14} strokeWidth={1.8} />
         </button>
+
+        {/* Focus Mode */}
+        <div className="relative">
+          <NavButton
+            onClick={() => {
+              if (focusActive) {
+                useFocusStore.getState().toggleFocus();
+              } else {
+                setShowFocusSettings(!showFocusSettings);
+              }
+            }}
+            icon={<Target size={15} strokeWidth={1.8} className={focusActive ? 'text-ghana-gold' : 'text-text-secondary'} />}
+            label="Focus Mode"
+            className={focusActive ? 'bg-ghana-gold-dim' : ''}
+          />
+          {showFocusSettings && <FocusSettings onClose={() => setShowFocusSettings(false)} />}
+        </div>
 
         {/* Separator */}
         <div className="w-px h-5 bg-border-1/40 mx-0.5" />
