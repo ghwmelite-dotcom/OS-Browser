@@ -21,6 +21,8 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { CommandPalette } from './components/CommandPalette';
 import { FloatingAIBar } from './components/FloatingAIBar';
 import { SplitScreenToolbar, SplitScreenContent, SplitScreenPicker } from './components/SplitScreen';
+import { CurrencyTools } from './components/CurrencyTools';
+import { TwiDictionary } from './components/TwiDictionary';
 
 export function App() {
   const { loadTabs, createTab } = useTabsStore();
@@ -34,6 +36,8 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showSplitPicker, setShowSplitPicker] = useState(false);
+  const [showCurrencyTools, setShowCurrencyTools] = useState(false);
+  const [showTwiDictionary, setShowTwiDictionary] = useState(false);
   const splitActive = useSplitScreenStore(s => s.isActive);
 
   useKeyboardShortcuts({
@@ -142,6 +146,18 @@ export function App() {
     return () => window.removeEventListener('os-browser:split-screen', handler);
   }, []);
 
+  useEffect(() => {
+    const handler = () => setShowCurrencyTools(prev => !prev);
+    window.addEventListener('os-browser:currency-tools', handler);
+    return () => window.removeEventListener('os-browser:currency-tools', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setShowTwiDictionary(prev => !prev);
+    window.addEventListener('os-browser:twi-dictionary', handler);
+    return () => window.removeEventListener('os-browser:twi-dictionary', handler);
+  }, []);
+
   return (
     <div className="h-screen w-screen flex flex-col bg-bg">
       <TitleBar />
@@ -174,6 +190,12 @@ export function App() {
 
         {/* AskOzzy Panel */}
         {isOpen && activePanel === 'askozzy' && <AskOzzyPanel />}
+
+        {/* GHS Currency & SSNIT Tools */}
+        {showCurrencyTools && <CurrencyTools onClose={() => setShowCurrencyTools(false)} />}
+
+        {/* Twi Dictionary */}
+        {showTwiDictionary && <TwiDictionary onClose={() => setShowTwiDictionary(false)} />}
       </div>
 
       <StatusBar />

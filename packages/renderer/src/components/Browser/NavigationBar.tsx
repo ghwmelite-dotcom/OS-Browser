@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Mail, Target } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Mail, Target, DollarSign, BookOpen } from 'lucide-react';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
 import { useSidebarStore } from '@/store/sidebar';
@@ -140,6 +140,20 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
         >
           <MessageSquare size={14} strokeWidth={1.8} />
         </button>
+
+        {/* GHS Tools */}
+        <NavButton
+          onClick={() => window.dispatchEvent(new CustomEvent('os-browser:currency-tools'))}
+          icon={<DollarSign size={15} strokeWidth={1.8} className="text-text-secondary" />}
+          label="GHS Currency & SSNIT Tools"
+        />
+
+        {/* Twi Dictionary */}
+        <NavButton
+          onClick={() => window.dispatchEvent(new CustomEvent('os-browser:twi-dictionary'))}
+          icon={<BookOpen size={15} strokeWidth={1.8} className="text-text-secondary" />}
+          label="Twi Dictionary"
+        />
 
         {/* Focus Mode */}
         <div className="relative">
