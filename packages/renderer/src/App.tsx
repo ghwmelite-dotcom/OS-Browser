@@ -17,6 +17,8 @@ import { useConnectivityStore } from './store/connectivity';
 import { useStatsStore } from './store/stats';
 import { useSidebarStore } from './store/sidebar';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { CommandPalette } from './components/CommandPalette';
+import { FloatingAIBar } from './components/FloatingAIBar';
 
 export function App() {
   const { loadTabs, createTab } = useTabsStore();
@@ -28,11 +30,13 @@ export function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
 
   useKeyboardShortcuts({
     onToggleHistory: () => setShowHistory(prev => !prev),
     onToggleBookmarks: () => setShowBookmarks(prev => !prev),
     onToggleSettings: () => setShowSettings(prev => !prev),
+    onToggleCommandPalette: () => setShowCommandPalette(prev => !prev),
   });
 
   useEffect(() => {
@@ -136,6 +140,7 @@ export function App() {
         {/* Main content */}
         <div className="flex-1 overflow-y-auto">
           <ContentArea />
+          <FloatingAIBar />
         </div>
 
         {/* AI Sidebar */}
@@ -146,6 +151,8 @@ export function App() {
       </div>
 
       <StatusBar />
+
+      <CommandPalette isOpen={showCommandPalette} onClose={() => setShowCommandPalette(false)} />
 
       {/* Overlay Panels */}
       {showHistory && <HistoryPanel onClose={() => setShowHistory(false)} />}
