@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Target, DollarSign, BookOpen, AlignJustify, CreditCard, Brain } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Target, DollarSign, BookOpen, AlignJustify, CreditCard, Brain, Smartphone } from 'lucide-react';
 import { ScreenshotButton } from '@/components/ScreenshotTool';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
@@ -9,6 +9,7 @@ import { useFocusStore } from '@/store/focus';
 import { FocusSettings } from '@/components/FocusMode';
 import { OmniBar } from './OmniBar';
 import { BrowserMenu } from './BrowserMenu';
+import { SavePageButton } from '@/components/Offline/SavePageButton';
 
 // Auto-generated avatar colors based on name hash
 const AVATAR_COLORS = [
@@ -193,12 +194,22 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
           label="GHS Currency & SSNIT Tools"
         />
 
+        {/* Mobile Money */}
+        <NavButton
+          onClick={() => window.dispatchEvent(new CustomEvent('os-browser:mobile-money'))}
+          icon={<Smartphone size={15} strokeWidth={1.8} className="text-text-secondary" />}
+          label="Mobile Money Quick Pay"
+        />
+
         {/* Twi Dictionary */}
         <NavButton
           onClick={() => window.dispatchEvent(new CustomEvent('os-browser:twi-dictionary'))}
           icon={<BookOpen size={15} strokeWidth={1.8} className="text-text-secondary" />}
           label="Twi Dictionary"
         />
+
+        {/* Save Page Offline */}
+        <SavePageButton />
 
         {/* Screenshot */}
         <ScreenshotButton />
