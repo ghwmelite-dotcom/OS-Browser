@@ -9,6 +9,7 @@ export function useKeyboardShortcuts(callbacks: {
   onToggleSettings?: () => void;
   onToggleCommandPalette?: () => void;
   onToggleSplitScreen?: () => void;
+  onBookmarkPage?: () => void;
 }) {
   const { createTab, closeTab, activeTabId, switchTab, tabs, reopenLastClosed } = useTabsStore();
   const { reload, stop, isLoading } = useNavigationStore();
@@ -65,6 +66,11 @@ export function useKeyboardShortcuts(callbacks: {
       else if (ctrl && key === 'h' && !shift) { e.preventDefault(); callbacks.onToggleHistory?.(); }
       // Ctrl+B — Bookmarks
       else if (ctrl && key === 'b' && !shift) { e.preventDefault(); callbacks.onToggleBookmarks?.(); }
+      // Ctrl+D — Bookmark current page
+      else if (ctrl && key === 'd' && !shift) {
+        e.preventDefault();
+        callbacks.onBookmarkPage?.();
+      }
       // Ctrl+J — AI Sidebar
       else if (ctrl && key === 'j' && !shift) { e.preventDefault(); toggleSidebar(); }
       // Ctrl+Shift+O — AskOzzy
