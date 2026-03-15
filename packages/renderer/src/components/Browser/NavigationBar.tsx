@@ -118,6 +118,7 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
   // Profile form state
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
+  const [profileView, setProfileView] = useState<'main' | 'edit' | 'customize' | 'add'>('main');
 
 
   return (
@@ -247,7 +248,7 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
         {/* User / Profile */}
         <div className="relative">
           <button
-            onClick={() => toggleDropdown('profile')}
+            onClick={() => { setProfileView('main'); toggleDropdown('profile'); }}
             className="w-[32px] h-[32px] flex items-center justify-center rounded-full hover:bg-surface-2 transition-all duration-100 focus:outline-none focus:ring-2 focus:ring-ghana-gold/40"
             aria-label="Account" title="Account"
           >
@@ -309,56 +310,174 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                       <p className="text-[12px] text-text-muted mt-0.5">{settings.email}</p>
                     </div>
 
-                    {/* Menu items */}
-                    <div className="py-2 border-b" style={{ borderColor: 'var(--color-border-1)' }}>
-                      {[
-                        { icon: '🔑', label: 'Passwords and autofill', onClick: () => { closeDropdown(); window.dispatchEvent(new CustomEvent('os-browser:currency-tools')); } },
-                        { icon: '⚙️', label: 'Manage your profile', onClick: () => { closeDropdown(); useTabsStore.getState().createTab('os-browser://settings'); } },
-                        { icon: '✏️', label: 'Customize profile', onClick: () => { closeDropdown(); useTabsStore.getState().createTab('os-browser://settings'); } },
-                      ].map(item => (
-                        <button key={item.label} onClick={item.onClick}
-                          className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
-                          <span className="text-[15px] w-5 text-center">{item.icon}</span>
-                          <span className="text-[13px] text-text-primary">{item.label}</span>
+                    {profileView === 'main' && (
+                      <>
+                        {/* Menu items */}
+                        <div className="py-2 border-b" style={{ borderColor: 'var(--color-border-1)' }}>
+                          <button onClick={() => { setProfileView('edit'); setProfileName(settings.display_name || ''); setProfileEmail(settings.email || ''); }}
+                            className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
+                            <span className="text-[15px] w-5 text-center">⚙️</span>
+                            <span className="text-[13px] text-text-primary">Manage your profile</span>
+                          </button>
+                          <button onClick={() => setProfileView('customize')}
+                            className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
+                            <span className="text-[15px] w-5 text-center">✏️</span>
+                            <span className="text-[13px] text-text-primary">Customize profile</span>
+                          </button>
+                          <button onClick={() => { closeDropdown(); useTabsStore.getState().createTab('os-browser://settings'); }}
+                            className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
+                            <span className="text-[15px] w-5 text-center">🔑</span>
+                            <span className="text-[13px] text-text-primary">Passwords and autofill</span>
+                          </button>
+                        </div>
+
+                        {/* Sign out */}
+                        <div className="py-2 border-b" style={{ borderColor: 'var(--color-border-1)' }}>
+                          <button onClick={async () => {
+                              await useSettingsStore.getState().updateSettings({ display_name: 'User', email: '', avatar_path: null });
+                              closeDropdown();
+                            }}
+                            className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
+                            <span className="text-[15px] w-5 text-center">🚪</span>
+                            <span className="text-[13px] text-text-primary">Sign out of OS Browser</span>
+                          </button>
+                        </div>
+
+                        {/* Other profiles */}
+                        <div className="py-2">
+                          <p className="px-5 py-1.5 text-[12px] font-bold text-text-primary">Other profiles</p>
+                          <button onClick={() => { closeDropdown(); window.osBrowser?.newWindow?.(); }}
+                            className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: '#6366f1' }}>G</div>
+                            <span className="text-[13px] text-text-primary">Guest</span>
+                          </button>
+                          <div className="h-px my-1" style={{ background: 'var(--color-border-1)' }} />
+                          <button onClick={() => setProfileView('add')}
+                            className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
+                            <span className="text-[15px] w-5 text-center">👤</span>
+                            <span className="text-[13px]" style={{ color: 'var(--color-accent)' }}>Add a profile</span>
+                          </button>
+                          <button onClick={() => { closeDropdown(); window.osBrowser?.newPrivateWindow?.(); }}
+                            className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
+                            <span className="text-[15px] w-5 text-center">🕵️</span>
+                            <span className="text-[13px] text-text-primary">Open Guest profile</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+
+                    {/* ── Edit Profile View ── */}
+                    {profileView === 'edit' && (
+                      <div className="p-5">
+                        <button onClick={() => setProfileView('main')} className="text-[12px] text-text-muted hover:text-text-secondary mb-4 flex items-center gap-1">
+                          ← Back
                         </button>
-                      ))}
-                    </div>
+                        <h4 className="text-[14px] font-bold text-text-primary mb-4">Edit Profile</h4>
+                        <div className="mb-3">
+                          <label className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1.5 block">Display Name</label>
+                          <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)}
+                            className="w-full px-3 py-2.5 rounded-lg text-[14px] outline-none border"
+                            style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }} />
+                        </div>
+                        <div className="mb-4">
+                          <label className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1.5 block">Email</label>
+                          <input type="email" value={profileEmail} onChange={e => setProfileEmail(e.target.value)}
+                            className="w-full px-3 py-2.5 rounded-lg text-[14px] outline-none border"
+                            style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }} />
+                        </div>
+                        <button onClick={async () => {
+                            if (!profileName.trim()) return;
+                            await useSettingsStore.getState().updateSettings({ display_name: profileName.trim(), email: profileEmail.trim() || null });
+                            setProfileView('main');
+                          }}
+                          disabled={!profileName.trim()}
+                          className="w-full py-2.5 rounded-lg text-[13px] font-semibold transition-all disabled:opacity-40"
+                          style={{ background: 'var(--color-accent)', color: '#fff' }}>
+                          Save Changes
+                        </button>
+                      </div>
+                    )}
 
-                    {/* Sign out */}
-                    <div className="py-2 border-b" style={{ borderColor: 'var(--color-border-1)' }}>
-                      <button onClick={async () => {
-                          await window.osBrowser.settings.update({ display_name: 'User', email: '' });
-                          useSettingsStore.getState().loadSettings();
-                          closeDropdown();
-                        }}
-                        className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
-                        <span className="text-[15px] w-5 text-center">🚪</span>
-                        <span className="text-[13px] text-text-primary">Sign out of OS Browser</span>
-                      </button>
-                    </div>
+                    {/* ── Customize Profile View ── */}
+                    {profileView === 'customize' && (
+                      <div className="p-5">
+                        <button onClick={() => setProfileView('main')} className="text-[12px] text-text-muted hover:text-text-secondary mb-4 flex items-center gap-1">
+                          ← Back
+                        </button>
+                        <h4 className="text-[14px] font-bold text-text-primary mb-4">Customize Profile</h4>
 
-                    {/* Other profiles section */}
-                    <div className="py-2">
-                      <p className="px-5 py-1.5 text-[12px] font-bold text-text-primary">Other profiles</p>
-                      <button onClick={() => { closeDropdown(); window.osBrowser?.newWindow?.(); }}
-                        className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: '#6366f1' }}>G</div>
-                        <span className="text-[13px] text-text-primary">Guest</span>
-                      </button>
+                        {/* Avatar change */}
+                        <p className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-2">Profile Photo</p>
+                        <div className="flex items-center gap-4 mb-5">
+                          <ProfileAvatar name={settings.display_name || 'U'} avatarPath={settings.avatar_path} size={56} />
+                          <div className="flex flex-col gap-1.5">
+                            <button onClick={() => document.getElementById('avatar-upload')?.click()}
+                              className="px-3 py-1.5 rounded-lg text-[12px] font-medium"
+                              style={{ background: 'var(--color-accent)', color: '#fff' }}>
+                              Upload Photo
+                            </button>
+                            {settings.avatar_path && (
+                              <button onClick={async () => {
+                                  await useSettingsStore.getState().updateSettings({ avatar_path: null });
+                                }}
+                                className="px-3 py-1.5 rounded-lg text-[12px] font-medium border hover:bg-surface-2"
+                                style={{ borderColor: 'var(--color-border-1)', color: 'var(--color-text-secondary)' }}>
+                                Remove Photo
+                              </button>
+                            )}
+                          </div>
+                        </div>
 
-                      <div className="h-px my-1" style={{ background: 'var(--color-border-1)' }} />
+                        {/* Theme color for avatar */}
+                        <p className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-2">Avatar Color (when no photo)</p>
+                        <div className="grid grid-cols-4 gap-2 mb-4">
+                          {AVATAR_COLORS.map((color, i) => (
+                            <button key={i} onClick={() => {
+                              // Remove custom photo to show the gradient avatar
+                              useSettingsStore.getState().updateSettings({ avatar_path: null });
+                            }}
+                              className="w-full aspect-square rounded-xl hover:scale-105 transition-transform"
+                              style={{ background: color }} />
+                          ))}
+                        </div>
 
-                      <button onClick={() => { closeDropdown(); }}
-                        className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
-                        <span className="text-[15px] w-5 text-center">👤</span>
-                        <span className="text-[13px]" style={{ color: 'var(--color-accent)' }}>Add a profile</span>
-                      </button>
-                      <button onClick={() => { closeDropdown(); window.osBrowser?.newPrivateWindow?.(); }}
-                        className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
-                        <span className="text-[15px] w-5 text-center">🕵️</span>
-                        <span className="text-[13px] text-text-primary">Open Guest profile</span>
-                      </button>
-                    </div>
+                        <p className="text-[10px] text-text-muted text-center">
+                          Avatar color is auto-assigned based on your name
+                        </p>
+                      </div>
+                    )}
+
+                    {/* ── Add Profile View ── */}
+                    {profileView === 'add' && (
+                      <div className="p-5">
+                        <button onClick={() => setProfileView('main')} className="text-[12px] text-text-muted hover:text-text-secondary mb-4 flex items-center gap-1">
+                          ← Back
+                        </button>
+                        <h4 className="text-[14px] font-bold text-text-primary mb-2">Add a Profile</h4>
+                        <p className="text-[12px] text-text-muted mb-4">Create a separate browsing profile with its own bookmarks and history.</p>
+
+                        <div className="mb-3">
+                          <label className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1.5 block">Profile Name</label>
+                          <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)}
+                            placeholder="e.g. Work, Personal"
+                            className="w-full px-3 py-2.5 rounded-lg text-[14px] outline-none border"
+                            style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }}
+                            autoFocus />
+                        </div>
+                        <button onClick={() => {
+                            if (!profileName.trim()) return;
+                            // Open a new window as a separate profile
+                            window.osBrowser?.newWindow?.();
+                            setProfileName('');
+                            closeDropdown();
+                          }}
+                          disabled={!profileName.trim()}
+                          className="w-full py-2.5 rounded-lg text-[13px] font-semibold transition-all disabled:opacity-40"
+                          style={{ background: 'var(--color-accent)', color: '#fff' }}>
+                          Create & Open Profile
+                        </button>
+                      </div>
+                    )}
                   </>
                 ) : (
                   /* ── Not signed in view ── */
