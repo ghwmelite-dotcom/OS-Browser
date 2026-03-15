@@ -105,11 +105,12 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
         <>
           <div className="fixed inset-0 z-[99]" onClick={close} />
           <div
-            className="absolute top-[34px] right-0 w-[300px] py-2 rounded-xl border shadow-2xl z-[100] overflow-hidden overflow-y-auto"
+            className="absolute top-[34px] right-0 w-[300px] py-2 rounded-xl border shadow-2xl z-[100] overflow-y-auto overflow-x-hidden"
             style={{
               background: 'var(--color-surface-1)',
               borderColor: 'var(--color-border-1)',
-              maxHeight: 'calc(100vh - 80px)',
+              maxHeight: 'min(calc(100vh - 60px), 600px)',
+              scrollbarWidth: 'thin',
             }}
           >
             {/* New tab / window */}
@@ -221,15 +222,17 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             <Separator />
 
             {/* Settings & about */}
-            <MenuItem icon={BarChart3} label="Statistics" onClick={onOpenStats} />
+            <MenuItem icon={BarChart3} label="Statistics" onClick={() => {
+              createTab('os-browser://stats' as any);
+            }} />
             <MenuItem icon={Settings} label="Settings" onClick={() => {
               createTab('os-browser://settings' as any);
             }} />
             <MenuItem icon={HelpCircle} label="Help" onClick={() => {
-              if (activeTabId) navigate(activeTabId, 'https://github.com/ghwmelite-dotcom/OS-Browser');
+              createTab('os-browser://help' as any);
             }} />
             <MenuItem icon={Info} label="About OS Browser" onClick={() => {
-              alert('OS Browser v1.0.0\nGhana\'s AI-Powered Desktop Browser\n\nBuilt by OHCS\nPowered by Cloudflare Workers AI');
+              createTab('os-browser://help' as any);
             }} />
           </div>
         </>
