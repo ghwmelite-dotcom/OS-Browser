@@ -3,7 +3,7 @@ import {
   MoreVertical, Plus, Copy, Star, Clock, Download, Settings, Shield,
   Printer, ZoomIn, ZoomOut, Maximize, User, HelpCircle, Info,
   Sparkles, MessageSquare, BarChart3, Globe, Trash2, Key,
-  ChevronRight, Search, Languages, FileText, LogIn, BookOpen, Columns
+  ChevronRight, Search, Languages, FileText, LogIn, BookOpen, Columns, DollarSign
 } from 'lucide-react';
 import { useTabsStore } from '@/store/tabs';
 import { useSettingsStore } from '@/store/settings';
@@ -164,6 +164,9 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             <MenuItem icon={Columns} label="Split Screen" shortcut="Ctrl+Shift+S" onClick={() => {
               window.dispatchEvent(new CustomEvent('os-browser:split-screen'));
             }} />
+            <MenuItem icon={DollarSign} label="GHS Currency & SSNIT Tools" onClick={() => {
+              window.dispatchEvent(new CustomEvent('os-browser:currency-tools'));
+            }} />
             <MenuItem icon={Globe} label="Government Portals" onClick={() => {
               if (activeTabId) navigate(activeTabId, 'os-browser://newtab');
             }} />
@@ -202,6 +205,9 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
               // Print is handled via keyboard shortcut in Electron
             }} />
             <MenuItem icon={Languages} label="Translate to Twi" onClick={() => { close(); openPanel('ai'); }} />
+            <MenuItem icon={BookOpen} label="Twi Dictionary" onClick={() => {
+              window.dispatchEvent(new CustomEvent('os-browser:twi-dictionary'));
+            }} />
             <MenuItem icon={FileText} label="Import bookmarks..." onClick={() => {
               window.osBrowser?.bookmarks?.list(); // Trigger import dialog in Electron
             }} />
