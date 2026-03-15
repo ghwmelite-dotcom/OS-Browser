@@ -271,18 +271,29 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                   <>
                     {/* Large profile header */}
                     <div className="px-6 pt-6 pb-5 text-center" style={{ background: 'var(--color-surface-2)' }}>
-                      {/* Hidden file input for photo upload */}
+                      {/* Hidden file input for photo upload — compresses to 128x128 */}
                       <input type="file" id="avatar-upload" accept="image/*" className="hidden"
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = async () => {
-                            const dataUrl = reader.result as string;
-                            await window.osBrowser.settings.update({ avatar_path: dataUrl } as any);
-                            useSettingsStore.getState().loadSettings();
-                          };
-                          reader.readAsDataURL(file);
+                          try {
+                            // Compress image to 128x128 to keep data URL small
+                            const img = new Image();
+                            img.onload = async () => {
+                              const canvas = document.createElement('canvas');
+                              canvas.width = 128;
+                              canvas.height = 128;
+                              const ctx = canvas.getContext('2d')!;
+                              // Draw centered/cropped square
+                              const s = Math.min(img.width, img.height);
+                              const sx = (img.width - s) / 2;
+                              const sy = (img.height - s) / 2;
+                              ctx.drawImage(img, sx, sy, s, s, 0, 0, 128, 128);
+                              const smallDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                              await useSettingsStore.getState().updateSettings({ avatar_path: smallDataUrl });
+                            };
+                            img.src = URL.createObjectURL(file);
+                          } catch {}
                         }}
                       />
                       <div className="flex justify-center mb-3">

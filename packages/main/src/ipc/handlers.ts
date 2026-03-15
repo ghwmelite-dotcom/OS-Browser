@@ -97,10 +97,11 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
     }
   });
 
-  // Screenshot capture
+  // Screenshot capture — shows Save As dialog
   ipcMain.handle('screenshot:capture', async (event) => {
     const path = require('path');
     const fs = require('fs');
+    const { dialog } = require('electron');
     const { getTabViews } = require('./tabs');
     const win = BrowserWindow.fromWebContents(event.sender);
     if (!win) return { success: false, error: 'No window found' };
@@ -112,7 +113,13 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
       const views = getTabViews();
       const view = activeTab ? views.get(activeTab.id) : null;
 
-      // Capture either the active tab's view or the whole window
+      // Make view visible for capture
+      if (view) view.setVisible(true);
+
+      // Brief delay to ensure view is rendered
+      await new Promise(r => setTimeout(r, 200));
+
+      // Capture
       let image;
       if (view && view.webContents) {
         image = await view.webContents.capturePage();
@@ -120,14 +127,31 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
         image = await win.webContents.capturePage();
       }
 
-      // Save to Downloads folder
-      const downloadsDir = app.getPath('downloads');
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      const filename = `OS-Browser-Screenshot-${timestamp}.png`;
-      const filePath = path.join(downloadsDir, filename);
+      const defaultFilename = `OS-Browser-Screenshot-${timestamp}.png`;
 
-      fs.writeFileSync(filePath, image.toPNG());
+      // Show Save As dialog — let user choose where to save
+      const { filePath } = await dialog.showSaveDialog(win, {
+        title: 'Save Screenshot',
+        defaultPath: path.join(app.getPath('downloads'), defaultFilename),
+        filters: [
+          { name: 'PNG Image', extensions: ['png'] },
+          { name: 'JPEG Image', extensions: ['jpg', 'jpeg'] },
+        ],
+      });
 
+      if (!filePath) {
+        return { success: false, error: 'Cancelled' };
+      }
+
+      // Save based on extension
+      if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+        fs.writeFileSync(filePath, image.toJPEG(90));
+      } else {
+        fs.writeFileSync(filePath, image.toPNG());
+      }
+
+      const filename = path.basename(filePath);
       return { success: true, filename, path: filePath };
     } catch (err: any) {
       return { success: false, error: err.message };
