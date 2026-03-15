@@ -157,7 +157,7 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             <MenuItem icon={Download} label="Downloads" shortcut="Ctrl+J" onClick={() => {
               createTab('os-browser://downloads' as any);
             }} />
-            <MenuItem icon={Star} label="Bookmarks and lists" shortcut="Ctrl+B" onClick={onOpenBookmarks} sub />
+            <MenuItem icon={Star} label="Bookmarks and lists" shortcut="Ctrl+B" onClick={() => createTab('os-browser://bookmarks' as any)} sub />
             <Separator />
 
             {/* AI features */}

@@ -6,6 +6,7 @@ import { SettingsPage } from '../Panels/SettingsPanel';
 import { StatsPage } from '../Panels/StatsPage';
 import { HelpPage } from './HelpPage';
 import { DocsPage } from './DocsPage';
+import { BookmarksPage } from './BookmarksPage';
 
 // Detect if we're in a private window
 const isPrivateWindow = new URLSearchParams(window.location.search).get('private') === 'true';
@@ -57,6 +58,10 @@ export function ContentArea() {
   // Docs tab
   if (tabUrl === 'os-browser://docs') {
     return <DocsPage />;
+  }
+
+  if (tabUrl === 'os-browser://bookmarks') {
+    return <BookmarksPage />;
   }
 
   // Help tab

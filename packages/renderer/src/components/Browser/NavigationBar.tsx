@@ -163,22 +163,6 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
           label="Copy link"
         />
 
-        {/* Bookmark */}
-        <NavButton
-          onClick={async () => {
-            const url = currentUrl;
-            const title = useTabsStore.getState().tabs.find(t => t.id === activeTabId)?.title || url;
-            if (url && url !== 'os-browser://newtab') {
-              const isBookmarked = await window.osBrowser.bookmarks.isBookmarked(url);
-              if (!isBookmarked) {
-                await window.osBrowser.bookmarks.add({ url, title });
-              }
-            }
-          }}
-          icon={<Star size={15} strokeWidth={1.8} className="text-text-secondary" />}
-          label="Bookmark this page (Ctrl+D)"
-        />
-
         {/* AskOzzy */}
         <NavButton
           onClick={() => openPanel(activePanel === 'askozzy' ? 'none' : 'askozzy')}

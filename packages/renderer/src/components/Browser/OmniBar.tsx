@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Lock, Info, Loader2, X, Clock, Globe } from 'lucide-react';
+import { Search, Lock, Info, Loader2, X, Clock, Globe, Star } from 'lucide-react';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
 import { useSettingsStore } from '@/store/settings';
+import { useBookmarksStore } from '@/store/bookmarks';
 
 interface Suggestion {
   url: string;
@@ -181,6 +182,11 @@ export function OmniBar() {
               <X size={12} className="text-text-muted" />
             </button>
           )}
+
+          {/* Bookmark star — inside the URL bar */}
+          {!isFocused && displayUrl && (
+            <BookmarkStar url={currentUrl} />
+          )}
         </div>
       </form>
 
@@ -210,5 +216,58 @@ export function OmniBar() {
         </div>
       )}
     </div>
+  );
+}
+
+// Bookmark star inside the URL bar — highlights gold when bookmarked
+function BookmarkStar({ url }: { url: string }) {
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const { addBookmark, removeBookmark, bookmarks, loadBookmarks } = useBookmarksStore();
+  const { tabs, activeTabId } = useTabsStore();
+
+  useEffect(() => {
+    if (url && !url.startsWith('os-browser://')) {
+      window.osBrowser.bookmarks.isBookmarked(url).then(setIsBookmarked).catch(() => {});
+    } else {
+      setIsBookmarked(false);
+    }
+  }, [url]);
+
+  const toggle = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!url || url.startsWith('os-browser://')) return;
+
+    if (isBookmarked) {
+      // Find and remove
+      const bData = await window.osBrowser.bookmarks.list();
+      const bms = bData.bookmarks || bData || [];
+      const match = bms.find((b: any) => b.url === url);
+      if (match) {
+        await window.osBrowser.bookmarks.delete(match.id);
+        setIsBookmarked(false);
+      }
+    } else {
+      const title = tabs.find(t => t.id === activeTabId)?.title || url;
+      await window.osBrowser.bookmarks.add({ url, title });
+      setIsBookmarked(true);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      className="w-6 h-6 flex items-center justify-center rounded-full shrink-0 transition-all duration-150 hover:scale-110"
+      aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this page'}
+      title={isBookmarked ? 'Remove bookmark' : 'Bookmark this page (Ctrl+D)'}
+    >
+      <Star
+        size={15}
+        strokeWidth={1.8}
+        fill={isBookmarked ? 'var(--color-accent)' : 'none'}
+        style={{ color: isBookmarked ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+      />
+    </button>
   );
 }
