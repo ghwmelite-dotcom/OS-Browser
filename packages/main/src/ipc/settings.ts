@@ -14,6 +14,7 @@ export function registerSettingsHandlers(): void {
       'display_name', 'email', 'avatar_path', 'avatar_color', 'default_model',
       'theme', 'language', 'sidebar_position', 'ad_blocking',
       'privacy_mode', 'search_engine', 'sync_enabled', 'startup_mode', 'onboarding_completed',
+      'ghana_card_data',
     ];
 
     const fields = Object.keys(data).filter(k => allowed.includes(k));

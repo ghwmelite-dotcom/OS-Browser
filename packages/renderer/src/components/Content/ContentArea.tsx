@@ -8,6 +8,8 @@ import { HelpPage } from './HelpPage';
 import { DocsPage } from './DocsPage';
 import { BookmarksPage } from './BookmarksPage';
 import { DataDashboard } from '../DataSaver/DataDashboard';
+import { DocumentsPage } from './DocumentsPage';
+import { GovHubPage } from './GovHubPage';
 
 // Detect if we're in a private window
 const isPrivateWindow = new URLSearchParams(window.location.search).get('private') === 'true';
@@ -65,6 +67,10 @@ export function ContentArea() {
     return <BookmarksPage />;
   }
 
+  if (tabUrl === 'os-browser://documents') {
+    return <DocumentsPage />;
+  }
+
   // Data Dashboard tab
   if (tabUrl === 'os-browser://data') {
     return <DataDashboard />;
@@ -73,6 +79,11 @@ export function ContentArea() {
   // Help tab
   if (tabUrl === 'os-browser://help') {
     return <HelpPage />;
+  }
+
+  // Government Hub
+  if (tabUrl === 'os-browser://gov') {
+    return <GovHubPage />;
   }
 
   // Real URLs — WebContentsView renders natively on top

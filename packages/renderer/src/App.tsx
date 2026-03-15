@@ -28,6 +28,7 @@ import { DownloadBar } from './components/DownloadBar';
 import { Onboarding } from './components/Onboarding';
 import { OfflineBanner } from './components/NetworkManager/OfflineBanner';
 import { useNetworkStore } from './store/network';
+import { IdentityPanel } from './components/GhanaCard/IdentityPanel';
 
 export function App() {
   const { loadTabs, createTab } = useTabsStore();
@@ -45,6 +46,7 @@ export function App() {
   const [showTwiDictionary, _setShowTwiDictionary] = useState(false);
   const [readingMode, setReadingMode] = useState<{ active: boolean; content: string; title: string; url: string }>({ active: false, content: '', title: '', url: '' });
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showIdentityPanel, setShowIdentityPanel] = useState(false);
 
   // Wrap sidebar panel setters to hide/show WebContentsViews
   const setShowCurrencyTools = (v: boolean | ((prev: boolean) => boolean)) => {
@@ -237,6 +239,12 @@ export function App() {
     return () => window.removeEventListener('os-browser:reading-mode', handleReadingMode);
   }, []);
 
+  useEffect(() => {
+    const handler = () => setShowIdentityPanel(prev => !prev);
+    window.addEventListener('os-browser:identity-panel', handler);
+    return () => window.removeEventListener('os-browser:identity-panel', handler);
+  }, []);
+
   return (
     <div className="h-screen w-screen flex flex-col bg-bg">
       <TitleBar />
@@ -246,6 +254,7 @@ export function App() {
         onOpenBookmarks={() => setShowBookmarks(true)}
         onOpenSettings={() => setShowSettings(true)}
         onOpenStats={() => useTabsStore.getState().createTab('os-browser://stats')}
+        onToggleIdentityPanel={() => setShowIdentityPanel(prev => !prev)}
       />
       <BookmarksBar />
       <OfflineBanner />
@@ -276,6 +285,9 @@ export function App() {
 
         {/* Twi Dictionary */}
         {showTwiDictionary && <TwiDictionary onClose={() => setShowTwiDictionary(false)} />}
+
+        {/* GhanaCard Identity Panel */}
+        {showIdentityPanel && <IdentityPanel onClose={() => setShowIdentityPanel(false)} />}
       </div>
 
       <DownloadBar />
