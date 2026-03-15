@@ -162,7 +162,7 @@ function RailIconButton({
 
   const handleMouseEnter = () => {
     setHovered(true);
-    tooltipTimer.current = setTimeout(() => setShowTooltip(true), 500);
+    tooltipTimer.current = setTimeout(() => setShowTooltip(true), 200);
   };
 
   const handleMouseLeave = () => {
@@ -177,7 +177,10 @@ function RailIconButton({
       ? 'var(--color-surface-2)'
       : 'transparent';
 
-  const iconColor = isActive ? stripColor : hovered ? 'var(--color-text-secondary)' : 'var(--color-text-muted)';
+  const isDark = document.documentElement.classList.contains('dark');
+  const defaultColor = isDark ? '#D4A017' : 'var(--color-text-muted)';
+  const hoverColor = isDark ? '#F2C94C' : 'var(--color-text-secondary)';
+  const iconColor = isActive ? stripColor : hovered ? hoverColor : defaultColor;
 
   return (
     <div

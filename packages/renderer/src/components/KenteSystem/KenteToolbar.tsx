@@ -27,7 +27,7 @@ function ToolbarButton({
   // Tooltip delay
   const onMouseEnter = useCallback(() => {
     setHovered(true);
-    tooltipTimer.current = setTimeout(() => setShowTooltip(true), 500);
+    tooltipTimer.current = setTimeout(() => setShowTooltip(true), 200);
   }, []);
 
   const onMouseLeave = useCallback(() => {
@@ -76,11 +76,12 @@ function ToolbarButton({
     setShowDropdown((prev) => !prev);
   };
 
+  const isDark = document.documentElement.classList.contains('dark');
   const iconColor = isActive
     ? feature.stripColor
     : hovered
-      ? 'var(--color-text-secondary)'
-      : 'var(--color-text-muted)';
+      ? (isDark ? '#F2C94C' : 'var(--color-text-secondary)')
+      : (isDark ? '#D4A017' : 'var(--color-text-muted)');
 
   return (
     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
