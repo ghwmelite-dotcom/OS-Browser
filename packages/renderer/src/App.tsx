@@ -33,6 +33,7 @@ import { MessagingPanel } from './components/Messaging/MessagingPanel';
 import { TranslationPanel } from './components/Translation/TranslationPanel';
 import { LiteracyAssistant } from './components/DigitalLiteracy/LiteracyAssistant';
 import { ReportGenerator, type ReportData } from './components/ScreenshotReport/ReportGenerator';
+import { MobileMoneyPanel } from './components/MobileMoney/MobileMoneyPanel';
 
 export function App() {
   const { loadTabs, createTab } = useTabsStore();
@@ -55,6 +56,7 @@ export function App() {
   const [showTranslationPanel, _setShowTranslationPanel] = useState(false);
   const [showLiteracyPanel, setShowLiteracyPanel] = useState(false);
   const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [showMobileMoney, setShowMobileMoney] = useState(false);
 
   // Wrap sidebar panel setters to hide/show WebContentsViews
   const setShowCurrencyTools = (v: boolean | ((prev: boolean) => boolean)) => {
@@ -302,6 +304,19 @@ export function App() {
     return () => window.removeEventListener('os-browser:messaging', handler);
   }, [showCurrencyTools, showTwiDictionary, isOpen]);
 
+  useEffect(() => {
+    const handler = () => {
+      setShowMobileMoney(prev => {
+        const next = !prev;
+        if (next) window.osBrowser?.hideWebViews?.();
+        else if (!showCurrencyTools && !showTwiDictionary && !isOpen) window.osBrowser?.showWebViews?.();
+        return next;
+      });
+    };
+    window.addEventListener('os-browser:mobile-money', handler);
+    return () => window.removeEventListener('os-browser:mobile-money', handler);
+  }, [showCurrencyTools, showTwiDictionary, isOpen]);
+
   return (
     <div className="h-screen w-screen flex flex-col bg-bg">
       <TitleBar />
@@ -352,6 +367,12 @@ export function App() {
         {/* Civil Service Messaging */}
         {showMessaging && <MessagingPanel onClose={() => {
           setShowMessaging(false);
+          if (!showCurrencyTools && !showTwiDictionary && !isOpen) window.osBrowser?.showWebViews?.();
+        }} />}
+
+        {/* Mobile Money Quick Pay */}
+        {showMobileMoney && <MobileMoneyPanel onClose={() => {
+          setShowMobileMoney(false);
           if (!showCurrencyTools && !showTwiDictionary && !isOpen) window.osBrowser?.showWebViews?.();
         }} />}
 

@@ -4,7 +4,7 @@ import {
   Printer, ZoomIn, ZoomOut, Maximize, User, HelpCircle, Info,
   Sparkles, MessageSquare, BarChart3, Globe, Trash2, Key,
   ChevronRight, Search, Languages, FileText, LogIn, BookOpen, Columns, DollarSign,
-  AlignJustify, Camera, Building2, MessageCircle, Brain
+  AlignJustify, Camera, Building2, MessageCircle, Brain, Smartphone, WifiOff
 } from 'lucide-react';
 import { useTabsStore } from '@/store/tabs';
 import { useSettingsStore } from '@/store/settings';
@@ -159,6 +159,12 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             }} />
             <MenuItem icon={Star} label="Bookmarks and lists" shortcut="Ctrl+B" onClick={() => createTab('os-browser://bookmarks' as any)} sub />
             <MenuItem icon={FileText} label="Documents" onClick={() => createTab('os-browser://documents' as any)} />
+            <MenuItem icon={Download} label="Save Page Offline" shortcut="Ctrl+Shift+S" onClick={() => {
+              window.dispatchEvent(new CustomEvent('os-browser:save-page-offline'));
+            }} />
+            <MenuItem icon={WifiOff} label="Offline Library" onClick={() => {
+              createTab('os-browser://offline' as any);
+            }} />
             <Separator />
 
             {/* AI features */}
@@ -169,6 +175,9 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             }} />
             <MenuItem icon={DollarSign} label="GHS Currency & SSNIT Tools" onClick={() => {
               window.dispatchEvent(new CustomEvent('os-browser:currency-tools'));
+            }} />
+            <MenuItem icon={Smartphone} label="Mobile Money" onClick={() => {
+              window.dispatchEvent(new CustomEvent('os-browser:mobile-money'));
             }} />
             <MenuItem icon={MessageCircle} label="Messages" shortcut="Ctrl+M" onClick={() => {
               window.dispatchEvent(new CustomEvent('os-browser:messaging'));
