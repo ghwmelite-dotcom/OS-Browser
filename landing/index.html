@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OS Browser — Ghana's AI-Powered Desktop Browser</title>
-  <meta name="description" content="Download OS Browser — the AI-powered desktop browser built for Ghana. 6 AI models, ad blocking, focus mode, split screen, GHS converter, Twi dictionary, screenshot tools, and 15+ keyboard shortcuts." />
+  <title>OS Browser — Ghana's Purpose-Built Desktop Browser</title>
+  <meta name="description" content="Download OS Browser — 12 purpose-built features organized by the Kente System. Data Saver, Dumsor Guard, Gov Services Hub, Encrypted Messenger, Mobile Money, Digital Literacy AI, and more." />
   <meta name="theme-color" content="#0f1117" />
   <link rel="canonical" href="https://www.osbrowser.askozzy.work" />
-  <meta property="og:title" content="OS Browser — Ghana's AI-Powered Desktop Browser" />
-  <meta property="og:description" content="Built-in AI sidebar with 6 models, network-level ad blocking, focus mode, split screen, GHS currency converter, Twi dictionary, and more." />
+  <meta property="og:title" content="OS Browser — Ghana's Purpose-Built Desktop Browser" />
+  <meta property="og:description" content="12 purpose-built features organized by the Kente System. Data Saver, Dumsor Guard, Gov Services, Encrypted Messenger, Mobile Money, and more." />
   <meta property="og:url" content="https://www.osbrowser.askozzy.work" />
   <meta property="og:type" content="website" />
   <link rel="icon" type="image/svg+xml" href="/icon.svg" />
@@ -33,6 +33,12 @@
       --accent: #D4A017;
       --dark: #0f1117;
       --dark-2: #171921;
+      --kente-infra: #3DDC84;
+      --kente-gov: #006B3F;
+      --kente-prod: #D85A30;
+      --kente-comm: #5DCAA5;
+      --kente-fin: #BA7517;
+      --kente-intel: #FCD116;
     }
 
     html { scroll-behavior: smooth; }
@@ -210,135 +216,288 @@
       color: var(--text-2); font-size: 16px; max-width: 560px; margin: 0 auto;
     }
 
-    /* ─── Core Features Section ─── */
-    .features {
-      padding: 80px 40px;
+    /* ─── Stats Row ─── */
+    .stats-row {
+      padding: 48px 40px;
       max-width: 1100px; margin: 0 auto;
     }
-    .features-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
+    .stats-row-inner {
+      display: flex; justify-content: center; align-items: center;
+      gap: 0; flex-wrap: wrap;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
     }
-    .feature-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 16px; padding: 28px;
-      transition: all 0.2s;
+    .stat-item {
+      flex: 1; min-width: 160px;
+      padding: 32px 24px;
+      text-align: center;
+      border-right: 1px solid var(--border);
     }
-    .feature-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.06); transform: translateY(-2px); }
-    .feature-icon {
-      width: 48px; height: 48px; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 16px; font-size: 22px;
+    .stat-item:last-child { border-right: none; }
+    .stat-item strong {
+      display: block; font-size: 32px; font-weight: 800;
+      background: linear-gradient(135deg, var(--gold), var(--red));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
     }
-    .fi-gold { background: rgba(212,160,23,0.1); color: var(--gold); }
-    .fi-green { background: rgba(0,107,63,0.1); color: var(--green); }
-    .fi-red { background: rgba(206,17,38,0.1); color: var(--red); }
-    .fi-dark { background: rgba(15,17,23,0.08); color: var(--text); }
-    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
-    .feature-card p { font-size: 13px; color: var(--text-2); line-height: 1.6; }
-    .feature-badge {
-      display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.06em; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px;
+    .stat-item span {
+      font-size: 13px; color: var(--text-3); font-weight: 500;
     }
-    .badge-new { background: rgba(0,107,63,0.1); color: var(--green); }
-    .badge-core { background: rgba(212,160,23,0.1); color: var(--gold); }
 
-    /* ─── AI Section (Dark) ─── */
-    .ai-section {
+    /* ─── Kente Features Section ─── */
+    .kente-features {
+      padding: 96px 40px;
+      max-width: 1100px; margin: 0 auto;
+    }
+
+    .kente-category {
+      margin-bottom: 48px;
+      opacity: 0; transform: translateY(24px);
+      transition: all 0.6s cubic-bezier(0.22,1,0.36,1);
+    }
+    .kente-category.visible {
+      opacity: 1; transform: translateY(0);
+    }
+
+    .kente-category-header {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 20px; padding-left: 20px;
+      position: relative;
+    }
+    .kente-category-header::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 4px; border-radius: 2px;
+    }
+    .kente-cat-infra .kente-category-header::before { background: var(--kente-infra); }
+    .kente-cat-gov .kente-category-header::before { background: var(--kente-gov); }
+    .kente-cat-prod .kente-category-header::before { background: var(--kente-prod); }
+    .kente-cat-comm .kente-category-header::before { background: var(--kente-comm); }
+    .kente-cat-fin .kente-category-header::before { background: var(--kente-fin); }
+    .kente-cat-intel .kente-category-header::before { background: var(--kente-intel); }
+
+    .kente-cat-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .kente-cat-icon svg { width: 20px; height: 20px; }
+    .kente-cat-infra .kente-cat-icon { background: rgba(61,220,132,0.12); color: var(--kente-infra); }
+    .kente-cat-gov .kente-cat-icon { background: rgba(0,107,63,0.12); color: var(--kente-gov); }
+    .kente-cat-prod .kente-cat-icon { background: rgba(216,90,48,0.12); color: var(--kente-prod); }
+    .kente-cat-comm .kente-cat-icon { background: rgba(93,202,165,0.12); color: var(--kente-comm); }
+    .kente-cat-fin .kente-cat-icon { background: rgba(186,117,23,0.12); color: var(--kente-fin); }
+    .kente-cat-intel .kente-cat-icon { background: rgba(252,209,22,0.15); color: #b89400; }
+
+    .kente-cat-info h3 {
+      font-size: 18px; font-weight: 700; margin-bottom: 2px;
+    }
+    .kente-cat-info p {
+      font-size: 13px; color: var(--text-3); font-weight: 400;
+    }
+
+    .kente-cards {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px; padding-left: 20px;
+    }
+
+    .kente-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      transition: all 0.25s cubic-bezier(0.22,1,0.36,1);
+      position: relative;
+      cursor: default;
+    }
+    .kente-card:hover {
+      box-shadow: 0 8px 32px rgba(0,0,0,0.07), 0 2px 8px rgba(0,0,0,0.04);
+      transform: translateY(-3px);
+      border-color: transparent;
+    }
+
+    .kente-card-top {
+      display: flex; align-items: flex-start; gap: 14px; margin-bottom: 10px;
+    }
+    .kente-card-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .kente-card-icon svg { width: 20px; height: 20px; }
+    .kente-card-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      flex-shrink: 0; margin-top: 7px;
+    }
+    .kente-card h4 {
+      font-size: 14px; font-weight: 700; line-height: 1.3;
+    }
+    .kente-card p {
+      font-size: 13px; color: var(--text-2); line-height: 1.55;
+    }
+
+    /* Card icon colors per category */
+    .kente-cat-infra .kente-card-icon { background: rgba(61,220,132,0.1); color: #2aae68; }
+    .kente-cat-infra .kente-card-dot { background: var(--kente-infra); }
+    .kente-cat-gov .kente-card-icon { background: rgba(0,107,63,0.1); color: var(--kente-gov); }
+    .kente-cat-gov .kente-card-dot { background: var(--kente-gov); }
+    .kente-cat-prod .kente-card-icon { background: rgba(216,90,48,0.1); color: var(--kente-prod); }
+    .kente-cat-prod .kente-card-dot { background: var(--kente-prod); }
+    .kente-cat-comm .kente-card-icon { background: rgba(93,202,165,0.1); color: #3a9e7f; }
+    .kente-cat-comm .kente-card-dot { background: var(--kente-comm); }
+    .kente-cat-fin .kente-card-icon { background: rgba(186,117,23,0.1); color: var(--kente-fin); }
+    .kente-cat-fin .kente-card-dot { background: var(--kente-fin); }
+    .kente-cat-intel .kente-card-icon { background: rgba(252,209,22,0.12); color: #9e8400; }
+    .kente-cat-intel .kente-card-dot { background: var(--kente-intel); }
+
+    /* ─── Kente System Explainer ─── */
+    .kente-system {
+      padding: 96px 40px;
+      max-width: 1100px; margin: 0 auto;
+    }
+    .kente-surfaces {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    .kente-surface {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 24px;
+      text-align: center;
+      transition: all 0.25s;
+    }
+    .kente-surface:hover {
+      box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+      transform: translateY(-2px);
+    }
+    .kente-surface-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: rgba(212,160,23,0.08);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px;
+      color: var(--gold);
+    }
+    .kente-surface-icon svg { width: 22px; height: 22px; }
+    .kente-surface h4 {
+      font-size: 15px; font-weight: 700; margin-bottom: 6px;
+    }
+    .kente-surface p {
+      font-size: 12px; color: var(--text-3); line-height: 1.5;
+    }
+    .kente-surface kbd {
+      display: inline-block; background: var(--surface-2);
+      border: 1px solid var(--border); border-radius: 5px;
+      padding: 2px 8px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      font-size: 10px; font-weight: 600; color: var(--text);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+      margin-top: 8px;
+    }
+
+    /* ─── Encrypted Messenger Section (Dark) ─── */
+    .messenger-section {
       background: var(--dark);
       padding: 96px 40px;
       color: #e8e8ec;
       position: relative;
       overflow: hidden;
     }
-    .ai-section::before {
+    .messenger-section::before {
       content: '';
       position: absolute; inset: 0;
       background:
-        radial-gradient(ellipse 80% 50% at 20% 0%, rgba(212,160,23,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 80% 50% at 20% 0%, rgba(93,202,165,0.08) 0%, transparent 50%),
         radial-gradient(ellipse 60% 60% at 80% 100%, rgba(0,107,63,0.06) 0%, transparent 50%);
     }
-    .ai-section .section-heading h2 { color: #e8e8ec; }
-    .ai-section .section-heading p { color: #9ca0ae; }
-    .ai-inner { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
-    .ai-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 24px; margin-bottom: 48px;
+    .messenger-inner {
+      max-width: 1100px; margin: 0 auto; position: relative; z-index: 1;
     }
-    .ai-card {
-      background: rgba(23,25,33,0.8);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 16px; padding: 28px;
-      transition: all 0.2s;
-    }
-    .ai-card:hover {
-      border-color: rgba(212,160,23,0.3);
-      box-shadow: 0 8px 32px rgba(212,160,23,0.06);
-      transform: translateY(-2px);
-    }
-    .ai-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; color: #e8e8ec; }
-    .ai-card p { font-size: 13px; color: #9ca0ae; line-height: 1.6; }
-    .ai-card .feature-icon { margin-bottom: 16px; }
-    .ai-models {
-      display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
-    }
-    .ai-model-chip {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 100px; padding: 8px 20px;
-      font-size: 13px; font-weight: 600; color: #ccc;
-    }
-    .ai-model-chip .model-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-    }
+    .messenger-section .section-heading h2 { color: #e8e8ec; }
+    .messenger-section .section-heading p { color: #9ca0ae; }
 
-    /* ─── Ghana Section ─── */
-    .ghana-section {
-      padding: 96px 40px;
-      max-width: 1100px; margin: 0 auto;
+    .messenger-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 48px; align-items: center;
     }
-    .ghana-grid {
-      display: grid; grid-template-columns: repeat(2, 1fr);
-      gap: 24px; margin-bottom: 48px;
+    .messenger-features {
+      display: flex; flex-direction: column; gap: 20px;
     }
-    .ghana-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 16px; padding: 32px;
-      transition: all 0.2s;
+    .messenger-feat {
+      display: flex; align-items: flex-start; gap: 16px;
+    }
+    .messenger-feat-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: rgba(93,202,165,0.12);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: var(--kente-comm);
+    }
+    .messenger-feat-icon svg { width: 18px; height: 18px; }
+    .messenger-feat h4 { font-size: 15px; font-weight: 700; color: #e8e8ec; margin-bottom: 3px; }
+    .messenger-feat p { font-size: 13px; color: #9ca0ae; line-height: 1.5; }
+
+    .messenger-visual {
       position: relative;
-      overflow: hidden;
+      padding: 32px;
     }
-    .ghana-card::after {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0; height: 3px;
-      background: linear-gradient(90deg, var(--red), var(--gold), var(--green));
-      opacity: 0; transition: opacity 0.2s;
+    .chat-mockup {
+      background: rgba(23,25,33,0.9);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 360px;
+      margin: 0 auto;
     }
-    .ghana-card:hover::after { opacity: 1; }
-    .ghana-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.06); transform: translateY(-2px); }
-    .ghana-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
-    .ghana-card p { font-size: 14px; color: var(--text-2); line-height: 1.6; }
-    .ghana-card .feature-icon { margin-bottom: 16px; }
-    .ghana-card-detail {
-      margin-top: 12px; font-size: 12px; color: var(--text-3);
-      padding-top: 12px; border-top: 1px solid var(--border);
+    .chat-header {
+      display: flex; align-items: center; gap: 10px;
+      padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 16px;
     }
+    .chat-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--kente-comm), var(--green));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff;
+    }
+    .chat-name { font-size: 13px; font-weight: 600; color: #e8e8ec; }
+    .chat-status { font-size: 10px; color: var(--kente-comm); }
+    .chat-bubble {
+      padding: 10px 14px; border-radius: 12px;
+      font-size: 13px; line-height: 1.5;
+      margin-bottom: 10px; max-width: 85%;
+      position: relative;
+    }
+    .chat-bubble-in {
+      background: rgba(93,202,165,0.15);
+      color: #d0d5dd;
+      border-bottom-left-radius: 4px;
+    }
+    .chat-bubble-out {
+      background: rgba(212,160,23,0.15);
+      color: #d0d5dd;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-lock {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 10px; color: #5a5f6e;
+      margin-top: 16px; justify-content: center;
+    }
+    .chat-lock svg { width: 12px; height: 12px; }
 
-    /* ─── Ghana Banner ─── */
-    .ghana-banner {
-      margin: 0 40px 80px;
-      max-width: 1020px; margin-left: auto; margin-right: auto;
-      background: linear-gradient(135deg, #CE1126 0%, #D4A017 50%, #006B3F 100%);
-      border-radius: 20px; padding: 56px 48px; text-align: center; color: #fff;
-      position: relative; overflow: hidden;
+    .encryption-badges {
+      display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px;
+      justify-content: center;
     }
-    .ghana-banner::before {
-      content: ''; position: absolute; inset: 0;
-      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-      opacity: 0.04;
+    .enc-badge {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 100px;
+      padding: 6px 14px;
+      font-size: 11px; font-weight: 600; color: #9ca0ae;
     }
-    .ghana-banner h2 { font-size: 32px; font-weight: 800; margin-bottom: 12px; position: relative; }
-    .ghana-banner p { font-size: 16px; opacity: 0.9; margin-bottom: 8px; position: relative; }
 
     /* ─── Keyboard Shortcuts Section ─── */
     .shortcuts-section {
@@ -365,6 +524,22 @@
       font-size: 11px; font-weight: 600; color: var(--text);
       box-shadow: 0 1px 2px rgba(0,0,0,0.06);
     }
+
+    /* ─── Ghana Banner ─── */
+    .ghana-banner {
+      margin: 0 40px 80px;
+      max-width: 1020px; margin-left: auto; margin-right: auto;
+      background: linear-gradient(135deg, #CE1126 0%, #D4A017 50%, #006B3F 100%);
+      border-radius: 20px; padding: 56px 48px; text-align: center; color: #fff;
+      position: relative; overflow: hidden;
+    }
+    .ghana-banner::before {
+      content: ''; position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity: 0.04;
+    }
+    .ghana-banner h2 { font-size: 32px; font-weight: 800; margin-bottom: 12px; position: relative; }
+    .ghana-banner p { font-size: 16px; opacity: 0.9; margin-bottom: 8px; position: relative; }
 
     /* ─── Bottom CTA ─── */
     .bottom-cta {
@@ -427,21 +602,30 @@
       .hero .hero-sub { font-size: 15px; }
       .hero .hero-stats { gap: 20px; }
       .hero .hero-stat strong { font-size: 22px; }
-      .features-grid, .ai-grid { grid-template-columns: 1fr; }
-      .ghana-grid { grid-template-columns: 1fr; }
+      .kente-cards { grid-template-columns: 1fr; }
+      .kente-surfaces { grid-template-columns: repeat(2, 1fr); }
+      .messenger-grid { grid-template-columns: 1fr; }
       .shortcut-list { grid-template-columns: 1fr; }
       .mockup-grid { grid-template-columns: repeat(3, 1fr); }
       .download-row { flex-direction: column; align-items: center; }
       nav { padding: 0 20px; }
       .nav-links { display: none; }
-      .hero, .features, .ai-section, .ghana-section, .shortcuts-section, .bottom-cta { padding-left: 20px; padding-right: 20px; }
+      .hero, .kente-features, .kente-system, .messenger-section, .shortcuts-section, .bottom-cta { padding-left: 20px; padding-right: 20px; }
       .footer-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
       .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
       .ghana-banner { margin-left: 20px; margin-right: 20px; padding: 32px 24px; }
+      .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
+      .stat-item:last-child { border-bottom: none; }
+      .stats-row-inner { flex-direction: column; }
+    }
+
+    @media (max-width: 480px) {
+      .kente-surfaces { grid-template-columns: 1fr; }
     }
 
     @media (prefers-reduced-motion: reduce) {
       .fade-up { opacity: 1; transform: none; animation: none; }
+      .kente-category { opacity: 1; transform: none; transition: none; }
     }
   </style>
 </head>
@@ -458,8 +642,8 @@
   </a>
   <div class="nav-links">
     <a href="#features">Features</a>
-    <a href="#ai">AI</a>
-    <a href="#ghana">Made for Ghana</a>
+    <a href="#kente-system">Kente System</a>
+    <a href="#messenger">Messenger</a>
     <a href="#download">Download</a>
     <a href="https://github.com/ghwmelite-dotcom/OS-Browser" target="_blank">GitHub</a>
   </div>
@@ -468,7 +652,7 @@
 
 <!-- Announcement -->
 <div class="announce">
-  Now with Command Palette, Split Screen, Focus Mode, Screenshot Tools & more &mdash; The most feature-rich browser built for Ghana
+  12 purpose-built features &mdash; Data Saver, Dumsor Guard, Gov Services, Encrypted Messenger, Mobile Money &amp; more &mdash; organized by the Kente System
 </div>
 
 <!-- Hero -->
@@ -480,28 +664,28 @@
     </svg>
   </div>
   <h1 class="fade-up delay-1">
-    <span>OS Browser</span><br />Ghana's AI-Powered<br />Desktop Browser
+    <span>OS Browser</span><br />Ghana's Purpose-Built<br />Desktop Browser
   </h1>
   <p class="hero-sub fade-up delay-2">
-    6 AI models built in. Network-level ad blocking. Focus mode. Split screen. GHS currency converter. Twi dictionary. Screenshot tools. 15+ keyboard shortcuts. All in one beautiful, privacy-first browser.
+    12 features woven into the Kente System. Data Saver with carrier plans. Dumsor Guard for power outages. 25+ government portals. E2E encrypted messaging. Mobile Money integration. Digital Literacy AI. Everything Ghana needs, built in.
   </p>
 
   <div class="hero-stats fade-up delay-2">
     <div class="hero-stat">
-      <strong>6</strong>
-      <span>AI Models</span>
+      <strong>12</strong>
+      <span>Features</span>
     </div>
     <div class="hero-stat">
-      <strong>15+</strong>
-      <span>Shortcuts</span>
+      <strong>25+</strong>
+      <span>Gov Services</span>
     </div>
     <div class="hero-stat">
-      <strong>8</strong>
-      <span>Currencies</span>
+      <strong>7</strong>
+      <span>Languages</span>
     </div>
     <div class="hero-stat">
-      <strong>57</strong>
-      <span>Twi Words</span>
+      <strong>E2E</strong>
+      <span>Encrypted</span>
     </div>
   </div>
 
@@ -531,7 +715,7 @@
       </div>
       <div class="dl-label">Windows</div>
       <div class="dl-buttons">
-        <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/download/v1.0.0/OS.Browser.Setup.1.0.0.exe" class="dl-btn dl-btn-gold" download="OS-Browser-Setup.exe">
+        <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/latest/download/OS.Browser.Setup.1.0.0.exe" class="dl-btn dl-btn-gold" download="OS-Browser-Setup.exe">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download
         </a>
@@ -552,7 +736,7 @@
     <div class="mockup-content">
       <div class="mockup-inner">
         <h2><span>OS Browser</span></h2>
-        <p>Ghana's AI-Powered Browser</p>
+        <p>12 Features. 6 Categories. The Kente System.</p>
         <div class="mockup-grid">
           <div class="mockup-portal"><div class="mockup-portal-icon">G</div><span>Ghana.gov</span></div>
           <div class="mockup-portal"><div class="mockup-portal-icon">G</div><span>GIFMIS</span></div>
@@ -566,250 +750,382 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- CORE FEATURES                                               -->
+<!-- STATS ROW                                                    -->
 <!-- ═══════════════════════════════════════════════════════════ -->
-<section class="features" id="features">
-  <div class="section-heading fade-up">
-    <span class="section-label label-gold">Features</span>
-    <h2>Everything You Need, Built In</h2>
-    <p>A complete productivity browser with powerful tools for work, privacy, and focus.</p>
-  </div>
-
-  <div class="features-grid">
-    <!-- Command Palette -->
-    <div class="feature-card fade-up delay-1">
-      <div class="feature-icon fi-gold">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      </div>
-      <span class="feature-badge badge-new">New</span>
-      <h3>Command Palette</h3>
-      <p>Press <kbd>Ctrl+K</kbd> to instantly search across tabs, bookmarks, history, and commands. The fastest way to navigate your browser.</p>
+<section class="stats-row">
+  <div class="stats-row-inner fade-up">
+    <div class="stat-item">
+      <strong>25+</strong>
+      <span>Gov Services</span>
     </div>
-
-    <!-- Split Screen -->
-    <div class="feature-card fade-up delay-2">
-      <div class="feature-icon fi-green">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
-      </div>
-      <span class="feature-badge badge-new">New</span>
-      <h3>Split Screen View</h3>
-      <p>Browse two pages side by side. Perfect for comparing documents, referencing data, or multitasking without switching tabs.</p>
+    <div class="stat-item">
+      <strong>7</strong>
+      <span>Languages</span>
     </div>
-
-    <!-- Focus Mode -->
-    <div class="feature-card fade-up delay-3">
-      <div class="feature-icon fi-red">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-      </div>
-      <span class="feature-badge badge-new">New</span>
-      <h3>Focus Mode</h3>
-      <p>Block distracting websites and track your focus time. Stay productive during work hours with customizable blocklists.</p>
+    <div class="stat-item">
+      <strong>12</strong>
+      <span>Features</span>
     </div>
-
-    <!-- Ad Blocking -->
-    <div class="feature-card fade-up delay-1">
-      <div class="feature-icon fi-green">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      </div>
-      <span class="feature-badge badge-core">Core</span>
-      <h3>Network-Level Ad Blocking</h3>
-      <p>Blocks ads, trackers, and malware at the network level before they load. Saves bandwidth. Automatically whitelists .gov.gh sites.</p>
-    </div>
-
-    <!-- Privacy Mode -->
-    <div class="feature-card fade-up delay-2">
-      <div class="feature-icon fi-dark">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      </div>
-      <span class="feature-badge badge-core">Core</span>
-      <h3>Privacy Mode</h3>
-      <p>Private browsing that leaves zero trace. Encrypted local database. No cloud telemetry. All data stays on your device.</p>
-    </div>
-
-    <!-- Tab Management -->
-    <div class="feature-card fade-up delay-3">
-      <div class="feature-icon fi-gold">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="4" rx="1"/><rect x="2" y="9" width="20" height="4" rx="1"/><rect x="2" y="15" width="20" height="4" rx="1"/></svg>
-      </div>
-      <span class="feature-badge badge-core">Core</span>
-      <h3>Color-Coded Tabs</h3>
-      <p>Organize your workflow with color-coded tabs and hover previews. See what's in each tab without switching to it.</p>
-    </div>
-
-    <!-- Reading Mode -->
-    <div class="feature-card fade-up delay-1">
-      <div class="feature-icon fi-green">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
-      </div>
-      <span class="feature-badge badge-new">New</span>
-      <h3>Reading Mode</h3>
-      <p>Strip away clutter for distraction-free reading. Clean typography, adjustable text size, and a calm reading experience.</p>
-    </div>
-
-    <!-- Screenshot Tool -->
-    <div class="feature-card fade-up delay-2">
-      <div class="feature-icon fi-red">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-      </div>
-      <span class="feature-badge badge-new">New</span>
-      <h3>Screenshot Tool</h3>
-      <p>Capture visible area, full page, or a selected region. Save or copy to clipboard instantly. No extensions needed.</p>
-    </div>
-
-    <!-- Download Manager -->
-    <div class="feature-card fade-up delay-3">
-      <div class="feature-icon fi-dark">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      </div>
-      <span class="feature-badge badge-new">New</span>
-      <h3>Download Manager</h3>
-      <p>Track and manage all your downloads in one place. Pause, resume, and organize files with a clean interface.</p>
-    </div>
-
-    <!-- Smart Window Sizing -->
-    <div class="feature-card fade-up delay-1">
-      <div class="feature-icon fi-gold">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><polyline points="15 3 15 9 21 9"/></svg>
-      </div>
-      <span class="feature-badge badge-new">New</span>
-      <h3>Smart Window Sizing</h3>
-      <p>Intelligent window management that remembers your preferred sizes and positions. Snap windows into place effortlessly.</p>
-    </div>
-
-    <!-- Session Restore -->
-    <div class="feature-card fade-up delay-2">
-      <div class="feature-icon fi-green">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
-      </div>
-      <h3>Session Restore</h3>
-      <p>Continue exactly where you left off. All your tabs, scroll positions, and state are preserved across restarts.</p>
-    </div>
-
-    <!-- Gradient Avatars -->
-    <div class="feature-card fade-up delay-3">
-      <div class="feature-icon fi-red">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      </div>
-      <h3>Custom Avatars</h3>
-      <p>Auto-generated gradient avatars with the option to upload your own photo. Personalize your browsing experience.</p>
+    <div class="stat-item">
+      <strong>E2E</strong>
+      <span>Encrypted</span>
     </div>
   </div>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- AI-POWERED SECTION (Dark)                                   -->
+<!-- KENTE FEATURES — 12 Features in 6 Categories                -->
 <!-- ═══════════════════════════════════════════════════════════ -->
-<section class="ai-section" id="ai">
-  <div class="ai-inner">
+<section class="kente-features" id="features">
+  <div class="section-heading fade-up">
+    <span class="section-label label-gold">The Kente System</span>
+    <h2>Everything Ghana needs in a browser</h2>
+    <p>12 purpose-built features organized by the Kente System &mdash; each one a thread in the weave</p>
+  </div>
+
+  <!-- ── Infrastructure ── -->
+  <div class="kente-category kente-cat-infra">
+    <div class="kente-category-header">
+      <div class="kente-cat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <div class="kente-cat-info">
+        <h3>Infrastructure</h3>
+        <p>Keeps the browser running on Ghana's networks</p>
+      </div>
+    </div>
+    <div class="kente-cards">
+      <!-- Data Saver -->
+      <div class="kente-card">
+        <div class="kente-card-top">
+          <div class="kente-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+          </div>
+          <div class="kente-card-dot"></div>
+        </div>
+        <h4>Data Saver</h4>
+        <p>Track data usage in GH&#8373;. MTN, Telecel, AT carrier plans. Budget alerts and Lite Mode.</p>
+      </div>
+      <!-- Dumsor Guard -->
+      <div class="kente-card">
+        <div class="kente-card-top">
+          <div class="kente-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z"/></svg>
+          </div>
+          <div class="kente-card-dot"></div>
+        </div>
+        <h4>Dumsor Guard</h4>
+        <p>Power outage recovery. Auto-saves tabs, forms, and scroll positions every 30 seconds.</p>
+      </div>
+      <!-- Network Manager -->
+      <div class="kente-card">
+        <div class="kente-card-top">
+          <div class="kente-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+          </div>
+          <div class="kente-card-dot"></div>
+        </div>
+        <h4>Network Manager</h4>
+        <p>Monitor connection quality. Auto-suspend background tabs on slow connections.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Government ── -->
+  <div class="kente-category kente-cat-gov">
+    <div class="kente-category-header">
+      <div class="kente-cat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+      </div>
+      <div class="kente-cat-info">
+        <h3>Government</h3>
+        <p>Civil service tools for Ghana's public sector</p>
+      </div>
+    </div>
+    <div class="kente-cards">
+      <!-- Gov Services Hub -->
+      <div class="kente-card">
+        <div class="kente-card-top">
+          <div class="kente-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </div>
+          <div class="kente-card-dot"></div>
+        </div>
+        <h4>Gov Services Hub</h4>
+        <p>25+ government portals with search, categories, health monitoring, and pinning.</p>
+      </div>
+      <!-- GhanaCard Identity -->
+      <div class="kente-card">
+        <div class="kente-card-top">
+          <div class="kente-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/><path d="M14 15h4"/></svg>
+          </div>
+          <div class="kente-card-dot"></div>
+        </div>
+        <h4>GhanaCard Identity</h4>
+        <p>Store GhanaCard and civil service credentials for auto-fill on gov portals.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Productivity ── -->
+  <div class="kente-category kente-cat-prod">
+    <div class="kente-category-header">
+      <div class="kente-cat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+      </div>
+      <div class="kente-cat-info">
+        <h3>Productivity</h3>
+        <p>Work tools for documents, offline access, and reporting</p>
+      </div>
+    </div>
+    <div class="kente-cards">
+      <!-- Document Workspace -->
+      <div class="kente-card">
+        <div class="kente-card-top">
+          <div class="kente-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <div class="kente-card-dot"></div>
+        </div>
+        <h4>Document Workspace</h4>
+        <p>View, organize, and annotate government documents and PDFs.</p>
+      </div>
+      <!-- Offline Library -->
+      <div class="kente-card">
+        <div class="kente-card-top">
+          <div class="kente-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </div>
+          <div class="kente-card-dot"></div>
+        </div>
+        <h4>Offline Library</h4>
+        <p>Save pages, auto-cache .gov.gh sites, queue form submissions for offline use.</p>
+      </div>
+      <!-- Screenshot-to-Report -->
+      <div class="kente-card">
+        <div class="kente-card-top">
+          <div class="kente-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <div class="kente-card-dot"></div>
+        </div>
+        <h4>Screenshot-to-Report</h4>
+        <p>Capture, annotate, and generate official PDF reports with stamps.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Communication ── -->
+  <div class="kente-category kente-cat-comm">
+    <div class="kente-category-header">
+      <div class="kente-cat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      </div>
+      <div class="kente-cat-info">
+        <h3>Communication</h3>
+        <p>Connecting people across languages and channels</p>
+      </div>
+    </div>
+    <div class="kente-cards">
+      <!-- Multi-Language Translation -->
+      <div class="kente-card">
+        <div class="kente-card-top">
+          <div class="kente-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M8 7h8"/><path d="M8 11h6"/></svg>
+          </div>
+          <div class="kente-card-dot"></div>
+        </div>
+        <h4>Multi-Language Translation</h4>
+        <p>7 languages: English, Twi, Ga, Ewe, Dagbani, Hausa, Fante with offline dictionaries.</p>
+      </div>
+      <!-- Encrypted Messenger -->
+      <div class="kente-card">
+        <div class="kente-card-top">
+          <div class="kente-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1"/></svg>
+          </div>
+          <div class="kente-card-dot"></div>
+        </div>
+        <h4>Encrypted Messenger</h4>
+        <p>Real-time E2E encrypted messaging for .gov.gh email holders with WebSocket.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Finance ── -->
+  <div class="kente-category kente-cat-fin">
+    <div class="kente-category-header">
+      <div class="kente-cat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      </div>
+      <div class="kente-cat-info">
+        <h3>Finance</h3>
+        <p>Money tools for mobile payments and budgeting</p>
+      </div>
+    </div>
+    <div class="kente-cards">
+      <!-- Mobile Money Quick Pay -->
+      <div class="kente-card">
+        <div class="kente-card-top">
+          <div class="kente-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><path d="M7 15h2"/><path d="M13 15h4"/></svg>
+          </div>
+          <div class="kente-card-dot"></div>
+        </div>
+        <h4>Mobile Money Quick Pay</h4>
+        <p>MTN MoMo, Telecel, AT accounts. Payment receipts, monthly statements, budget tracking.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Intelligence ── -->
+  <div class="kente-category kente-cat-intel">
+    <div class="kente-category-header">
+      <div class="kente-cat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5"/></svg>
+      </div>
+      <div class="kente-cat-info">
+        <h3>Intelligence</h3>
+        <p>Smart features powered by AI</p>
+      </div>
+    </div>
+    <div class="kente-cards">
+      <!-- Digital Literacy AI -->
+      <div class="kente-card">
+        <div class="kente-card-top">
+          <div class="kente-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <div class="kente-card-dot"></div>
+        </div>
+        <h4>Digital Literacy AI</h4>
+        <p>Page explainer, form filling guides, phishing detection, and 5 government tutorials.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- THE KENTE SYSTEM — 4 Surfaces Explainer                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="kente-system" id="kente-system">
+  <div class="section-heading fade-up">
+    <span class="section-label label-gold">Architecture</span>
+    <h2>Every feature has a home</h2>
+    <p>The Kente System organizes 12 features across 4 surfaces, so everything is exactly where you expect it.</p>
+  </div>
+
+  <div class="kente-surfaces fade-up delay-1">
+    <div class="kente-surface">
+      <div class="kente-surface-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+      </div>
+      <h4>Sidebar</h4>
+      <p>Icon rail for feature panels. Data Saver, Gov Hub, Messenger, and more live here.</p>
+      <kbd>Click icons</kbd>
+    </div>
+    <div class="kente-surface">
+      <div class="kente-surface-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+      </div>
+      <h4>Toolbar</h4>
+      <p>Page-level actions. Screenshot, Document Workspace, Reading Mode, and translations.</p>
+      <kbd>Toolbar buttons</kbd>
+    </div>
+    <div class="kente-surface">
+      <div class="kente-surface-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      </div>
+      <h4>Command Bar</h4>
+      <p>Search features, switch tabs, run commands. The fastest way to access anything.</p>
+      <kbd>Ctrl + K</kbd>
+    </div>
+    <div class="kente-surface">
+      <div class="kente-surface-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="17" x2="21" y2="17"/></svg>
+      </div>
+      <h4>Status Bar</h4>
+      <p>Always-on monitoring. Data usage, network quality, Dumsor Guard status, and battery.</p>
+      <kbd>Always visible</kbd>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- ENCRYPTED MESSENGER SECTION (Dark)                          -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="messenger-section" id="messenger">
+  <div class="messenger-inner">
     <div class="section-heading fade-up">
-      <span class="section-label label-gold">AI-Powered</span>
-      <h2>Your AI Assistant, Built In</h2>
-      <p>Six powerful AI models at your fingertips. Summarize pages, translate text, draft documents, and research topics without leaving the browser.</p>
+      <span class="section-label label-green">Encrypted</span>
+      <h2>Your messages, your keys</h2>
+      <p>End-to-end encrypted messaging built for Ghana's civil service. The server never sees your plaintext.</p>
     </div>
 
-    <div class="ai-grid">
-      <div class="ai-card fade-up delay-1">
-        <div class="feature-icon fi-gold">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    <div class="messenger-grid">
+      <div class="messenger-features fade-up delay-1">
+        <div class="messenger-feat">
+          <div class="messenger-feat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          </div>
+          <div>
+            <h4>ECDH P-256 + AES-GCM 256-bit</h4>
+            <p>Military-grade encryption using elliptic curve Diffie-Hellman key exchange and AES-GCM symmetric encryption.</p>
+          </div>
         </div>
-        <h3>AI Sidebar</h3>
-        <p>A full AI chat panel that slides in from the side. Ask questions, get summaries, translate content, draft letters, and research any topic.</p>
-      </div>
-      <div class="ai-card fade-up delay-2">
-        <div class="feature-icon fi-green">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <div class="messenger-feat">
+          <div class="messenger-feat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div>
+            <h4>.gov.gh email verification</h4>
+            <p>Only verified government email holders can access the messenger. Identity tied to your civil service credentials.</p>
+          </div>
         </div>
-        <h3>AskOzzy Integration</h3>
-        <p>One-click access to Ghana's sovereign AI platform for deep research, data analysis, professional document drafting, and more.</p>
-      </div>
-      <div class="ai-card fade-up delay-3">
-        <div class="feature-icon fi-gold">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
+        <div class="messenger-feat">
+          <div class="messenger-feat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </div>
+          <div>
+            <h4>Server never sees plaintext</h4>
+            <p>Messages are encrypted on your device before transmission. The server only handles encrypted blobs.</p>
+          </div>
         </div>
-        <h3>Floating AI Page Actions</h3>
-        <p>A context-aware floating toolbar appears on any webpage. Summarize, translate, explain, or ask questions about the content you are viewing.</p>
+        <div class="messenger-feat">
+          <div class="messenger-feat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z"/></svg>
+          </div>
+          <div>
+            <h4>Real-time WebSocket</h4>
+            <p>Instant message delivery via WebSocket connections. No polling. No delays. Real-time conversations.</p>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- AI Model Chips -->
-    <div class="ai-models fade-up delay-4">
-      <div class="ai-model-chip">
-        <span class="model-dot" style="background:#7C3AED;"></span>
-        Llama
+      <div class="messenger-visual fade-up delay-2">
+        <div class="chat-mockup">
+          <div class="chat-header">
+            <div class="chat-avatar">AK</div>
+            <div>
+              <div class="chat-name">Ama Kofi</div>
+              <div class="chat-status">Online &bull; Verified .gov.gh</div>
+            </div>
+          </div>
+          <div class="chat-bubble chat-bubble-in">The quarterly report is ready for review. Can you check section 3?</div>
+          <div class="chat-bubble chat-bubble-out">Reviewing now. Will send feedback by 3pm.</div>
+          <div class="chat-bubble chat-bubble-in">Perfect. The minister needs it signed by Friday.</div>
+          <div class="chat-lock">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            End-to-end encrypted
+          </div>
+        </div>
+        <div class="encryption-badges">
+          <div class="enc-badge">ECDH P-256</div>
+          <div class="enc-badge">AES-GCM 256</div>
+          <div class="enc-badge">Forward Secrecy</div>
+        </div>
       </div>
-      <div class="ai-model-chip">
-        <span class="model-dot" style="background:#2563EB;"></span>
-        DeepSeek
-      </div>
-      <div class="ai-model-chip">
-        <span class="model-dot" style="background:#F59E0B;"></span>
-        Mistral
-      </div>
-      <div class="ai-model-chip">
-        <span class="model-dot" style="background:#10B981;"></span>
-        Qwen
-      </div>
-      <div class="ai-model-chip">
-        <span class="model-dot" style="background:#EF4444;"></span>
-        Gemma
-      </div>
-      <div class="ai-model-chip">
-        <span class="model-dot" style="background: linear-gradient(135deg, var(--red), var(--gold), var(--green));"></span>
-        AskOzzy
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- MADE FOR GHANA SECTION                                      -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section class="ghana-section" id="ghana">
-  <div class="section-heading fade-up">
-    <span class="section-label label-green">Made for Ghana</span>
-    <h2>Tools Built for Ghanaian Professionals</h2>
-    <p>Purpose-built features that understand the needs of Ghana's workforce.</p>
-  </div>
-
-  <div class="ghana-grid">
-    <!-- GHS Currency Converter -->
-    <div class="ghana-card fade-up delay-1">
-      <div class="feature-icon fi-gold">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-      </div>
-      <h3>GHS Currency Converter</h3>
-      <p>Convert Ghana Cedis to 8 major currencies with live exchange rates. Quick access from the toolbar for instant conversions.</p>
-      <div class="ghana-card-detail">Supports USD, EUR, GBP, NGN, XOF, CNY, ZAR, KES</div>
-    </div>
-
-    <!-- SSNIT Calculator -->
-    <div class="ghana-card fade-up delay-2">
-      <div class="feature-icon fi-green">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
-      </div>
-      <h3>SSNIT Contribution Calculator</h3>
-      <p>Calculate your Social Security contributions, employer contributions, and projected benefits. Essential for every Ghanaian worker.</p>
-      <div class="ghana-card-detail">Employee (5.5%), Employer (13%), Total (18.5%)</div>
-    </div>
-
-    <!-- Twi Dictionary -->
-    <div class="ghana-card fade-up delay-1">
-      <div class="feature-icon fi-red">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M8 7h8"/><path d="M8 11h6"/></svg>
-      </div>
-      <h3>Twi Dictionary</h3>
-      <p>Look up Twi words and phrases organized across 5 categories. Learn greetings, numbers, common phrases, and more.</p>
-      <div class="ghana-card-detail">57 words across Greetings, Numbers, Common Phrases, Food, Family</div>
-    </div>
-
-    <!-- Gov Portal Hub -->
-    <div class="ghana-card fade-up delay-2">
-      <div class="feature-icon fi-gold">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
-      </div>
-      <h3>Government Portal Hub</h3>
-      <p>Pre-loaded shortcuts to GIFMIS, CAGD, GRA, SSNIT, OHCS, E-SPAR and more. One click to any government service portal.</p>
-      <div class="ghana-card-detail">Auto-whitelists .gov.gh domains for ad blocking</div>
     </div>
   </div>
 </section>
@@ -818,7 +1134,7 @@
 <div class="ghana-banner fade-up">
   <h2>Built for Ghana. By Ghana.</h2>
   <p>Your data stays on your device. Sovereign. Private. Yours.</p>
-  <p>Dark and light modes with Ghana-inspired themes. Offline support with queued AI requests.</p>
+  <p>12 features across 6 categories, woven together by the Kente System.</p>
   <p style="font-size:13px;opacity:0.75;margin-top:8px;">Powered by OHCS</p>
 </div>
 
@@ -829,13 +1145,17 @@
   <div class="section-heading fade-up">
     <span class="section-label label-gold">Productivity</span>
     <h2>Keyboard-First Design</h2>
-    <p>15+ keyboard shortcuts to keep your hands on the keyboard and your workflow fast.</p>
+    <p>Power-user shortcuts to keep your hands on the keyboard and your workflow fast.</p>
   </div>
 
   <div class="shortcut-list fade-up delay-1">
     <div class="shortcut-item">
-      <span>Command Palette</span>
+      <span>Command Bar</span>
       <kbd>Ctrl + K</kbd>
+    </div>
+    <div class="shortcut-item">
+      <span>Toggle Sidebar</span>
+      <kbd>Ctrl + \</kbd>
     </div>
     <div class="shortcut-item">
       <span>New Tab</span>
@@ -873,6 +1193,10 @@
       <span>Downloads</span>
       <kbd>Ctrl + Shift + D</kbd>
     </div>
+    <div class="shortcut-item">
+      <span>Translate Page</span>
+      <kbd>Ctrl + Shift + T</kbd>
+    </div>
   </div>
 </section>
 
@@ -881,7 +1205,7 @@
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section class="bottom-cta">
   <h2 class="fade-up">Download <span>OS Browser</span> Today</h2>
-  <p class="fade-up delay-1">AI-Powered. Ad-Blocking. Privacy-First. Made for Ghana.</p>
+  <p class="fade-up delay-1">12 Features. 6 Categories. The Kente System. Made for Ghana.</p>
 
   <div class="download-row fade-up delay-2">
     <div class="dl-card">
@@ -901,7 +1225,7 @@
       </div>
       <div class="dl-label">Windows</div>
       <div class="dl-buttons">
-        <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/download/v1.0.0/OS.Browser.Setup.1.0.0.exe" class="dl-btn dl-btn-gold" download="OS-Browser-Setup.exe">
+        <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/latest/download/OS.Browser.Setup.1.0.0.exe" class="dl-btn dl-btn-gold" download="OS-Browser-Setup.exe">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download
         </a>
@@ -916,13 +1240,13 @@
   <div class="footer-grid">
     <div>
       <div class="footer-brand">OS Browser</div>
-      <p class="footer-brand-desc">Ghana's AI-powered desktop browser. Built with privacy, productivity, and local needs in mind. Free and open source.</p>
+      <p class="footer-brand-desc">Ghana's purpose-built desktop browser. 12 features woven by the Kente System. Data Saver, Dumsor Guard, Gov Services, Encrypted Messenger, Mobile Money, and Digital Literacy AI. Free and open source.</p>
     </div>
     <div class="footer-col">
       <h4>Product</h4>
       <a href="#features">Features</a>
-      <a href="#ai">AI Assistant</a>
-      <a href="#ghana">Ghana Tools</a>
+      <a href="#kente-system">Kente System</a>
+      <a href="#messenger">Messenger</a>
       <a href="#download">Download</a>
     </div>
     <div class="footer-col">
@@ -943,6 +1267,43 @@
     <a href="https://www.osbrowser.askozzy.work">www.osbrowser.askozzy.work</a>
   </div>
 </footer>
+
+<script>
+  // IntersectionObserver for Kente category animations
+  (function() {
+    const observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.15,
+      rootMargin: '0px 0px -40px 0px'
+    });
+
+    document.querySelectorAll('.kente-category').forEach(function(el) {
+      observer.observe(el);
+    });
+
+    // Also animate fade-up elements that are not in the initial viewport
+    const fadeObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.style.animationPlayState = 'running';
+          fadeObserver.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.1
+    });
+
+    document.querySelectorAll('.fade-up').forEach(function(el) {
+      fadeObserver.observe(el);
+    });
+  })();
+</script>
 
 </body>
 </html>
