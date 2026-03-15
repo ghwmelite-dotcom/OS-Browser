@@ -2,24 +2,21 @@ import { safeStorage } from 'electron';
 import crypto from 'crypto';
 
 const ALGORITHM = 'aes-256-gcm';
+let _cachedKey: Buffer | null = null;
 
 function getCredentialKey(): Buffer {
-  // Use a separate key from the DB encryption key
-  // Stored in safeStorage under a different identifier
-  const keyHex = safeStorage.isEncryptionAvailable()
-    ? (() => {
-        try {
-          // Try to retrieve existing key
-          const stored = safeStorage.encryptString('credential-key-check');
-          // Generate a deterministic key from safeStorage's machine binding
-          return crypto.createHash('sha256').update(stored).digest();
-        } catch {
-          return crypto.randomBytes(32);
-        }
-      })()
-    : crypto.randomBytes(32);
+  if (_cachedKey) return _cachedKey;
 
-  return typeof keyHex === 'string' ? Buffer.from(keyHex, 'hex') : keyHex;
+  // Generate a deterministic key from a fixed seed encrypted by safeStorage
+  const seed = 'os-browser-credential-key-v1';
+  if (safeStorage.isEncryptionAvailable()) {
+    const encrypted = safeStorage.encryptString(seed);
+    _cachedKey = crypto.createHash('sha256').update(encrypted).digest();
+  } else {
+    // Fallback: use a fixed key derived from machine info (less secure but consistent)
+    _cachedKey = crypto.createHash('sha256').update(seed + require('os').hostname()).digest();
+  }
+  return _cachedKey;
 }
 
 export function encryptCredential(plaintext: string): string {

@@ -16,7 +16,7 @@ function SaveIndicator({ show }: { show: boolean }) {
 
 // Full settings page rendered inside a tab
 export function SettingsPage() {
-  const { settings, updateSettings, loadSettings } = useSettingsStore();
+  const { settings, isLoaded, updateSettings, loadSettings } = useSettingsStore();
   const [saveShow, setSaveShow] = useState(false);
 
   useEffect(() => {
@@ -30,9 +30,14 @@ export function SettingsPage() {
     setTimeout(() => setSaveShow(false), 1500);
   }, [updateSettings]);
 
+  useEffect(() => {
+    if (!settings && !isLoaded) {
+      const timer = setTimeout(() => loadSettings(), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [settings, isLoaded]);
+
   if (!settings) {
-    // Try loading once more after a short delay
-    setTimeout(() => loadSettings(), 100);
     return (
       <div className="flex-1 flex items-center justify-center text-text-muted">
         <div className="text-center">
