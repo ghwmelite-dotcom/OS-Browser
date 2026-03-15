@@ -14,6 +14,7 @@ import { registerCredentialHandlers } from './credentials';
 import { initDownloadProtection } from '../services/downloads';
 import { initCertHandler } from '../services/cert-handler';
 import { registerBookmarkImportHandlers } from '../services/bookmark-import';
+import { getDatabase } from '../db/database';
 
 export function registerAllHandlers(mainWindow: BrowserWindow): void {
   // Window controls — use event.sender to find the calling window
