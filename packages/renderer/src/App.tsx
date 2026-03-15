@@ -25,6 +25,7 @@ import { CurrencyTools } from './components/CurrencyTools';
 import { TwiDictionary } from './components/TwiDictionary';
 import { ReadingMode } from './components/ReadingMode';
 import { DownloadBar } from './components/DownloadBar';
+import { Onboarding } from './components/Onboarding';
 
 export function App() {
   const { loadTabs, createTab } = useTabsStore();
@@ -41,6 +42,7 @@ export function App() {
   const [showCurrencyTools, _setShowCurrencyTools] = useState(false);
   const [showTwiDictionary, _setShowTwiDictionary] = useState(false);
   const [readingMode, setReadingMode] = useState<{ active: boolean; content: string; title: string; url: string }>({ active: false, content: '', title: '', url: '' });
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Wrap sidebar panel setters to hide/show WebContentsViews
   const setShowCurrencyTools = (v: boolean | ((prev: boolean) => boolean)) => {
@@ -98,6 +100,12 @@ export function App() {
           const theme = settings?.theme || 'light';
           document.documentElement.classList.toggle('dark', theme === 'dark');
           document.documentElement.classList.toggle('light', theme !== 'dark');
+        }
+
+        // Check if onboarding was completed
+        const onboardingDone = (useSettingsStore.getState().settings as any)?.onboarding_completed;
+        if (!onboardingDone) {
+          setShowOnboarding(true);
         }
 
         await loadTabs();
@@ -256,6 +264,13 @@ export function App() {
       {showHistory && <HistoryPanel onClose={() => setShowHistory(false)} />}
       {showBookmarks && <BookmarkManager onClose={() => setShowBookmarks(false)} />}
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
+
+      {showOnboarding && <Onboarding onComplete={() => {
+        useSettingsStore.getState().updateSettings({ onboarding_completed: true });
+        setShowOnboarding(false);
+        // Reload settings to show the new profile
+        useSettingsStore.getState().loadSettings();
+      }} />}
     </div>
   );
 }
