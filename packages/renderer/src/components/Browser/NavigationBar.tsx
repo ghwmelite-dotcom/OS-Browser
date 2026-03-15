@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Mail, QrCode, ArrowRight as ArrowRightIcon } from 'lucide-react';
-import QRCode from 'qrcode';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Mail } from 'lucide-react';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
 import { useSidebarStore } from '@/store/sidebar';
@@ -49,7 +48,7 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
     else window.osBrowser?.showWebViews?.();
   };
   const [loginEmail, setLoginEmail] = useState('');
-  const [loginStep, setLoginStep] = useState<'email' | 'code' | 'qr'>('email');
+  const [loginStep, setLoginStep] = useState<'email' | 'code'>('email');
   const [verifyCode, setVerifyCode] = useState('');
 
   const handleSendCode = () => {
@@ -211,20 +210,6 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                         Send verification code
                       </button>
 
-                      <div className="flex items-center gap-3 my-3">
-                        <div className="flex-1 h-px" style={{ background: 'var(--color-border-1)' }} />
-                        <span className="text-[11px] text-text-muted">or</span>
-                        <div className="flex-1 h-px" style={{ background: 'var(--color-border-1)' }} />
-                      </div>
-
-                      <button
-                        onClick={() => setLoginStep('qr')}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[13px] font-medium border transition-colors hover:bg-surface-2"
-                        style={{ borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }}
-                      >
-                        <QrCode size={14} />
-                        Sign in with QR code
-                      </button>
                     </>
                   )}
 
@@ -267,9 +252,6 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                     </>
                   )}
 
-                  {loginStep === 'qr' && (
-                    <QRLoginPanel onBack={() => setLoginStep('email')} onSignIn={() => setShowLoginMenu(false)} />
-                  )}
                 </div>
 
                 <div className="px-4 pb-3">
@@ -294,109 +276,3 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
   );
 }
 
-// Generate a random base32 secret for TOTP
-function generateTOTPSecret(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  let secret = '';
-  const arr = new Uint8Array(20);
-  crypto.getRandomValues(arr);
-  for (let i = 0; i < 20; i++) {
-    secret += chars[arr[i] % 32];
-  }
-  return secret;
-}
-
-// QR Code Login Panel — generates TOTP QR for authenticator apps
-function QRLoginPanel({ onBack, onSignIn }: { onBack: () => void; onSignIn: () => void }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [secret] = useState(() => generateTOTPSecret());
-  const [totpCode, setTotpCode] = useState('');
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // Standard TOTP URI format — works with Google Authenticator, Microsoft Authenticator,
-    // Authy, 1Password, and all other TOTP apps
-    const otpauthUri = `otpauth://totp/OS%20Browser:user?secret=${secret}&issuer=OS%20Browser&algorithm=SHA1&digits=6&period=30`;
-
-    const displaySize = 200;
-    const scale = Math.max(window.devicePixelRatio || 1, 2);
-
-    QRCode.toCanvas(canvas, otpauthUri, {
-      width: displaySize * scale,
-      margin: 3,
-      color: { dark: '#000000', light: '#ffffff' },
-      errorCorrectionLevel: 'M',
-    }).then(() => {
-      canvas.style.width = `${displaySize}px`;
-      canvas.style.height = `${displaySize}px`;
-    }).catch(console.error);
-  }, [secret]);
-
-  const handleVerify = async () => {
-    if (totpCode.length !== 6) {
-      setError('Enter a 6-digit code');
-      return;
-    }
-    // Store auth locally and close the sign-in panel
-    await window.osBrowser.settings.update({
-      display_name: 'Authenticated User',
-      email: `totp-${secret.slice(0, 8)}@osbrowser.local`,
-    });
-    // Reload settings so avatar shows in nav bar
-    const { useSettingsStore } = await import('@/store/settings');
-    useSettingsStore.getState().loadSettings();
-    setError('');
-    onSignIn();
-  };
-
-  return (
-    <>
-      <div className="flex justify-center mb-3">
-        <div className="rounded-xl overflow-hidden bg-white p-2">
-          <canvas ref={canvasRef} />
-        </div>
-      </div>
-
-      <p className="text-[12px] text-text-secondary text-center mb-1 font-medium">
-        1. Scan with your authenticator app
-      </p>
-      <p className="text-[11px] text-text-muted text-center mb-3">
-        Google Authenticator, Microsoft Authenticator, Authy, or any TOTP app
-      </p>
-
-      <p className="text-[12px] text-text-secondary text-center mb-2 font-medium">
-        2. Enter the 6-digit code from your app
-      </p>
-
-      <input
-        type="text"
-        value={totpCode}
-        onChange={e => { setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
-        placeholder="000000"
-        maxLength={6}
-        className="w-full px-4 py-3 rounded-lg text-center text-[24px] font-mono tracking-[0.5em] outline-none border transition-colors mb-2"
-        style={{ background: 'var(--color-surface-2)', borderColor: error ? '#CE1126' : 'var(--color-border-1)', color: 'var(--color-text-primary)' }}
-      />
-
-      {error && <p className="text-[11px] text-center mb-2" style={{ color: '#CE1126' }}>{error}</p>}
-
-      <button
-        onClick={handleVerify}
-        disabled={totpCode.length !== 6}
-        className="w-full px-4 py-2.5 rounded-lg text-[13px] font-semibold transition-all disabled:opacity-40 mb-3"
-        style={{ background: 'var(--color-accent)', color: '#fff' }}
-      >
-        Verify & Sign in
-      </button>
-
-      <button onClick={onBack} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[13px] font-medium border transition-colors hover:bg-surface-2"
-        style={{ borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }}>
-        <Mail size={14} />
-        Use email instead
-      </button>
-    </>
-  );
-}
