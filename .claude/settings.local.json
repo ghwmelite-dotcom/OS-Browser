@@ -3,7 +3,10 @@
     "allow": [
       "WebFetch(domain:askozzy.ghwmelite.workers.dev)",
       "Bash(cd:*)",
-      "Bash(npm view:*)"
+      "Bash(npm view:*)",
+      "Bash(tasklist:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:www.genspark.ai)"
     ]
   }
 }

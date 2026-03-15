@@ -5,13 +5,13 @@ import {
   Languages,
   BookOpen,
   PenTool,
-  Shield,
   GitCompare,
   Sparkles,
   ExternalLink,
   Clock,
   Globe,
   Zap,
+  Shield,
 } from 'lucide-react';
 import { useTabsStore } from '@/store/tabs';
 import { useStatsStore } from '@/store/stats';
@@ -181,14 +181,6 @@ export function NewTabPage() {
       color: 'text-purple-400',
       bgColor: 'bg-purple-400/10',
       action: () => openPanel('ai'),
-    },
-    {
-      icon: Shield,
-      label: 'Privacy Report',
-      desc: 'Check site tracking & safety',
-      color: 'text-red-400',
-      bgColor: 'bg-red-400/10',
-      action: () => {},
     },
     {
       icon: GitCompare,
