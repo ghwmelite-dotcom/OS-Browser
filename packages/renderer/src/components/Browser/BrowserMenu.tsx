@@ -234,6 +234,9 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             <Separator />
 
             {/* Settings & about */}
+            <MenuItem icon={BarChart3} label="Data Dashboard" onClick={() => {
+              createTab('os-browser://data' as any);
+            }} />
             <MenuItem icon={BarChart3} label="Statistics" onClick={() => {
               createTab('os-browser://stats' as any);
             }} />
