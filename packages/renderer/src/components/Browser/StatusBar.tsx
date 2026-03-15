@@ -4,6 +4,7 @@ import { useConnectivityStore } from '@/store/connectivity';
 import { useSettingsStore } from '@/store/settings';
 import { useStatsStore } from '@/store/stats';
 import { useNavigationStore } from '@/store/navigation';
+import { FocusIndicator } from '@/components/FocusMode';
 
 export function StatusBar() {
   const { status, queuedCount } = useConnectivityStore();
@@ -47,6 +48,9 @@ export function StatusBar() {
 
       {/* Right: indicators */}
       <div className="flex items-center gap-3 shrink-0">
+        {/* Focus Mode indicator */}
+        <FocusIndicator />
+
         {/* Connectivity — only show if not online */}
         {status !== 'online' && (
           <span className="flex items-center gap-1 text-[10px] text-text-muted">
