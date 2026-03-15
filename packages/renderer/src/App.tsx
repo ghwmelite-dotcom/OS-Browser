@@ -29,6 +29,10 @@ import { Onboarding } from './components/Onboarding';
 import { OfflineBanner } from './components/NetworkManager/OfflineBanner';
 import { useNetworkStore } from './store/network';
 import { IdentityPanel } from './components/GhanaCard/IdentityPanel';
+import { MessagingPanel } from './components/Messaging/MessagingPanel';
+import { TranslationPanel } from './components/Translation/TranslationPanel';
+import { LiteracyAssistant } from './components/DigitalLiteracy/LiteracyAssistant';
+import { ReportGenerator, type ReportData } from './components/ScreenshotReport/ReportGenerator';
 
 export function App() {
   const { loadTabs, createTab } = useTabsStore();
@@ -47,6 +51,10 @@ export function App() {
   const [readingMode, setReadingMode] = useState<{ active: boolean; content: string; title: string; url: string }>({ active: false, content: '', title: '', url: '' });
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showIdentityPanel, setShowIdentityPanel] = useState(false);
+  const [showMessaging, setShowMessaging] = useState(false);
+  const [showTranslationPanel, _setShowTranslationPanel] = useState(false);
+  const [showLiteracyPanel, setShowLiteracyPanel] = useState(false);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
 
   // Wrap sidebar panel setters to hide/show WebContentsViews
   const setShowCurrencyTools = (v: boolean | ((prev: boolean) => boolean)) => {
@@ -61,7 +69,15 @@ export function App() {
     _setShowTwiDictionary(prev => {
       const newVal = typeof v === 'function' ? v(prev) : v;
       if (newVal) window.osBrowser?.hideWebViews?.();
-      else if (!showCurrencyTools && !isOpen) window.osBrowser?.showWebViews?.();
+      else if (!showCurrencyTools && !showTranslationPanel && !isOpen) window.osBrowser?.showWebViews?.();
+      return newVal;
+    });
+  };
+  const setShowTranslationPanel = (v: boolean | ((prev: boolean) => boolean)) => {
+    _setShowTranslationPanel(prev => {
+      const newVal = typeof v === 'function' ? v(prev) : v;
+      if (newVal) window.osBrowser?.hideWebViews?.();
+      else if (!showCurrencyTools && !showTwiDictionary && !isOpen) window.osBrowser?.showWebViews?.();
       return newVal;
     });
   };
@@ -69,7 +85,7 @@ export function App() {
   // Also hide views when AI sidebar or AskOzzy panel opens
   useEffect(() => {
     if (isOpen) window.osBrowser?.hideWebViews?.();
-    else if (!showCurrencyTools && !showTwiDictionary) window.osBrowser?.showWebViews?.();
+    else if (!showCurrencyTools && !showTwiDictionary && !showTranslationPanel) window.osBrowser?.showWebViews?.();
   }, [isOpen]);
   const splitActive = useSplitScreenStore(s => s.isActive);
 
@@ -245,6 +261,47 @@ export function App() {
     return () => window.removeEventListener('os-browser:identity-panel', handler);
   }, []);
 
+  useEffect(() => {
+    const handler = () => setShowTranslationPanel(prev => !prev);
+    window.addEventListener('os-browser:translation-panel', handler);
+    return () => window.removeEventListener('os-browser:translation-panel', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      setShowLiteracyPanel(prev => {
+        const next = !prev;
+        if (next) window.osBrowser?.hideWebViews?.();
+        else if (!showCurrencyTools && !showTwiDictionary && !isOpen) window.osBrowser?.showWebViews?.();
+        return next;
+      });
+    };
+    window.addEventListener('os-browser:literacy-assistant', handler);
+    return () => window.removeEventListener('os-browser:literacy-assistant', handler);
+  }, [showCurrencyTools, showTwiDictionary, isOpen]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as ReportData;
+      if (detail) setReportData(detail);
+    };
+    window.addEventListener('os-browser:generate-report', handler);
+    return () => window.removeEventListener('os-browser:generate-report', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      setShowMessaging(prev => {
+        const next = !prev;
+        if (next) window.osBrowser?.hideWebViews?.();
+        else if (!showCurrencyTools && !showTwiDictionary && !isOpen) window.osBrowser?.showWebViews?.();
+        return next;
+      });
+    };
+    window.addEventListener('os-browser:messaging', handler);
+    return () => window.removeEventListener('os-browser:messaging', handler);
+  }, [showCurrencyTools, showTwiDictionary, isOpen]);
+
   return (
     <div className="h-screen w-screen flex flex-col bg-bg">
       <TitleBar />
@@ -288,6 +345,21 @@ export function App() {
 
         {/* GhanaCard Identity Panel */}
         {showIdentityPanel && <IdentityPanel onClose={() => setShowIdentityPanel(false)} />}
+
+        {/* Translation Panel */}
+        {showTranslationPanel && <TranslationPanel onClose={() => setShowTranslationPanel(false)} />}
+
+        {/* Civil Service Messaging */}
+        {showMessaging && <MessagingPanel onClose={() => {
+          setShowMessaging(false);
+          if (!showCurrencyTools && !showTwiDictionary && !isOpen) window.osBrowser?.showWebViews?.();
+        }} />}
+
+        {/* Digital Literacy Assistant */}
+        {showLiteracyPanel && <LiteracyAssistant onClose={() => {
+          setShowLiteracyPanel(false);
+          if (!showCurrencyTools && !showTwiDictionary && !isOpen) window.osBrowser?.showWebViews?.();
+        }} />}
       </div>
 
       <DownloadBar />
@@ -309,6 +381,9 @@ export function App() {
       {showHistory && <HistoryPanel onClose={() => setShowHistory(false)} />}
       {showBookmarks && <BookmarkManager onClose={() => setShowBookmarks(false)} />}
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
+
+      {/* Screenshot Report Generator Modal */}
+      {reportData && <ReportGenerator data={reportData} onClose={() => setReportData(null)} />}
 
       {showOnboarding && <Onboarding onComplete={() => {
         useSettingsStore.getState().updateSettings({ onboarding_completed: true });

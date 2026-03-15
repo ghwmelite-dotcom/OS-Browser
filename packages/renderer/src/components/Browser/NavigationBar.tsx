@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Target, DollarSign, BookOpen, AlignJustify, CreditCard } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Target, DollarSign, BookOpen, AlignJustify, CreditCard, Brain } from 'lucide-react';
 import { ScreenshotButton } from '@/components/ScreenshotTool';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
@@ -226,6 +226,13 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
           />
           {openDropdown === 'focus' && <FocusSettings onClose={closeDropdown} />}
         </div>
+
+        {/* Digital Assistant */}
+        <NavButton
+          onClick={() => window.dispatchEvent(new CustomEvent('os-browser:literacy-assistant'))}
+          icon={<Brain size={15} strokeWidth={1.8} className="text-text-secondary" />}
+          label="Digital Assistant"
+        />
 
         {/* GhanaCard Identity */}
         <NavButton
