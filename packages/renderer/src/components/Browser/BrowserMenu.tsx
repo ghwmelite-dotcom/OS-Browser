@@ -226,7 +226,7 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
               (window.osBrowser as any)?.captureScreenshot?.();
             }} />
             <MenuItem icon={FileText} label="Import bookmarks..." onClick={() => {
-              // Import handled in Electron main process
+              (window.osBrowser?.bookmarks as any)?.import?.();
             }} />
             <MenuItem icon={FileText} label="Export bookmarks..." onClick={() => {
               window.osBrowser?.bookmarks?.export?.();
