@@ -4,7 +4,7 @@ import {
   Printer, ZoomIn, ZoomOut, Maximize, User, HelpCircle, Info,
   Sparkles, MessageSquare, BarChart3, Globe, Trash2, Key,
   ChevronRight, Search, Languages, FileText, LogIn, BookOpen, Columns, DollarSign,
-  AlignJustify, Camera, Building2
+  AlignJustify, Camera, Building2, MessageCircle, Brain
 } from 'lucide-react';
 import { useTabsStore } from '@/store/tabs';
 import { useSettingsStore } from '@/store/settings';
@@ -170,8 +170,14 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             <MenuItem icon={DollarSign} label="GHS Currency & SSNIT Tools" onClick={() => {
               window.dispatchEvent(new CustomEvent('os-browser:currency-tools'));
             }} />
+            <MenuItem icon={MessageCircle} label="Messages" shortcut="Ctrl+M" onClick={() => {
+              window.dispatchEvent(new CustomEvent('os-browser:messaging'));
+            }} />
             <MenuItem icon={Building2} label="Government Hub" onClick={() => {
               createTab('os-browser://gov' as any);
+            }} />
+            <MenuItem icon={Brain} label="Digital Assistant" onClick={() => {
+              window.dispatchEvent(new CustomEvent('os-browser:literacy-assistant'));
             }} />
             <Separator />
 
@@ -216,7 +222,9 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
               // Ctrl+P is handled natively by Electron/Chromium
               window.print();
             }} />
-            <MenuItem icon={Languages} label="Translate to Twi" onClick={() => { close(); openPanel('ai'); }} />
+            <MenuItem icon={Languages} label="Translation" onClick={() => {
+              window.dispatchEvent(new CustomEvent('os-browser:translation-panel'));
+            }} />
             <MenuItem icon={BookOpen} label="Twi Dictionary" onClick={() => {
               window.dispatchEvent(new CustomEvent('os-browser:twi-dictionary'));
             }} />
@@ -225,6 +233,43 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             }} />
             <MenuItem icon={Camera} label="Screenshot" onClick={() => {
               (window.osBrowser as any)?.captureScreenshot?.();
+            }} />
+            <MenuItem icon={FileText} label="Screenshot to Report" onClick={async () => {
+              close();
+              window.osBrowser?.showWebViews?.();
+              await new Promise(r => setTimeout(r, 400));
+              try {
+                const result = await (window.osBrowser as any)?.captureScreenshotDataUrl?.();
+                if (result?.dataUrl) {
+                  window.dispatchEvent(new CustomEvent('os-browser:generate-report', {
+                    detail: {
+                      screenshotDataUrl: result.dataUrl,
+                      url: currentUrl || '',
+                      title: currentTitle || 'Untitled',
+                      timestamp: Date.now(),
+                    },
+                  }));
+                } else {
+                  // Fallback: use regular screenshot and open report with placeholder
+                  window.dispatchEvent(new CustomEvent('os-browser:generate-report', {
+                    detail: {
+                      screenshotDataUrl: 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#f0f0f0"/><text x="200" y="150" text-anchor="middle" fill="#999" font-size="16">Screenshot preview unavailable</text></svg>'),
+                      url: currentUrl || '',
+                      title: currentTitle || 'Untitled',
+                      timestamp: Date.now(),
+                    },
+                  }));
+                }
+              } catch {
+                window.dispatchEvent(new CustomEvent('os-browser:generate-report', {
+                  detail: {
+                    screenshotDataUrl: 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#f0f0f0"/><text x="200" y="150" text-anchor="middle" fill="#999" font-size="16">Screenshot preview unavailable</text></svg>'),
+                    url: currentUrl || '',
+                    title: currentTitle || 'Untitled',
+                    timestamp: Date.now(),
+                  },
+                }));
+              }
             }} />
             <MenuItem icon={FileText} label="Import bookmarks..." onClick={() => {
               (window.osBrowser?.bookmarks as any)?.import?.();

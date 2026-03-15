@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Camera, Check, Monitor, Maximize, Scissors } from 'lucide-react';
+import { Camera, Check, Monitor, Maximize, Scissors, FileText } from 'lucide-react';
+import { useNavigationStore } from '@/store/navigation';
+import { useTabsStore } from '@/store/tabs';
 
 export function ScreenshotButton() {
   const [showMenu, setShowMenu] = useState(false);
@@ -100,6 +102,40 @@ export function ScreenshotButton() {
               <div>
                 <div className="text-[13px] text-text-primary">Selected Area</div>
                 <div className="text-[10px] text-text-muted">Draw to capture a region</div>
+              </div>
+            </button>
+
+            <div className="h-px my-1" style={{ background: 'var(--color-border-1)' }} />
+            <p className="px-4 py-1.5 text-[10px] font-medium text-text-muted uppercase tracking-wider">Report</p>
+
+            <button onClick={async () => {
+              setShowMenu(false);
+              window.osBrowser?.showWebViews?.();
+              await new Promise(r => setTimeout(r, 400));
+              const currentUrl = useNavigationStore.getState().currentUrl;
+              const tabs = useTabsStore.getState().tabs;
+              const activeTabId = useTabsStore.getState().activeTabId;
+              const currentTitle = tabs.find(t => t.id === activeTabId)?.title || '';
+              try {
+                const result = await (window.osBrowser as any)?.captureScreenshotDataUrl?.();
+                const dataUrl = result?.dataUrl || 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#f0f0f0"/><text x="200" y="150" text-anchor="middle" fill="#999" font-size="16">Screenshot preview unavailable</text></svg>');
+                window.dispatchEvent(new CustomEvent('os-browser:generate-report', {
+                  detail: { screenshotDataUrl: dataUrl, url: currentUrl || '', title: currentTitle || 'Untitled', timestamp: Date.now() },
+                }));
+              } catch {
+                window.dispatchEvent(new CustomEvent('os-browser:generate-report', {
+                  detail: {
+                    screenshotDataUrl: 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#f0f0f0"/><text x="200" y="150" text-anchor="middle" fill="#999" font-size="16">Screenshot preview unavailable</text></svg>'),
+                    url: currentUrl || '', title: currentTitle || 'Untitled', timestamp: Date.now(),
+                  },
+                }));
+              }
+            }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-surface-2 transition-colors">
+              <FileText size={14} className="text-text-muted" />
+              <div>
+                <div className="text-[13px] text-text-primary">Screenshot to Report</div>
+                <div className="text-[10px] text-text-muted">Generate an official report</div>
               </div>
             </button>
           </div>
