@@ -65,12 +65,15 @@ function ToolbarButton({
     setDropdownPosition(spaceBelow < 200 ? 'above' : 'below');
   }, [showDropdown]);
 
-  const handleClick = () => {
-    if (hasDropdown) {
-      setShowDropdown((prev) => !prev);
-    } else {
-      config.onClick();
-    }
+  // Click the icon → execute the primary action
+  // Click the chevron → toggle dropdown
+  const handleIconClick = () => {
+    config.onClick();
+  };
+
+  const handleChevronClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDropdown((prev) => !prev);
   };
 
   const iconColor = isActive
@@ -80,10 +83,11 @@ function ToolbarButton({
       : 'var(--color-text-muted)';
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+      {/* Main icon button — always executes primary action */}
       <button
         ref={buttonRef}
-        onClick={handleClick}
+        onClick={handleIconClick}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         aria-label={config.label}
@@ -93,29 +97,47 @@ function ToolbarButton({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 1,
           border: 'none',
-          borderRadius: 8,
+          borderRadius: hasDropdown ? '8px 0 0 8px' : 8,
           cursor: 'pointer',
           background: hovered || showDropdown ? 'var(--color-surface-2)' : 'transparent',
           transition: 'background 100ms ease, color 100ms ease',
-          position: 'relative',
         }}
       >
         <Icon size={15} strokeWidth={1.8} style={{ color: iconColor }} />
-        {hasDropdown && (
+      </button>
+      {/* Chevron dropdown trigger — separate clickable area */}
+      {hasDropdown && (
+        <button
+          onClick={handleChevronClick}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
+          aria-label={`${config.label} options`}
+          style={{
+            width: 16,
+            height: 30,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: 'none',
+            borderRadius: '0 8px 8px 0',
+            cursor: 'pointer',
+            background: hovered || showDropdown ? 'var(--color-surface-2)' : 'transparent',
+            transition: 'background 100ms ease',
+            marginLeft: -1,
+          }}
+        >
           <ChevronDown
             size={10}
             strokeWidth={2}
             style={{
               color: iconColor,
-              marginLeft: -2,
               transition: 'transform 150ms ease',
               transform: showDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
             }}
           />
-        )}
-      </button>
+        </button>
+      )}
 
       {/* Tooltip */}
       {showTooltip && !showDropdown && (

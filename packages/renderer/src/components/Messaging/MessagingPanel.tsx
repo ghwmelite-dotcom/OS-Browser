@@ -535,9 +535,9 @@ export function MessagingPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="h-full flex flex-col border-l shrink-0"
+      className="h-full flex flex-col shrink-0"
       style={{
-        width: 380,
+        width: '100%',
         background: 'var(--color-surface-1)',
         borderColor: 'var(--color-border-1)',
       }}

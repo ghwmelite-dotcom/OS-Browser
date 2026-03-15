@@ -263,6 +263,14 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    const handler = () => {
+      useTabsStore.getState().createTab('os-browser://settings');
+    };
+    window.addEventListener('os-browser:open-settings', handler);
+    return () => window.removeEventListener('os-browser:open-settings', handler);
+  }, []);
+
+  useEffect(() => {
     const handler = () => setShowIdentityPanel(prev => !prev);
     window.addEventListener('os-browser:identity-panel', handler);
     return () => window.removeEventListener('os-browser:identity-panel', handler);
@@ -333,6 +341,7 @@ export function App() {
         onOpenStats={() => useTabsStore.getState().createTab('os-browser://stats')}
       />
       <BookmarksBar />
+      <KenteStatusBar />
       <OfflineBanner />
 
       {/* Content + Sidebar */}
@@ -391,7 +400,6 @@ export function App() {
       </div>
 
       <DownloadBar />
-      <KenteStatusBar />
 
       {showSplitPicker && <SplitScreenPicker onClose={() => setShowSplitPicker(false)} />}
 
