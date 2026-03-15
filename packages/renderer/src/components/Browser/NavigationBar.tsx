@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Mail, Target, DollarSign, BookOpen } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Mail, Target, DollarSign, BookOpen, AlignJustify } from 'lucide-react';
+import { ScreenshotButton } from '@/components/ScreenshotTool';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
 import { useSidebarStore } from '@/store/sidebar';
@@ -153,6 +154,16 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
           onClick={() => window.dispatchEvent(new CustomEvent('os-browser:twi-dictionary'))}
           icon={<BookOpen size={15} strokeWidth={1.8} className="text-text-secondary" />}
           label="Twi Dictionary"
+        />
+
+        {/* Screenshot */}
+        <ScreenshotButton />
+
+        {/* Reading Mode */}
+        <NavButton
+          onClick={() => window.dispatchEvent(new CustomEvent('os-browser:reading-mode'))}
+          icon={<AlignJustify size={15} strokeWidth={1.8} className="text-text-secondary" />}
+          label="Reading Mode"
         />
 
         {/* Focus Mode */}

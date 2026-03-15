@@ -23,6 +23,8 @@ import { FloatingAIBar } from './components/FloatingAIBar';
 import { SplitScreenToolbar, SplitScreenContent, SplitScreenPicker } from './components/SplitScreen';
 import { CurrencyTools } from './components/CurrencyTools';
 import { TwiDictionary } from './components/TwiDictionary';
+import { ReadingMode } from './components/ReadingMode';
+import { DownloadBar } from './components/DownloadBar';
 
 export function App() {
   const { loadTabs, createTab } = useTabsStore();
@@ -38,6 +40,7 @@ export function App() {
   const [showSplitPicker, setShowSplitPicker] = useState(false);
   const [showCurrencyTools, setShowCurrencyTools] = useState(false);
   const [showTwiDictionary, setShowTwiDictionary] = useState(false);
+  const [readingMode, setReadingMode] = useState<{ active: boolean; content: string; title: string; url: string }>({ active: false, content: '', title: '', url: '' });
   const splitActive = useSplitScreenStore(s => s.isActive);
 
   useKeyboardShortcuts({
@@ -158,6 +161,18 @@ export function App() {
     return () => window.removeEventListener('os-browser:twi-dictionary', handler);
   }, []);
 
+  useEffect(() => {
+    const handleReadingMode = () => {
+      const tabs = useTabsStore.getState().tabs;
+      const active = tabs.find(t => t.id === useTabsStore.getState().activeTabId);
+      if (active && !active.url?.startsWith('os-browser://')) {
+        setReadingMode({ active: true, content: '', title: active.title || '', url: active.url || '' });
+      }
+    };
+    window.addEventListener('os-browser:reading-mode', handleReadingMode);
+    return () => window.removeEventListener('os-browser:reading-mode', handleReadingMode);
+  }, []);
+
   return (
     <div className="h-screen w-screen flex flex-col bg-bg">
       <TitleBar />
@@ -198,9 +213,18 @@ export function App() {
         {showTwiDictionary && <TwiDictionary onClose={() => setShowTwiDictionary(false)} />}
       </div>
 
+      <DownloadBar />
       <StatusBar />
 
       {showSplitPicker && <SplitScreenPicker onClose={() => setShowSplitPicker(false)} />}
+
+      <ReadingMode
+        isActive={readingMode.active}
+        content={readingMode.content}
+        title={readingMode.title}
+        url={readingMode.url}
+        onClose={() => setReadingMode({ active: false, content: '', title: '', url: '' })}
+      />
 
       <CommandPalette isOpen={showCommandPalette} onClose={() => setShowCommandPalette(false)} />
 
