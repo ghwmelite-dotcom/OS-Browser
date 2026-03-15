@@ -172,6 +172,11 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
   // App info
   ipcMain.handle(IPC.APP_GET_VERSION, () => app.getVersion());
 
+  ipcMain.handle(IPC.APP_CHECK_UPDATE, () => {
+    // Auto-updater would check here; for now just return current version
+    return { currentVersion: app.getVersion(), updateAvailable: false };
+  });
+
   // Gov Portals
   ipcMain.handle(IPC.GOV_PORTAL_LIST, () => {
     const { getDatabase } = require('../db/database');

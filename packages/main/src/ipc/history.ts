@@ -26,8 +26,7 @@ export function registerHistoryHandlers(): void {
   ipcMain.handle(IPC.HISTORY_CLEAR, () => {
     const db = getDatabase();
     db.prepare('DELETE FROM history').run();
-    db.prepare('DELETE FROM history_fts').run();
-    db.prepare('DELETE FROM history_fts_map').run();
+    db.prepare('DELETE FROM history_fulltext').run();
   });
 
   ipcMain.handle(IPC.HISTORY_SEARCH, (_event, query: string) => {
