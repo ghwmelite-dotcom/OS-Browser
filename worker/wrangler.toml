@@ -20,19 +20,19 @@ DEFAULT_MODEL = "@cf/meta/llama-3-8b-instruct"
 
 [[kv_namespaces]]
 binding = "RATE_LIMITS"
-id = "placeholder-rate-limits"
+id = "aa3ee44d287a49ddbefa32447a66399a"
 
 [[kv_namespaces]]
 binding = "PAGE_CACHE"
-id = "placeholder-page-cache"
+id = "17dd1ea3f38a43708724394b3a47c879"
 
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "placeholder-sessions"
+id = "8054c890dab648d3b001a6aa61aee658"
 
 [[kv_namespaces]]
 binding = "MESSAGES"
-id = "placeholder-messages"
+id = "410622ef993e4cab886b50f683f79602"
 
 # AI binding
 [ai]
