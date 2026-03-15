@@ -141,7 +141,14 @@ export function NewTabPage() {
     if (query.includes('.') && !query.includes(' ')) {
       openUrl(query.startsWith('http') ? query : `https://${query}`);
     } else {
-      openUrl(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
+      const searchEngines: Record<string, string> = {
+        google: 'https://www.google.com/search?q=',
+        duckduckgo: 'https://duckduckgo.com/?q=',
+        bing: 'https://www.bing.com/search?q=',
+        osbrowser: 'https://www.google.com/search?q=',
+      };
+      const searchUrl = searchEngines[(settings as any)?.search_engine || 'google'] || searchEngines.google;
+      openUrl(`${searchUrl}${encodeURIComponent(query)}`);
     }
   };
 

@@ -72,7 +72,7 @@ export function useKeyboardShortcuts(callbacks: {
       // Ctrl+Shift+S — Split Screen
       else if (ctrl && shift && key === 's') { e.preventDefault(); callbacks.onToggleSplitScreen?.(); }
       // Escape — Close sidebar/panel
-      else if (key === 'escape') { closePanel(); callbacks.onToggleHistory?.(); callbacks.onToggleBookmarks?.(); }
+      else if (key === 'escape') { closePanel(); }
       // F11 — Fullscreen
       else if (key === 'f11') { e.preventDefault(); window.osBrowser?.fullscreen(); }
     };

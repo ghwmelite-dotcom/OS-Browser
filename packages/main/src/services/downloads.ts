@@ -1,5 +1,6 @@
 import { session, BrowserWindow, dialog } from 'electron';
 import path from 'path';
+import crypto from 'crypto';
 
 const DANGEROUS_EXTENSIONS = ['.exe', '.bat', '.cmd', '.ps1', '.msi', '.scr', '.com', '.vbs', '.js', '.wsf'];
 

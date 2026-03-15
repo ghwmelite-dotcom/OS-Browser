@@ -1,6 +1,7 @@
 import { BrowserWindow } from 'electron';
 import { IPC } from '@os-browser/shared';
 import type { ConnectivityState } from '@os-browser/shared';
+import { processQueue } from '../services/offline-queue';
 
 const API_BASE = 'https://os-browser-api.ghwmelite.workers.dev';
 let currentStatus: ConnectivityState = 'online';
@@ -26,8 +27,12 @@ async function checkConnectivity(): Promise<ConnectivityState> {
 async function runCheck(): Promise<void> {
   const newStatus = await checkConnectivity();
   if (newStatus !== currentStatus) {
+    const previousStatus = currentStatus;
     currentStatus = newStatus;
     mainWindowRef?.webContents.send(IPC.CONNECTIVITY_CHANGED, currentStatus);
+    if (newStatus === 'online' && previousStatus !== 'online') {
+      processQueue().catch(() => {});
+    }
   }
 }
 

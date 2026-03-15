@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, Lock, Info, Loader2, X, Clock, Globe } from 'lucide-react';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
+import { useSettingsStore } from '@/store/settings';
 
 interface Suggestion {
   url: string;
@@ -13,6 +14,7 @@ export function OmniBar() {
   const { currentUrl, isLoading, isSecure } = useNavigationStore();
   const { activeTabId } = useTabsStore();
   const { navigate } = useNavigationStore();
+  const { settings } = useSettingsStore();
   const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -75,7 +77,14 @@ export function OmniBar() {
     if (!value.includes('://') && value.includes('.') && !value.includes(' ')) {
       url = `https://${value}`;
     } else if (!value.includes('://') && !value.includes('.')) {
-      url = `https://www.google.com/search?q=${encodeURIComponent(value)}`;
+      const searchEngines: Record<string, string> = {
+        google: 'https://www.google.com/search?q=',
+        duckduckgo: 'https://duckduckgo.com/?q=',
+        bing: 'https://www.bing.com/search?q=',
+        osbrowser: 'https://www.google.com/search?q=',
+      };
+      const searchUrl = searchEngines[(settings as any)?.search_engine || 'google'] || searchEngines.google;
+      url = `${searchUrl}${encodeURIComponent(value)}`;
     }
     navigate(activeTabId, url);
     setSuggestions([]);
