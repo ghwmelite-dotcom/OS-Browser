@@ -106,21 +106,27 @@ export function App() {
         const onboardingDone = (useSettingsStore.getState().settings as any)?.onboarding_completed;
         if (!onboardingDone) {
           setShowOnboarding(true);
+          // During onboarding: start fresh — hide any existing web views
+          // and create a single clean new tab
+          window.osBrowser?.hideWebViews?.();
+          await loadTabs();
+          if (useTabsStore.getState().tabs.length === 0) {
+            await createTab();
+          }
+          await loadStats();
+          return; // Skip session restore — onboarding is showing
         }
 
         await loadTabs();
         const existingTabs = useTabsStore.getState().tabs;
 
         if (startupMode === 'restore' && existingTabs.length > 0) {
-          // Resume where user left off — tabs are already loaded from DB
-          // Navigate each tab that has a real URL to restore the WebContentsView
           for (const tab of existingTabs) {
             if (tab.url && tab.url !== 'os-browser://newtab') {
               await window.osBrowser.tabs.navigate(tab.id, tab.url);
             }
           }
         } else {
-          // Start fresh — create a new tab if none exist
           if (existingTabs.length === 0) {
             await createTab();
           }
@@ -268,8 +274,9 @@ export function App() {
       {showOnboarding && <Onboarding onComplete={() => {
         useSettingsStore.getState().updateSettings({ onboarding_completed: true });
         setShowOnboarding(false);
-        // Reload settings to show the new profile
         useSettingsStore.getState().loadSettings();
+        // Show web views now that onboarding is done
+        window.osBrowser?.showWebViews?.();
       }} />}
     </div>
   );
