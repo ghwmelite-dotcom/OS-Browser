@@ -38,9 +38,33 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showSplitPicker, setShowSplitPicker] = useState(false);
-  const [showCurrencyTools, setShowCurrencyTools] = useState(false);
-  const [showTwiDictionary, setShowTwiDictionary] = useState(false);
+  const [showCurrencyTools, _setShowCurrencyTools] = useState(false);
+  const [showTwiDictionary, _setShowTwiDictionary] = useState(false);
   const [readingMode, setReadingMode] = useState<{ active: boolean; content: string; title: string; url: string }>({ active: false, content: '', title: '', url: '' });
+
+  // Wrap sidebar panel setters to hide/show WebContentsViews
+  const setShowCurrencyTools = (v: boolean | ((prev: boolean) => boolean)) => {
+    _setShowCurrencyTools(prev => {
+      const newVal = typeof v === 'function' ? v(prev) : v;
+      if (newVal) window.osBrowser?.hideWebViews?.();
+      else if (!showTwiDictionary && !isOpen) window.osBrowser?.showWebViews?.();
+      return newVal;
+    });
+  };
+  const setShowTwiDictionary = (v: boolean | ((prev: boolean) => boolean)) => {
+    _setShowTwiDictionary(prev => {
+      const newVal = typeof v === 'function' ? v(prev) : v;
+      if (newVal) window.osBrowser?.hideWebViews?.();
+      else if (!showCurrencyTools && !isOpen) window.osBrowser?.showWebViews?.();
+      return newVal;
+    });
+  };
+
+  // Also hide views when AI sidebar or AskOzzy panel opens
+  useEffect(() => {
+    if (isOpen) window.osBrowser?.hideWebViews?.();
+    else if (!showCurrencyTools && !showTwiDictionary) window.osBrowser?.showWebViews?.();
+  }, [isOpen]);
   const splitActive = useSplitScreenStore(s => s.isActive);
 
   useKeyboardShortcuts({
