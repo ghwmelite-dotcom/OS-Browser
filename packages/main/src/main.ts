@@ -3,6 +3,7 @@ import path from 'path';
 import { initDatabase, getDatabase, closeDatabase, runMigrations } from './db/database';
 import { seedDatabase } from './db/seed';
 import { registerAllHandlers } from './ipc/handlers';
+import { initAutoUpdater } from './services/auto-update';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -78,6 +79,9 @@ function createWindow() {
 
   // Register IPC handlers
   registerAllHandlers(mainWindow);
+
+  // Auto-updater — checks GitHub Releases for new versions
+  initAutoUpdater(mainWindow);
 
   // Load renderer
   const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
