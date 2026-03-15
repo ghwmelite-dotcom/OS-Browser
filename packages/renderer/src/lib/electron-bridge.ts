@@ -18,6 +18,7 @@ const mockBridge = {
   newPrivateWindow: noop,
   hideWebViews: noop,
   showWebViews: noop,
+  captureScreenshot: async () => ({ success: false, error: 'Not available in browser mode' }),
 
   tabs: {
     create: async (url?: string) => ({
