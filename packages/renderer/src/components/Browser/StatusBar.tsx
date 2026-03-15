@@ -6,6 +6,8 @@ import { useStatsStore } from '@/store/stats';
 import { useNavigationStore } from '@/store/navigation';
 import { FocusIndicator } from '@/components/FocusMode';
 import { DataStatusIndicator } from '@/components/DataSaver/DataStatusIndicator';
+import { DumsorGuardIndicator } from '@/components/DumsorGuard/DumsorGuardIndicator';
+import { NetworkIndicator } from '@/components/NetworkManager/NetworkIndicator';
 import { useTabsStore } from '@/store/tabs';
 
 export function StatusBar() {
@@ -51,8 +53,14 @@ export function StatusBar() {
 
       {/* Right: indicators */}
       <div className="flex items-center gap-3 shrink-0">
+        {/* Dumsor Guard — session save status */}
+        <DumsorGuardIndicator />
+
         {/* Data Usage Indicator */}
         <DataStatusIndicator onClick={() => createTab('os-browser://data' as any)} />
+
+        {/* Network quality indicator */}
+        <NetworkIndicator onClick={() => createTab('os-browser://data' as any)} />
 
         {/* Focus Mode indicator */}
         <FocusIndicator />
