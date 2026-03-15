@@ -37,12 +37,17 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
     win?.setFullScreen(!win.isFullScreen());
   });
 
-  // New window
+  // New window — smart sizing based on screen resolution
   ipcMain.handle('window:new', () => {
     const path = require('path');
+    const { screen } = require('electron');
+    const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
+    const w = Math.max(1024, Math.round(sw * 0.8));
+    const h = Math.max(600, Math.round(sh * 0.8));
     const newWin = new BrowserWindow({
-      width: 1280, height: 800, minWidth: 800, minHeight: 600,
-      frame: false, titleBarStyle: 'hidden', backgroundColor: '#0a0a08',
+      width: w, height: h, minWidth: 800, minHeight: 500,
+      x: Math.round((sw - w) / 2) + 30, y: Math.round((sh - h) / 2) + 30,
+      frame: false, titleBarStyle: 'hidden', backgroundColor: '#fce8c8',
       webPreferences: {
         preload: path.join(__dirname, '..', '..', 'preload', 'dist', 'index.js'),
         contextIsolation: true, nodeIntegration: false, sandbox: true, webviewTag: false,
@@ -58,8 +63,13 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
   // New private window — separate session, dark mode, no cache
   ipcMain.handle('window:new-private', () => {
     const path = require('path');
+    const { screen } = require('electron');
+    const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
+    const w = Math.max(1024, Math.round(sw * 0.8));
+    const h = Math.max(600, Math.round(sh * 0.8));
     const privWin = new BrowserWindow({
-      width: 1280, height: 800, minWidth: 800, minHeight: 600,
+      width: w, height: h, minWidth: 800, minHeight: 500,
+      x: Math.round((sw - w) / 2) + 50, y: Math.round((sh - h) / 2) + 50,
       frame: false, titleBarStyle: 'hidden', backgroundColor: '#0f1117',
       webPreferences: {
         preload: path.join(__dirname, '..', '..', 'preload', 'dist', 'index.js'),

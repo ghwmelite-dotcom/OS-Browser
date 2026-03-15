@@ -165,10 +165,14 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
 
 function resizeViewToContent(view: WebContentsView, win: BrowserWindow): void {
   const bounds = win.getContentBounds();
-  // Leave room for title bar (32px), tab bar (36px), nav bar (40px), bookmarks bar (32px), status bar (24px)
-  const topOffset = 140;
-  const bottomOffset = 24;
-  view.setBounds({ x: 0, y: topOffset, width: bounds.width, height: bounds.height - topOffset - bottomOffset });
+  // Browser chrome heights:
+  // TitleBar: 32px, TabBar: 36px, NavigationBar: 44px, BookmarksBar: ~28px, StatusBar: 22px
+  // Total chrome: ~162px top + 22px bottom
+  // Using 134px top (without bookmarks bar as it may be hidden) + 22px bottom
+  const topOffset = 134;
+  const bottomOffset = 22;
+  const height = Math.max(100, bounds.height - topOffset - bottomOffset);
+  view.setBounds({ x: 0, y: topOffset, width: bounds.width, height });
 }
 
 function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: BrowserWindow): void {
