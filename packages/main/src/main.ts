@@ -98,7 +98,32 @@ function createWindow() {
   // Save window state on move/resize
   mainWindow.on('resize', saveWindowState);
   mainWindow.on('move', saveWindowState);
-  mainWindow.on('close', saveWindowState);
+
+  // Confirm close when multiple tabs are open
+  mainWindow.on('close', (e) => {
+    saveWindowState();
+
+    const db = getDatabase();
+    const tabCount = (db.prepare('SELECT COUNT(*) as count FROM tabs').get() as any)?.count || 0;
+
+    if (tabCount > 1) {
+      const { dialog } = require('electron');
+      const choice = dialog.showMessageBoxSync(mainWindow!, {
+        type: 'question',
+        buttons: ['Close All Tabs', 'Cancel'],
+        defaultId: 1,
+        title: 'Close OS Browser?',
+        message: `You have ${tabCount} tabs open.`,
+        detail: 'Are you sure you want to close the browser? All open tabs will be closed.',
+        cancelId: 1,
+      });
+
+      if (choice === 1) {
+        e.preventDefault(); // Cancel the close
+        return;
+      }
+    }
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
