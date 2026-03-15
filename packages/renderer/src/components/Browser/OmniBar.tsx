@@ -226,11 +226,17 @@ function BookmarkStar({ url }: { url: string }) {
   const { tabs, activeTabId } = useTabsStore();
 
   useEffect(() => {
-    if (url && !url.startsWith('os-browser://')) {
-      window.osBrowser.bookmarks.isBookmarked(url).then(setIsBookmarked).catch(() => {});
-    } else {
-      setIsBookmarked(false);
-    }
+    const check = () => {
+      if (url && !url.startsWith('os-browser://')) {
+        window.osBrowser.bookmarks.isBookmarked(url).then(setIsBookmarked).catch(() => {});
+      } else {
+        setIsBookmarked(false);
+      }
+    };
+    check();
+    // Listen for Ctrl+D toggle events to refresh star state
+    window.addEventListener('bookmark-changed', check);
+    return () => window.removeEventListener('bookmark-changed', check);
   }, [url]);
 
   const toggle = async (e: React.MouseEvent) => {

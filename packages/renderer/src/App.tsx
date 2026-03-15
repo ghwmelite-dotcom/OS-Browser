@@ -88,12 +88,13 @@ export function App() {
         if (!isBookmarked) {
           await window.osBrowser.bookmarks.add({ url, title: activeTab?.title || url });
         } else {
-          // If already bookmarked, remove it (toggle behavior)
           const data = await window.osBrowser.bookmarks.list();
           const bms = data.bookmarks || data || [];
           const match = bms.find((b: any) => b.url === url);
           if (match) await window.osBrowser.bookmarks.delete(match.id);
         }
+        // Notify BookmarkStar to refresh its state
+        window.dispatchEvent(new Event('bookmark-changed'));
       }
     },
   });

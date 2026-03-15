@@ -76,6 +76,7 @@ const mockBridge = {
     createFolder: noop,
     deleteFolder: noop,
     updateFolder: noop,
+    import: async () => ({ imported: 0 }),
     export: async () => ({ success: false }),
   },
 
