@@ -56,7 +56,8 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     }
 
     const tab = db.prepare('SELECT * FROM tabs WHERE id = ?').get(id) as any;
-    if (tab && tab.url !== 'os-browser://newtab' && !tabViews.has(id)) {
+    // Only create WebContentsView for real URLs — not internal os-browser:// pages
+    if (tab && tab.url && !tab.url.startsWith('os-browser://') && !tabViews.has(id)) {
       const view = new WebContentsView();
       mainWindow.contentView.addChildView(view);
       resizeViewToContent(view, mainWindow);
@@ -65,6 +66,13 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
       tabViews.set(id, view);
       if (isTabSuspended(id)) {
         markTabRestored(id);
+      }
+    }
+
+    // Hide all views when switching to an internal page
+    if (tab && tab.url && tab.url.startsWith('os-browser://')) {
+      for (const view of tabViews.values()) {
+        view.setVisible(false);
       }
     }
 
@@ -165,11 +173,12 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
 
 function resizeViewToContent(view: WebContentsView, win: BrowserWindow): void {
   const bounds = win.getContentBounds();
-  // Browser chrome heights:
-  // TitleBar: 32px, TabBar: 36px, NavigationBar: 44px, BookmarksBar: ~28px, StatusBar: 22px
-  // Total chrome: ~162px top + 22px bottom
-  // Using 134px top (without bookmarks bar as it may be hidden) + 22px bottom
-  const topOffset = 134;
+  // Browser chrome heights (measured from actual components):
+  // TitleBar: 32px, TabBar: 36px, NavigationBar: 44px = 112px
+  // BookmarksBar: ~28px (may be hidden), StatusBar: 22px
+  // Use 112px top offset (no bookmarks bar gap — it's part of the React layer)
+  // The WebContentsView sits right below the nav bar
+  const topOffset = 112;
   const bottomOffset = 22;
   const height = Math.max(100, bounds.height - topOffset - bottomOffset);
   view.setBounds({ x: 0, y: topOffset, width: bounds.width, height });
