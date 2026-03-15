@@ -97,6 +97,43 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
     }
   });
 
+  // Screenshot capture
+  ipcMain.handle('screenshot:capture', async (event) => {
+    const path = require('path');
+    const fs = require('fs');
+    const { getTabViews } = require('./tabs');
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) return { success: false, error: 'No window found' };
+
+    try {
+      // Find the active tab's WebContentsView
+      const db = getDatabase();
+      const activeTab = db.prepare('SELECT id FROM tabs WHERE is_active = 1').get() as any;
+      const views = getTabViews();
+      const view = activeTab ? views.get(activeTab.id) : null;
+
+      // Capture either the active tab's view or the whole window
+      let image;
+      if (view && view.webContents) {
+        image = await view.webContents.capturePage();
+      } else {
+        image = await win.webContents.capturePage();
+      }
+
+      // Save to Downloads folder
+      const downloadsDir = app.getPath('downloads');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `OS-Browser-Screenshot-${timestamp}.png`;
+      const filePath = path.join(downloadsDir, filename);
+
+      fs.writeFileSync(filePath, image.toPNG());
+
+      return { success: true, filename, path: filePath };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  });
+
   // App info
   ipcMain.handle(IPC.APP_GET_VERSION, () => app.getVersion());
 

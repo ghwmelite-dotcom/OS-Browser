@@ -14,25 +14,25 @@ export function ScreenshotButton() {
 
   const captureVisiblePage = async () => {
     setShowMenu(false);
+    // Show web views first so we capture actual page content
     window.osBrowser?.showWebViews?.();
-    // Brief delay to let views show before capture
-    await new Promise(r => setTimeout(r, 200));
+    // Brief delay to let views render before capture
+    await new Promise(r => setTimeout(r, 300));
     try {
-      // Attempt to download a screenshot via canvas
-      const canvas = document.createElement('canvas');
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      // For Electron, we'd use webContents.capturePage() — for now trigger a download prompt
-      showSuccess('Screenshot saved to Downloads');
+      const result = await (window.osBrowser as any)?.captureScreenshot?.();
+      if (result?.success) {
+        showSuccess(`Saved: ${result.filename}`);
+      } else {
+        showSuccess(result?.error || 'Screenshot failed');
+      }
     } catch {
-      showSuccess('Screenshot captured');
+      showSuccess('Screenshot failed');
     }
   };
 
-  const captureFullPage = () => {
-    setShowMenu(false);
-    window.osBrowser?.showWebViews?.();
-    showSuccess('Full page screenshot saved');
+  const captureFullPage = async () => {
+    // Full page uses the same capture for now (visible area)
+    await captureVisiblePage();
   };
 
   const captureSelection = () => {
