@@ -28,6 +28,7 @@ nsis:
   installerIcon: assets/icon.ico
   uninstallerIcon: assets/icon.ico
   runAfterFinish: true
+  deleteAppDataOnUninstall: true
 publish:
   provider: github
   owner: ghwmelite-dotcom
