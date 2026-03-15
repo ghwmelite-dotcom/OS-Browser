@@ -32,6 +32,7 @@ function getTabColor(index: number) {
 
 export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, index = 0, onSwitch, onClose }: TabProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const tabRef = useRef<HTMLDivElement>(null);
   const color = useMemo(() => getTabColor(index), [index]);
 
@@ -52,8 +53,16 @@ export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, in
     <div
       ref={tabRef}
       onClick={onSwitch}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        const timer = setTimeout(() => setShowPreview(true), 600);
+        (tabRef.current as any).__hoverTimer = timer;
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setShowPreview(false);
+        clearTimeout((tabRef.current as any)?.__hoverTimer);
+      }}
       className={`
         group relative flex items-center h-[34px] cursor-pointer overflow-hidden
         transition-all duration-150 ease-out rounded-t-lg mx-[1px]
@@ -135,6 +144,20 @@ export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, in
         >
           <X size={11} className="text-text-muted" />
         </button>
+      )}
+
+      {/* Tab preview tooltip */}
+      {showPreview && !isPinned && (
+        <div className="absolute top-full left-0 mt-1 z-[60] pointer-events-none"
+          style={{ minWidth: '200px', maxWidth: '300px' }}>
+          <div className="rounded-lg border px-3 py-2 shadow-lg text-left"
+            style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}>
+            <p className="text-[12px] font-medium text-text-primary truncate">{title}</p>
+            {url && url !== 'os-browser://newtab' && (
+              <p className="text-[10px] text-text-muted truncate mt-0.5">{url}</p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
