@@ -3,6 +3,7 @@ import { create } from 'zustand';
 interface Settings {
   display_name: string;
   email: string | null;
+  avatar_path: string | null;
   default_model: string;
   theme: 'dark' | 'light' | 'system';
   language: string;
@@ -11,13 +12,15 @@ interface Settings {
   privacy_mode: boolean;
   search_engine: string;
   sync_enabled: boolean;
+  startup_mode: string;
+  [key: string]: any; // Allow arbitrary extra fields
 }
 
 interface SettingsState {
   settings: Settings | null;
   isLoaded: boolean;
   loadSettings: () => Promise<void>;
-  updateSettings: (data: Partial<Settings>) => Promise<void>;
+  updateSettings: (data: Record<string, any>) => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -30,11 +33,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   },
 
   updateSettings: async (data) => {
-    // Optimistically update local state first (don't depend on IPC return)
+    // Optimistically update local state — merge all fields
     set((s) => ({
-      settings: s.settings ? { ...s.settings, ...data } as Settings : s.settings,
+      settings: s.settings ? { ...s.settings, ...data } : s.settings,
     }));
-    // Fire IPC to persist to database (don't await — fire and forget)
+    // Persist to database
     try {
       await window.osBrowser.settings.update(data);
     } catch {}

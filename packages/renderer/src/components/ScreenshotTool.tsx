@@ -14,14 +14,16 @@ export function ScreenshotButton() {
 
   const captureVisiblePage = async () => {
     setShowMenu(false);
-    // Show web views first so we capture actual page content
+    // Show web views so we capture actual page content
     window.osBrowser?.showWebViews?.();
-    // Brief delay to let views render before capture
-    await new Promise(r => setTimeout(r, 300));
+    // Brief delay to let views render
+    await new Promise(r => setTimeout(r, 400));
     try {
       const result = await (window.osBrowser as any)?.captureScreenshot?.();
       if (result?.success) {
         showSuccess(`Saved: ${result.filename}`);
+      } else if (result?.error === 'Cancelled') {
+        // User cancelled Save As dialog — no message needed
       } else {
         showSuccess(result?.error || 'Screenshot failed');
       }
@@ -31,7 +33,6 @@ export function ScreenshotButton() {
   };
 
   const captureFullPage = async () => {
-    // Full page uses the same capture for now (visible area)
     await captureVisiblePage();
   };
 
