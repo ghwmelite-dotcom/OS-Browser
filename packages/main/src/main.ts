@@ -30,17 +30,30 @@ function saveWindowState() {
 
 function createWindow() {
   const state = getWindowState();
+  const { screen } = require('electron');
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width: screenW, height: screenH } = primaryDisplay.workAreaSize;
+
+  // Smart default sizing based on screen resolution:
+  // - Use 85% of screen width/height for a balanced initial window
+  // - Minimum 1024x600 for usability
+  // - Cap at screen size minus some margin
+  const defaultWidth = Math.max(1024, Math.min(Math.round(screenW * 0.85), screenW - 80));
+  const defaultHeight = Math.max(600, Math.min(Math.round(screenH * 0.85), screenH - 60));
+  // Center on screen if no saved position
+  const defaultX = Math.round((screenW - defaultWidth) / 2);
+  const defaultY = Math.round((screenH - defaultHeight) / 2);
 
   mainWindow = new BrowserWindow({
-    x: state?.x ?? 100,
-    y: state?.y ?? 100,
-    width: state?.width ?? 1280,
-    height: state?.height ?? 800,
+    x: state?.x ?? defaultX,
+    y: state?.y ?? defaultY,
+    width: state?.width ?? defaultWidth,
+    height: state?.height ?? defaultHeight,
     minWidth: 800,
-    minHeight: 600,
+    minHeight: 500,
     frame: false,
     titleBarStyle: 'hidden',
-    backgroundColor: '#0c0e14',
+    backgroundColor: '#fce8c8', // Light mode default
     webPreferences: {
       preload: path.join(__dirname, '..', '..', 'preload', 'dist', 'index.js'),
       contextIsolation: true,
