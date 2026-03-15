@@ -331,7 +331,6 @@ export function App() {
         onOpenBookmarks={() => setShowBookmarks(true)}
         onOpenSettings={() => setShowSettings(true)}
         onOpenStats={() => useTabsStore.getState().createTab('os-browser://stats')}
-        onToggleIdentityPanel={() => setShowIdentityPanel(prev => !prev)}
       />
       <BookmarksBar />
       <OfflineBanner />
