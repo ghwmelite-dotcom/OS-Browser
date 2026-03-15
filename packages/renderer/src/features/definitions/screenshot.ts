@@ -2,14 +2,20 @@ import { Camera } from 'lucide-react';
 import { FeatureRegistry } from '../registry';
 
 const captureVisible = () => {
+  // Show web views so we capture the actual page content
   window.osBrowser?.showWebViews?.();
   setTimeout(async () => {
     try {
-      await (window.osBrowser as any)?.captureScreenshot?.();
+      const result = await (window.osBrowser as any)?.captureScreenshot?.();
+      if (result?.success) {
+        // Brief visual feedback
+        window.osBrowser?.hideWebViews?.();
+      }
     } catch {
-      // Silently handle screenshot failure
+      // If captureScreenshot doesn't exist, try print as fallback
+      try { window.print(); } catch {}
     }
-  }, 400);
+  }, 300);
 };
 
 const captureFullPage = () => {
@@ -18,9 +24,9 @@ const captureFullPage = () => {
     try {
       await (window.osBrowser as any)?.captureFullPage?.();
     } catch {
-      captureVisible(); // Fallback to visible area
+      captureVisible();
     }
-  }, 400);
+  }, 300);
 };
 
 const screenshotToReport = () => {
@@ -33,13 +39,10 @@ const screenshotToReport = () => {
           detail: { screenshotPath: result.filePath },
         }));
       }
-    } catch {
-      // Silently handle failure
-    }
-  }, 400);
+    } catch {}
+  }, 300);
 };
 
-// ── Feature Definition ──────────────────────────────────────────────
 const screenshotFeature = {
   id: 'screenshot',
   name: 'Screenshot',
@@ -56,53 +59,18 @@ const screenshotFeature = {
       order: 1,
       onClick: () => captureVisible(),
       dropdownItems: [
-        {
-          id: 'screenshot:visible',
-          label: 'Capture visible area',
-          onClick: () => captureVisible(),
-        },
-        {
-          id: 'screenshot:full-page',
-          label: 'Capture full page',
-          onClick: () => captureFullPage(),
-        },
-        {
-          id: 'screenshot:to-report',
-          label: 'Screenshot to Report',
-          onClick: () => screenshotToReport(),
-        },
+        { id: 'screenshot:visible', label: 'Capture visible area', onClick: () => captureVisible() },
+        { id: 'screenshot:full-page', label: 'Capture full page', onClick: () => captureFullPage() },
+        { id: 'screenshot:to-report', label: 'Screenshot to Report', onClick: () => screenshotToReport() },
       ],
     },
     commandBar: [
-      {
-        id: 'screenshot:take',
-        label: 'Take screenshot',
-        description: 'Capture the visible area of the current page',
-        keywords: ['screenshot', 'capture', 'snap', 'image', 'picture', 'screen'],
-        action: () => captureVisible(),
-        shortcut: 'Ctrl+Shift+X',
-        group: 'Screenshot',
-      },
-      {
-        id: 'screenshot:full',
-        label: 'Capture full page',
-        description: 'Capture the entire page including scrolled content',
-        keywords: ['full', 'page', 'capture', 'entire', 'scroll', 'complete', 'screenshot'],
-        action: () => captureFullPage(),
-        group: 'Screenshot',
-      },
-      {
-        id: 'screenshot:report',
-        label: 'Generate report from screenshot',
-        description: 'Create a formatted report from a screenshot',
-        keywords: ['report', 'generate', 'screenshot', 'document', 'annotate', 'share'],
-        action: () => screenshotToReport(),
-        group: 'Screenshot',
-      },
+      { id: 'screenshot:take', label: 'Take screenshot', description: 'Capture the visible area', keywords: ['screenshot', 'capture', 'snap', 'image', 'screen'], action: () => captureVisible(), shortcut: 'Ctrl+Shift+X' },
+      { id: 'screenshot:full', label: 'Capture full page', description: 'Capture entire scrolled page', keywords: ['full', 'page', 'capture', 'entire', 'screenshot'], action: () => captureFullPage() },
+      { id: 'screenshot:report', label: 'Generate report from screenshot', description: 'Create a formatted report', keywords: ['report', 'generate', 'screenshot', 'document'], action: () => screenshotToReport() },
     ],
   },
 };
 
 FeatureRegistry.register(screenshotFeature);
-
 export default screenshotFeature;

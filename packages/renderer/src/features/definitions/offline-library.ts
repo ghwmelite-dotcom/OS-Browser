@@ -2,9 +2,27 @@ import React from 'react';
 import { WifiOff, Download, ExternalLink, Save, ListChecks, Trash2, ChevronRight } from 'lucide-react';
 import { FeatureRegistry, SidebarPanelProps } from '../registry';
 import { useTabsStore } from '@/store/tabs';
+import { useNavigationStore } from '@/store/navigation';
+import { useOfflineStore } from '@/store/offline';
 
 const openOfflineLibrary = () => useTabsStore.getState().createTab('os-browser://offline');
-const savePageOffline = () => window.dispatchEvent(new CustomEvent('os-browser:save-page-offline'));
+
+const savePageOffline = () => {
+  const url = useNavigationStore.getState().currentUrl;
+  if (!url || url.startsWith('os-browser://')) return;
+  const tabs = useTabsStore.getState().tabs;
+  const activeTab = tabs.find(t => t.id === useTabsStore.getState().activeTabId);
+  const title = activeTab?.title || url;
+  const isGov = url.includes('.gov.gh') || url.includes('.edu.gh');
+  useOfflineStore.getState().savePage({
+    url,
+    title,
+    category: isGov ? 'gov' : 'manual',
+    content: `<html><head><title>${title}</title></head><body><p>Saved from ${url}</p></body></html>`,
+  });
+  // Also dispatch event for any other listeners
+  window.dispatchEvent(new CustomEvent('os-browser:save-page-offline'));
+};
 
 const OFFLINE_ACTIONS = [
   { label: 'Save Current Page', desc: 'Download this page for offline access', icon: Save, action: savePageOffline },
