@@ -10,6 +10,63 @@ import { FocusSettings } from '@/components/FocusMode';
 import { OmniBar } from './OmniBar';
 import { BrowserMenu } from './BrowserMenu';
 
+// Auto-generated avatar colors based on name hash
+const AVATAR_COLORS = [
+  'linear-gradient(135deg, #CE1126 0%, #FCD116 100%)', // Ghana red-gold
+  'linear-gradient(135deg, #006B3F 0%, #FCD116 100%)', // Ghana green-gold
+  'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', // Purple
+  'linear-gradient(135deg, #f43f5e 0%, #ec4899 100%)', // Pink
+  'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%)', // Blue
+  'linear-gradient(135deg, #f97316 0%, #eab308 100%)', // Orange
+  'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)', // Teal
+  'linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%)', // Violet
+];
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.charAt(0).toUpperCase();
+}
+
+// Reusable avatar component — shows photo if available, otherwise generated initials
+function ProfileAvatar({ name, avatarPath, size = 72, editable = false, onChangePhoto }: {
+  name: string; avatarPath?: string | null; size?: number; editable?: boolean; onChangePhoto?: () => void;
+}) {
+  const initials = getInitials(name || 'U');
+  const bgColor = getAvatarColor(name || 'User');
+  const fontSize = size < 40 ? size * 0.4 : size * 0.38;
+
+  return (
+    <div className="relative group" style={{ width: size, height: size }}>
+      {avatarPath ? (
+        <img src={avatarPath} alt={name}
+          className="rounded-full object-cover shadow-lg"
+          style={{ width: size, height: size }}
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
+      ) : (
+        <div className="rounded-full flex items-center justify-center font-bold text-white shadow-lg"
+          style={{ width: size, height: size, background: bgColor, fontSize }}>
+          {initials}
+        </div>
+      )}
+      {editable && onChangePhoto && (
+        <button onClick={onChangePhoto}
+          className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <span className="text-white text-[10px] font-medium">Change</span>
+        </button>
+      )}
+    </div>
+  );
+}
+
 function NavButton({
   onClick, disabled = false, icon, label, className = '',
 }: {
@@ -195,9 +252,7 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
             aria-label="Account" title="Account"
           >
             {settings?.email ? (
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: 'var(--color-accent)' }}>
-                {(settings.display_name || settings.email).charAt(0).toUpperCase()}
-              </div>
+              <ProfileAvatar name={settings.display_name || 'U'} avatarPath={(settings as any).avatar_path} size={26} />
             ) : (
               <User size={16} strokeWidth={1.8} className="text-text-secondary" />
             )}
@@ -216,9 +271,28 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                   <>
                     {/* Large profile header */}
                     <div className="px-6 pt-6 pb-5 text-center" style={{ background: 'var(--color-surface-2)' }}>
-                      <div className="w-[72px] h-[72px] rounded-full mx-auto mb-3 flex items-center justify-center text-[28px] font-bold text-white shadow-lg"
-                        style={{ background: 'linear-gradient(135deg, #CE1126 0%, #FCD116 50%, #006B3F 100%)' }}>
-                        {(settings.display_name || 'U').charAt(0).toUpperCase()}
+                      {/* Hidden file input for photo upload */}
+                      <input type="file" id="avatar-upload" accept="image/*" className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = async () => {
+                            const dataUrl = reader.result as string;
+                            await window.osBrowser.settings.update({ avatar_path: dataUrl } as any);
+                            useSettingsStore.getState().loadSettings();
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                      <div className="flex justify-center mb-3">
+                        <ProfileAvatar
+                          name={settings.display_name || 'U'}
+                          avatarPath={(settings as any).avatar_path}
+                          size={80}
+                          editable
+                          onChangePhoto={() => document.getElementById('avatar-upload')?.click()}
+                        />
                       </div>
                       <h3 className="text-[16px] font-bold text-text-primary">{settings.display_name}</h3>
                       <p className="text-[12px] text-text-muted mt-0.5">{settings.email}</p>
