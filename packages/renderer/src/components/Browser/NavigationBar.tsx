@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, Star, Sparkles, MessageSquare, User, Share, Target, DollarSign, BookOpen, AlignJustify, CreditCard, Brain, Smartphone } from 'lucide-react';
-import { ScreenshotButton } from '@/components/ScreenshotTool';
+import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, User, Share } from 'lucide-react';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
-import { useSidebarStore } from '@/store/sidebar';
 import { useSettingsStore } from '@/store/settings';
-import { useFocusStore } from '@/store/focus';
-import { FocusSettings } from '@/components/FocusMode';
 import { OmniBar } from './OmniBar';
 import { BrowserMenu } from './BrowserMenu';
-import { SavePageButton } from '@/components/Offline/SavePageButton';
 import { KenteToolbar } from '../KenteSystem/KenteToolbar';
 
 // Auto-generated avatar colors based on name hash
@@ -94,16 +89,13 @@ interface NavigationBarProps {
   onOpenBookmarks: () => void;
   onOpenSettings: () => void;
   onOpenStats: () => void;
-  onToggleIdentityPanel: () => void;
 }
 
-export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, onOpenStats, onToggleIdentityPanel }: NavigationBarProps) {
+export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, onOpenStats }: NavigationBarProps) {
   const { canGoBack, canGoForward, isLoading, currentUrl } = useNavigationStore();
-  const { goBack, goForward, reload, stop, navigate } = useNavigationStore();
+  const { goBack, goForward, reload, stop } = useNavigationStore();
   const { activeTabId } = useTabsStore();
-  const { isOpen, toggleSidebar, openPanel, activePanel } = useSidebarStore();
   const { settings } = useSettingsStore();
-  const focusActive = useFocusStore(s => s.isActive);
 
   // Track any open dropdown — hide WebContentsViews when ANY dropdown is open
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -122,6 +114,7 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
   const [profileView, setProfileView] = useState<'main' | 'edit' | 'customize' | 'add'>('main');
+  const [showCopied, setShowCopied] = useState(false);
 
 
   return (
@@ -154,113 +147,33 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
       <OmniBar />
 
       {/* ── Right: Actions ── */}
-      <div className="flex items-center gap-[6px] ml-3">
-        {/* Kente Toolbar */}
+      <div className="flex items-center gap-1 ml-3">
+        {/* Kente Toolbar — contextual page actions (Screenshot, Save Offline, Translate, Lite Mode) */}
         <KenteToolbar />
 
-        {/* Separator */}
-        <div className="w-px h-5 bg-border-1/40 mx-0.5" />
-
-        {/* Share */}
-        <NavButton
-          onClick={() => {
-            if (currentUrl && currentUrl !== 'os-browser://newtab') {
-              navigator.clipboard?.writeText(currentUrl);
-            }
-          }}
-          icon={<Share size={15} strokeWidth={1.8} className="text-text-secondary" />}
-          label="Copy link"
-        />
-
-        {/* AskOzzy */}
-        <NavButton
-          onClick={() => openPanel(activePanel === 'askozzy' ? 'none' : 'askozzy')}
-          icon={<Sparkles size={15} strokeWidth={1.8} className={activePanel === 'askozzy' ? 'text-ghana-gold' : 'text-text-secondary'} />}
-          label="AskOzzy (Ctrl+Shift+O)"
-          className={activePanel === 'askozzy' ? 'bg-ghana-gold-dim' : ''}
-        />
-
-        {/* AI sidebar */}
-        <button
-          onClick={toggleSidebar}
-          className={`w-[32px] h-[32px] flex items-center justify-center rounded-full transition-all duration-150
-            focus:outline-none focus:ring-2 focus:ring-ghana-gold/40
-            ${isOpen && activePanel === 'ai'
-              ? 'bg-ghana-gold text-bg shadow-[0_0_8px_rgba(212,160,23,0.3)]'
-              : 'hover:bg-surface-2 text-text-secondary'
-            }`}
-          aria-label="AI Assistant (Ctrl+J)" title="AI Assistant (Ctrl+J)"
-        >
-          <MessageSquare size={14} strokeWidth={1.8} />
-        </button>
-
-        {/* GHS Tools */}
-        <NavButton
-          onClick={() => window.dispatchEvent(new CustomEvent('os-browser:currency-tools'))}
-          icon={<DollarSign size={15} strokeWidth={1.8} className="text-text-secondary" />}
-          label="GHS Currency & SSNIT Tools"
-        />
-
-        {/* Mobile Money */}
-        <NavButton
-          onClick={() => window.dispatchEvent(new CustomEvent('os-browser:mobile-money'))}
-          icon={<Smartphone size={15} strokeWidth={1.8} className="text-text-secondary" />}
-          label="Mobile Money Quick Pay"
-        />
-
-        {/* Twi Dictionary */}
-        <NavButton
-          onClick={() => window.dispatchEvent(new CustomEvent('os-browser:twi-dictionary'))}
-          icon={<BookOpen size={15} strokeWidth={1.8} className="text-text-secondary" />}
-          label="Twi Dictionary"
-        />
-
-        {/* Save Page Offline */}
-        <SavePageButton />
-
-        {/* Screenshot */}
-        <ScreenshotButton />
-
-        {/* Reading Mode */}
-        <NavButton
-          onClick={() => window.dispatchEvent(new CustomEvent('os-browser:reading-mode'))}
-          icon={<AlignJustify size={15} strokeWidth={1.8} className="text-text-secondary" />}
-          label="Reading Mode"
-        />
-
-        {/* Focus Mode */}
+        {/* Share — with copy feedback */}
         <div className="relative">
           <NavButton
             onClick={() => {
-              if (focusActive) {
-                useFocusStore.getState().toggleFocus();
-              } else {
-                toggleDropdown('focus');
+              if (currentUrl && currentUrl !== 'os-browser://newtab') {
+                navigator.clipboard?.writeText(currentUrl);
+                setShowCopied(true);
+                setTimeout(() => setShowCopied(false), 1500);
               }
             }}
-            icon={<Target size={15} strokeWidth={1.8} className={focusActive ? 'text-ghana-gold' : 'text-text-secondary'} />}
-            label="Focus Mode"
-            className={focusActive ? 'bg-ghana-gold-dim' : ''}
+            icon={<Share size={15} strokeWidth={1.8} className="text-text-secondary" />}
+            label="Copy link"
           />
-          {openDropdown === 'focus' && <FocusSettings onClose={closeDropdown} />}
+          {showCopied && (
+            <div className="absolute top-[36px] left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg text-[10px] font-medium whitespace-nowrap z-50 shadow-lg"
+              style={{ background: 'var(--color-accent)', color: '#fff' }}>
+              Link copied!
+            </div>
+          )}
         </div>
 
-        {/* Digital Assistant */}
-        <NavButton
-          onClick={() => window.dispatchEvent(new CustomEvent('os-browser:literacy-assistant'))}
-          icon={<Brain size={15} strokeWidth={1.8} className="text-text-secondary" />}
-          label="Digital Assistant"
-        />
-
-        {/* GhanaCard Identity */}
-        <NavButton
-          onClick={onToggleIdentityPanel}
-          icon={<CreditCard size={15} strokeWidth={1.8} className="text-text-secondary" />}
-          label="GhanaCard Identity"
-        />
-
-        {/* Separator */}
-        <div className="w-px h-5 bg-border-1/40 mx-0.5" />
+        {/* Thin separator */}
+        <div className="w-px h-4 mx-1" style={{ background: 'var(--color-border-2)' }} />
 
         {/* User / Profile */}
         <div className="relative">
