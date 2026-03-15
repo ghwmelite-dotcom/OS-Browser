@@ -92,6 +92,8 @@ contextBridge.exposeInMainWorld('osBrowser', {
     isBookmarked: (url: string) => ipcRenderer.invoke(IPC.BOOKMARK_IS_BOOKMARKED, url),
     createFolder: (folder: any) => ipcRenderer.invoke(IPC.BOOKMARK_FOLDER_CREATE, folder),
     deleteFolder: (id: number) => ipcRenderer.invoke(IPC.BOOKMARK_FOLDER_DELETE, id),
+    updateFolder: (id: number, data: any) => ipcRenderer.invoke('bookmark:folder:update', id, data),
+    export: () => ipcRenderer.invoke('bookmark:export'),
   },
 
   ai: {

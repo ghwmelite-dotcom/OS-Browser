@@ -228,6 +228,9 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             <MenuItem icon={FileText} label="Import bookmarks..." onClick={() => {
               // Import handled in Electron main process
             }} />
+            <MenuItem icon={FileText} label="Export bookmarks..." onClick={() => {
+              window.osBrowser?.bookmarks?.export?.();
+            }} />
             <Separator />
 
             {/* Settings & about */}

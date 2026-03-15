@@ -79,6 +79,23 @@ export function App() {
       if (isActive) deactivate();
       else setShowSplitPicker(true);
     },
+    onBookmarkPage: async () => {
+      const url = useNavigationStore.getState().currentUrl;
+      const tabs = useTabsStore.getState().tabs;
+      const activeTab = tabs.find(t => t.id === useTabsStore.getState().activeTabId);
+      if (url && !url.startsWith('os-browser://')) {
+        const isBookmarked = await window.osBrowser.bookmarks.isBookmarked(url);
+        if (!isBookmarked) {
+          await window.osBrowser.bookmarks.add({ url, title: activeTab?.title || url });
+        } else {
+          // If already bookmarked, remove it (toggle behavior)
+          const data = await window.osBrowser.bookmarks.list();
+          const bms = data.bookmarks || data || [];
+          const match = bms.find((b: any) => b.url === url);
+          if (match) await window.osBrowser.bookmarks.delete(match.id);
+        }
+      }
+    },
   });
 
   useEffect(() => {
