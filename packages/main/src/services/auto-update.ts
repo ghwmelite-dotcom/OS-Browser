@@ -1,14 +1,14 @@
 import { BrowserWindow, app } from 'electron';
 
 export function initAutoUpdater(mainWindow: BrowserWindow): void {
-  // Only run auto-updater in packaged builds
-  if (!app.isPackaged) return;
+  // In dev mode, skip auto-install but still allow checking
+  const isDev = !app.isPackaged;
 
   try {
     const { autoUpdater } = require('electron-updater');
 
-    autoUpdater.autoDownload = true;
-    autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.autoDownload = !isDev; // Don't auto-download in dev
+    autoUpdater.autoInstallOnAppQuit = !isDev; // Don't auto-install in dev
 
     autoUpdater.on('update-available', (info: any) => {
       mainWindow.webContents.send('update:available', info);
@@ -32,8 +32,9 @@ export function initAutoUpdater(mainWindow: BrowserWindow): void {
       });
     });
 
-    autoUpdater.on('error', () => {
-      // Silently fail — updates are not critical
+    autoUpdater.on('error', (err: Error) => {
+      // Notify renderer about update errors so users are informed
+      mainWindow.webContents.send('update:error', err.message || 'Update check failed');
     });
 
     // Check for updates every 6 hours
