@@ -293,9 +293,7 @@ export function KenteToolbar() {
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 4,
-        overflow: 'hidden',
-        flexWrap: 'wrap',
+        gap: 2,
       }}
     >
       {toolbarFeatures.map((f) => (
