@@ -5,12 +5,15 @@ import { useSettingsStore } from '@/store/settings';
 import { useStatsStore } from '@/store/stats';
 import { useNavigationStore } from '@/store/navigation';
 import { FocusIndicator } from '@/components/FocusMode';
+import { DataStatusIndicator } from '@/components/DataSaver/DataStatusIndicator';
+import { useTabsStore } from '@/store/tabs';
 
 export function StatusBar() {
   const { status, queuedCount } = useConnectivityStore();
   const { settings } = useSettingsStore();
   const { totalAdsBlocked } = useStatsStore();
   const { currentUrl, isLoading, isSecure } = useNavigationStore();
+  const { createTab } = useTabsStore();
 
   const isNewTab = currentUrl === 'os-browser://newtab';
   const displayUrl = isNewTab ? '' : currentUrl;
@@ -48,6 +51,9 @@ export function StatusBar() {
 
       {/* Right: indicators */}
       <div className="flex items-center gap-3 shrink-0">
+        {/* Data Usage Indicator */}
+        <DataStatusIndicator onClick={() => createTab('os-browser://data' as any)} />
+
         {/* Focus Mode indicator */}
         <FocusIndicator />
 

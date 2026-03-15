@@ -7,6 +7,7 @@ import { StatsPage } from '../Panels/StatsPage';
 import { HelpPage } from './HelpPage';
 import { DocsPage } from './DocsPage';
 import { BookmarksPage } from './BookmarksPage';
+import { DataDashboard } from '../DataSaver/DataDashboard';
 
 // Detect if we're in a private window
 const isPrivateWindow = new URLSearchParams(window.location.search).get('private') === 'true';
@@ -62,6 +63,11 @@ export function ContentArea() {
 
   if (tabUrl === 'os-browser://bookmarks') {
     return <BookmarksPage />;
+  }
+
+  // Data Dashboard tab
+  if (tabUrl === 'os-browser://data') {
+    return <DataDashboard />;
   }
 
   // Help tab
