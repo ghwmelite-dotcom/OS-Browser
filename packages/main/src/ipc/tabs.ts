@@ -174,14 +174,13 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
 function resizeViewToContent(view: WebContentsView, win: BrowserWindow): void {
   const bounds = win.getContentBounds();
   // Browser chrome heights (measured from actual components):
-  // TitleBar: 32px, TabBar: 36px, NavigationBar: 44px = 112px
-  // BookmarksBar: ~28px (may be hidden), StatusBar: 22px
-  // Use 112px top offset (no bookmarks bar gap — it's part of the React layer)
-  // The WebContentsView sits right below the nav bar
-  const topOffset = 112;
-  const bottomOffset = 22;
-  const height = Math.max(100, bounds.height - topOffset - bottomOffset);
-  view.setBounds({ x: 0, y: topOffset, width: bounds.width, height });
+  // TitleBar: 32px, TabBar: 36px, NavigationBar: 44px, BookmarksBar: 28px, KenteStatusBar: 28px = 168px
+  const topOffset = 168;
+  // Kente Sidebar icon rail width = 48px (always visible on the left)
+  const sidebarWidth = 48;
+  const height = Math.max(100, bounds.height - topOffset);
+  const width = Math.max(100, bounds.width - sidebarWidth);
+  view.setBounds({ x: sidebarWidth, y: topOffset, width, height });
 }
 
 function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: BrowserWindow): void {
