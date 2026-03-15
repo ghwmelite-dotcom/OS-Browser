@@ -133,7 +133,6 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
           flex: 1,
           overflowY: 'auto',
           overflowX: 'hidden',
-          padding: 12,
           wordBreak: 'break-word',
         }}
       >
