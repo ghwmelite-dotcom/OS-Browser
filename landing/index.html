@@ -506,6 +506,94 @@
       font-size: 18px; opacity: 0.4; font-style: italic;
       margin-bottom: 40px; max-width: 500px; margin-left: auto; margin-right: auto;
     }
+    /* ═══════════════ DOWNLOAD COUNTER ═══════════════ */
+    .download-counter {
+      margin-top: 28px;
+      animation: fadeUp 0.8s ease-out 1s both;
+    }
+    .download-counter-inner {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 10px 24px; border-radius: 100px;
+      background: rgba(212, 160, 23, 0.06);
+      border: 1px solid rgba(212, 160, 23, 0.12);
+    }
+    .download-counter-fire {
+      font-size: 18px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .download-counter-number {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--gold);
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 20px rgba(212, 160, 23, 0.3);
+      transition: text-shadow 0.4s;
+    }
+    .download-counter-number.glow {
+      text-shadow: 0 0 30px rgba(242, 201, 76, 0.7), 0 0 60px rgba(212, 160, 23, 0.4);
+    }
+    .download-counter-label {
+      font-size: 14px;
+      color: rgba(245, 240, 229, 0.45);
+      font-style: italic;
+    }
+
+    /* ═══════════════ DOWNLOAD TOAST ═══════════════ */
+    .download-toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 200;
+      pointer-events: none;
+    }
+    .download-toast {
+      width: 300px;
+      padding: 16px 20px;
+      background: rgba(10, 10, 15, 0.85);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      border: 1px solid rgba(212, 160, 23, 0.15);
+      border-left: 3px solid var(--gold);
+      border-radius: 12px;
+      transform: translateX(120%);
+      opacity: 0;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s;
+      pointer-events: auto;
+    }
+    .download-toast.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    .download-toast.hide {
+      transform: translateX(120%);
+      opacity: 0;
+      transition: transform 0.3s ease-in, opacity 0.3s;
+    }
+    .download-toast-header {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 4px;
+    }
+    .download-toast-icon {
+      width: 24px; height: 24px; border-radius: 6px;
+      background: rgba(212, 160, 23, 0.12);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; color: var(--gold);
+      flex-shrink: 0;
+    }
+    .download-toast-text {
+      font-size: 13px;
+      color: rgba(245, 240, 229, 0.8);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    .download-toast-time {
+      font-size: 11px;
+      color: rgba(245, 240, 229, 0.3);
+      margin-top: 4px;
+      padding-left: 32px;
+    }
+
     .cta-download {
       display: inline-flex; align-items: center; gap: 12px;
       background: linear-gradient(135deg, var(--gold) 0%, var(--gold-deep) 100%);
@@ -672,7 +760,26 @@
     </a>
     <a href="#features" class="btn-secondary">Explore Features</a>
   </div>
+
+  <div class="download-counter">
+    <div class="download-counter-inner">
+      <span class="download-counter-fire">&#128293;</span>
+      <span class="download-counter-number" id="downloadCount">0</span>
+      <span class="download-counter-label">downloads and counting</span>
+    </div>
+  </div>
 </section>
+
+<!-- Download toast notification -->
+<div class="download-toast-container" id="toastContainer">
+  <div class="download-toast" id="downloadToast">
+    <div class="download-toast-header">
+      <div class="download-toast-icon">&#8595;</div>
+      <div class="download-toast-text" id="toastText">Someone in Accra just downloaded OS Browser</div>
+    </div>
+    <div class="download-toast-time" id="toastTime">3 minutes ago</div>
+  </div>
+</div>
 
 <!-- ═══════════════ STATS ═══════════════ -->
 <div class="stats-ribbon">
@@ -1110,6 +1217,185 @@
   if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     animateParticles();
   }
+
+  // ══════════════════════════════════════════════════════
+  // ── Download Counter & Live Toast System ──
+  // ══════════════════════════════════════════════════════
+
+  const WORKER_URL = 'https://os-browser-worker.ghwmelite.workers.dev';
+  const counterEl = document.getElementById('downloadCount');
+  const toastEl = document.getElementById('downloadToast');
+  const toastTextEl = document.getElementById('toastText');
+  const toastTimeEl = document.getElementById('toastTime');
+  let currentDisplayCount = 0;
+  let actualCount = 0;
+
+  // ── Easing: easeOutExpo ──
+  function easeOutExpo(t) {
+    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+  }
+
+  // ── Animate count from start to end ──
+  function animateCount(start, end, duration) {
+    if (start === end) return;
+    const startTime = performance.now();
+    const formatter = new Intl.NumberFormat();
+
+    function tick(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = easeOutExpo(progress);
+      const current = Math.round(start + (end - start) * eased);
+      counterEl.textContent = formatter.format(current);
+      currentDisplayCount = current;
+
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // ── Flash gold glow on update ──
+  function flashCounter() {
+    counterEl.classList.add('glow');
+    setTimeout(() => counterEl.classList.remove('glow'), 800);
+  }
+
+  // ── Fetch download count ──
+  async function fetchDownloadCount() {
+    try {
+      const res = await fetch(WORKER_URL + '/api/v1/downloads/count');
+      const data = await res.json();
+      const newCount = data.count || 0;
+
+      if (newCount !== actualCount) {
+        const prevCount = actualCount;
+        actualCount = newCount;
+
+        if (prevCount === 0) {
+          // Initial load — animate from 0
+          animateCount(0, newCount, 2000);
+        } else {
+          // Update — animate from current to new
+          flashCounter();
+          animateCount(currentDisplayCount, newCount, 600);
+        }
+      }
+    } catch (e) {
+      // Silently fail — show cached or 0
+    }
+  }
+
+  // Initial fetch + poll every 30 seconds
+  fetchDownloadCount();
+  setInterval(fetchDownloadCount, 30000);
+
+  // ── Live download toast system ──
+  const ghCities = ['Accra', 'Kumasi', 'Tamale', 'Takoradi', 'Cape Coast', 'Sunyani', 'Ho', 'Koforidua', 'Wa', 'Bolgatanga'];
+  let toastQueue = [];
+  let isToastShowing = false;
+
+  function relativeTimeStr(timestamp) {
+    const diff = Date.now() - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return minutes + ' minute' + (minutes === 1 ? '' : 's') + ' ago';
+    const hours = Math.floor(minutes / 60);
+    return hours + ' hour' + (hours === 1 ? '' : 's') + ' ago';
+  }
+
+  function showNextToast() {
+    if (isToastShowing || toastQueue.length === 0) return;
+    isToastShowing = true;
+
+    const event = toastQueue.shift();
+    const city = event.city || ghCities[Math.floor(Math.random() * ghCities.length)];
+    toastTextEl.textContent = 'Someone in ' + city + ' just downloaded OS Browser';
+    toastTimeEl.textContent = relativeTimeStr(event.timestamp);
+
+    toastEl.classList.remove('hide');
+    toastEl.classList.add('show');
+
+    // Stay visible for 4 seconds
+    setTimeout(() => {
+      toastEl.classList.remove('show');
+      toastEl.classList.add('hide');
+
+      // After exit animation
+      setTimeout(() => {
+        isToastShowing = false;
+      }, 350);
+    }, 4000);
+  }
+
+  // ── Fetch recent downloads for toast feed ──
+  async function fetchRecentDownloads() {
+    try {
+      const res = await fetch(WORKER_URL + '/api/v1/downloads/recent');
+      const data = await res.json();
+      const thirtyMinAgo = Date.now() - 30 * 60 * 1000;
+
+      if (data.recent && data.recent.length > 0) {
+        // Filter to only last 30 minutes
+        const recentEvents = data.recent.filter(function(e) { return e.timestamp > thirtyMinAgo; });
+        if (recentEvents.length > 0) {
+          toastQueue = recentEvents.slice(0, 5);
+        } else {
+          // Generate a synthetic event with a random city for social proof
+          toastQueue = [{
+            timestamp: Date.now() - Math.floor(Math.random() * 15) * 60000,
+            city: ghCities[Math.floor(Math.random() * ghCities.length)]
+          }];
+        }
+      } else {
+        // No events yet — show synthetic for social proof
+        toastQueue = [{
+          timestamp: Date.now() - Math.floor(Math.random() * 10) * 60000,
+          city: ghCities[Math.floor(Math.random() * ghCities.length)]
+        }];
+      }
+    } catch (e) {
+      // On error, generate a synthetic toast
+      toastQueue = [{
+        timestamp: Date.now() - Math.floor(Math.random() * 10) * 60000,
+        city: ghCities[Math.floor(Math.random() * ghCities.length)]
+      }];
+    }
+  }
+
+  // Start toast feed after 5 seconds, then every 15-20 seconds
+  setTimeout(async () => {
+    await fetchRecentDownloads();
+    showNextToast();
+
+    setInterval(() => {
+      if (toastQueue.length === 0) {
+        fetchRecentDownloads().then(showNextToast);
+      } else {
+        showNextToast();
+      }
+    }, 15000 + Math.random() * 5000);
+  }, 5000);
+
+  // ── Track download clicks ──
+  const downloadLinks = document.querySelectorAll('a[href*="OS.Browser.Setup"], a.cta-download, a.btn-primary[href*="releases"], a.nav-cta[href*="releases"]');
+  downloadLinks.forEach(function(link) {
+    link.addEventListener('click', async function(e) {
+      e.preventDefault();
+      const href = link.href;
+      try {
+        await fetch(WORKER_URL + '/api/v1/downloads/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ platform: 'windows' })
+        });
+      } catch (err) {
+        // Silently fail — don't block the download
+      }
+      window.location.href = href;
+    });
+  });
 </script>
 
 </body>

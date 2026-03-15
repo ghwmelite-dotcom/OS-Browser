@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import {
   Search,
   FileText,
@@ -12,6 +12,8 @@ import {
   Globe,
   Zap,
   Shield,
+  Download,
+  Users,
 } from 'lucide-react';
 import { useTabsStore } from '@/store/tabs';
 import { useStatsStore } from '@/store/stats';
@@ -68,6 +70,108 @@ const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
 };
 
 const DEFAULT_CATEGORY = { bg: 'bg-ghana-gold-dim', text: 'text-ghana-gold' };
+
+const WORKER_URL = 'https://os-browser-worker.ghwmelite.workers.dev';
+
+/* ── Animated number counter hook ── */
+function useAnimatedCount(target: number, duration = 1500): number {
+  const [display, setDisplay] = useState(0);
+  const frameRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (target === 0) return;
+    const start = 0;
+    const startTime = performance.now();
+
+    function tick(now: number) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // easeOutExpo
+      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setDisplay(Math.round(start + (target - start) * eased));
+
+      if (progress < 1) {
+        frameRef.current = requestAnimationFrame(tick);
+      }
+    }
+
+    frameRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameRef.current);
+  }, [target, duration]);
+
+  return display;
+}
+
+/* ── Download Counter Widget ── */
+function DownloadCounterWidget() {
+  const [count, setCount] = useState(0);
+  const [error, setError] = useState(false);
+  const animatedCount = useAnimatedCount(count);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchCount() {
+      try {
+        const res = await fetch(`${WORKER_URL}/api/v1/downloads/count`);
+        if (!res.ok) throw new Error('Failed');
+        const data = await res.json();
+        if (!cancelled) {
+          setCount(data.count || 0);
+          setError(false);
+        }
+      } catch {
+        if (!cancelled) setError(true);
+      }
+    }
+    fetchCount();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Hide widget gracefully if API is unreachable and no cached count
+  if (error && count === 0) return null;
+
+  const formatter = new Intl.NumberFormat();
+
+  return (
+    <div
+      className="glass rounded-[16px] p-5 text-center transition-all duration-300 hover:-translate-y-[2px]"
+      style={{
+        maxWidth: 220,
+        margin: '0 auto',
+        borderColor: 'rgba(212, 160, 23, 0.1)',
+      }}
+    >
+      <div className="flex items-center justify-center gap-2 mb-2">
+        <Users size={14} className="text-ghana-gold" />
+        <span
+          className="text-[11px] font-semibold uppercase tracking-widest"
+          style={{ color: 'var(--color-accent)' }}
+        >
+          OS Browser Community
+        </span>
+      </div>
+      <div
+        className="text-2xl font-bold mb-1"
+        style={{
+          color: 'var(--color-accent)',
+          fontVariantNumeric: 'tabular-nums',
+          textShadow: '0 0 16px rgba(212, 160, 23, 0.25)',
+        }}
+      >
+        {formatter.format(animatedCount)}
+      </div>
+      <div className="flex items-center justify-center gap-1.5 text-text-muted">
+        <Download size={11} />
+        <span className="text-xs">downloads</span>
+      </div>
+      <div
+        className="text-[10px] mt-2 text-text-muted italic opacity-60"
+      >
+        Join the movement
+      </div>
+    </div>
+  );
+}
 
 export function NewTabPage() {
   const [portals, setPortals] = useState<GovPortal[]>([]);
@@ -427,6 +531,11 @@ export function NewTabPage() {
             </div>
           </section>
         )}
+
+        {/* ── Download Counter Widget ── */}
+        <section className="mb-14 animate-fade-up stagger-6" aria-label="Download counter">
+          <DownloadCounterWidget />
+        </section>
 
         {/* ── Footer ── */}
         <footer className="text-center pb-8 animate-fade-up stagger-6">
