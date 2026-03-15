@@ -32,21 +32,8 @@ const MessengerIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onC
 };
 
 // ── Sidebar Panel ───────────────────────────────────────────────────
-const MessengerPanel: React.FC<SidebarPanelProps> = ({ width, stripColor, onClose }) => {
-  return React.createElement('div', {
-    style: {
-      width,
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column' as const,
-      borderLeft: `3px solid ${stripColor}`,
-      background: 'var(--color-surface-1)',
-      color: 'var(--color-text-primary)',
-      overflow: 'hidden',
-    },
-  },
-    React.createElement(MessagingPanel, { onClose }),
-  );
+const MessengerPanel: React.FC<SidebarPanelProps> = ({ onClose }) => {
+  return React.createElement(MessagingPanel, { onClose });
 };
 
 // ── Feature Definition ──────────────────────────────────────────────
