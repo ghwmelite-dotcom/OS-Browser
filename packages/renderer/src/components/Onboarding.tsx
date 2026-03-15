@@ -1,5 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ChevronRight, MessageSquare, Globe, Target, User, Sparkles, DollarSign, BookOpen } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  ChevronRight, Globe, User, Shield, Building2, Lock, Languages,
+  Download, Smartphone, Battery, Keyboard, Sidebar, Terminal, BarChart3
+} from 'lucide-react';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -10,7 +13,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
   const [direction, setDirection] = useState<'next' | 'prev'>('next');
-  const totalSteps = 5;
+  const totalSteps = 6;
 
   const next = () => {
     if (step < totalSteps - 1) {
@@ -50,76 +53,229 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     return () => window.removeEventListener('keydown', handler);
   }, [step, profileName, profileEmail]);
 
-  const slides = [
-    // Slide 0: Welcome
-    {
-      icon: (
-        <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl"
-          style={{ background: 'linear-gradient(135deg, #CE1126 0%, #FCD116 50%, #006B3F 100%)' }}>
-          <svg width="48" height="48" viewBox="0 0 512 512">
-            <path d="M256 90L370 140V270Q370 370 256 430Q142 370 142 270V140Z" fill="white" opacity=".95"/>
-          </svg>
-        </div>
-      ),
-      title: 'Welcome to OS Browser \u{1F1EC}\u{1F1ED}',
-      desc: "Ghana's smartest browser \u2014 built for productivity, privacy, and you. Let's take a quick tour.",
-    },
-    // Slide 1: AI Assistant
-    {
-      icon: (
-        <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl"
-          style={{ background: 'linear-gradient(135deg, #D4A017 0%, #F2C94C 100%)' }}>
-          <MessageSquare size={40} className="text-white" />
-        </div>
-      ),
-      title: 'Your AI Assistant, Built In',
-      desc: 'Press Ctrl+J to open the AI sidebar. Summarize pages, translate to Twi, draft letters, and research any topic \u2014 all without leaving the browser.',
-    },
-    // Slide 2: Ghana Tools
-    {
-      icon: (
-        <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl"
-          style={{ background: 'linear-gradient(135deg, #006B3F 0%, #10B981 100%)' }}>
-          <div className="flex gap-1">
-            <DollarSign size={24} className="text-white" />
-            <BookOpen size={24} className="text-white" />
-          </div>
-        </div>
-      ),
-      title: 'Made for Ghana',
-      desc: 'GHS currency converter, SSNIT calculator, Twi dictionary, and quick access to 10 government portals \u2014 tools no other browser has.',
-    },
-    // Slide 3: Productivity
-    {
-      icon: (
-        <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl"
-          style={{ background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)' }}>
-          <Target size={40} className="text-white" />
-        </div>
-      ),
-      title: 'Work Smarter, Not Harder',
-      desc: 'Command Palette (Ctrl+K), Split Screen, Focus Mode, Reading Mode, Screenshot Tool, and 15+ keyboard shortcuts to keep you in the flow.',
-    },
-    // Slide 4: Profile Setup
-    {
-      icon: (
-        <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl"
-          style={{ background: 'linear-gradient(135deg, #CE1126 0%, #F43F5E 100%)' }}>
-          <User size={40} className="text-white" />
-        </div>
-      ),
-      title: 'Make It Yours',
-      desc: null, // Custom content below
-    },
-  ];
+  // Generate initials for avatar preview
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 0 || !parts[0]) return '?';
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
 
-  const currentSlide = slides[step];
+  const renderStep = () => {
+    switch (step) {
+      // Step 0: Welcome
+      case 0:
+        return (
+          <div className="text-center">
+            <div className="w-28 h-28 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+              style={{ background: 'linear-gradient(135deg, #CE1126 0%, #FCD116 50%, #006B3F 100%)' }}>
+              <svg width="52" height="52" viewBox="0 0 512 512">
+                <path d="M256 90L370 140V270Q370 370 256 430Q142 370 142 270V140Z" fill="white" opacity=".95"/>
+              </svg>
+            </div>
+            {/* Ghana flag stripe */}
+            <div className="flex h-1 rounded-full overflow-hidden mb-6 mx-auto max-w-[180px]">
+              <div className="flex-1" style={{ background: '#CE1126' }} />
+              <div className="flex-1" style={{ background: '#FCD116' }} />
+              <div className="flex-1" style={{ background: '#006B3F' }} />
+            </div>
+            <h2 className="text-[24px] font-bold text-text-primary mb-3">Welcome to OS Browser</h2>
+            <p className="text-[14px] text-text-secondary leading-relaxed max-w-[400px] mx-auto mb-2">
+              Ghana's purpose-built desktop browser with 12 features designed for civil servants.
+            </p>
+            <p className="text-[13px] text-text-muted max-w-[400px] mx-auto">
+              Secure messaging, government portals, mobile money tracking, offline access, and more —
+              all in one browser built for your daily work.
+            </p>
+          </div>
+        );
+
+      // Step 1: Set Up Your Profile
+      case 1:
+        return (
+          <div className="text-center">
+            <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+              style={{ background: 'linear-gradient(135deg, #CE1126 0%, #F43F5E 100%)' }}>
+              {profileName.trim() ? (
+                <span className="text-[28px] font-bold text-white">{getInitials(profileName)}</span>
+              ) : (
+                <User size={40} className="text-white" />
+              )}
+            </div>
+            <h2 className="text-[22px] font-bold text-text-primary mb-3">Set Up Your Profile</h2>
+            <div className="text-left max-w-[360px] mx-auto">
+              <p className="text-[13px] text-text-secondary text-center mb-5">
+                Personalise your browser experience. Your profile stays on your device.
+              </p>
+              <div className="mb-3">
+                <label className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1.5 block">Your Name</label>
+                <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)}
+                  placeholder="e.g. Kwame Mensah" autoFocus
+                  className="w-full px-3 py-2.5 rounded-lg text-[14px] outline-none border"
+                  style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }} />
+              </div>
+              <div className="mb-2">
+                <label className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1.5 block">Email (optional)</label>
+                <input type="email" value={profileEmail} onChange={e => setProfileEmail(e.target.value)}
+                  placeholder="you@example.gov.gh"
+                  className="w-full px-3 py-2.5 rounded-lg text-[14px] outline-none border"
+                  style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }} />
+              </div>
+              <p className="text-[10px] text-text-muted text-center mt-2">
+                Stored locally on your device. Never sent to any server.
+              </p>
+            </div>
+          </div>
+        );
+
+      // Step 2: Meet the Kente System
+      case 2:
+        return (
+          <div className="text-center">
+            <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+              style={{ background: 'linear-gradient(135deg, #CE1126 0%, #FCD116 50%, #006B3F 100%)' }}>
+              <Globe size={40} className="text-white" />
+            </div>
+            <h2 className="text-[22px] font-bold text-text-primary mb-2">Meet the Kente System</h2>
+            <p className="text-[13px] text-text-muted mb-5 max-w-[380px] mx-auto">
+              Every feature has a home. You'll find them all across 4 surfaces.
+            </p>
+            <div className="grid grid-cols-2 gap-3 max-w-[400px] mx-auto text-left">
+              <div className="p-3 rounded-xl border" style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)' }}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Sidebar size={14} style={{ color: '#CE1126' }} />
+                  <span className="text-[12px] font-semibold text-text-primary">Sidebar</span>
+                </div>
+                <p className="text-[10px] text-text-muted leading-relaxed">Icon rail on the left — your feature workspace</p>
+              </div>
+              <div className="p-3 rounded-xl border" style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)' }}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Globe size={14} style={{ color: '#006B3F' }} />
+                  <span className="text-[12px] font-semibold text-text-primary">Toolbar</span>
+                </div>
+                <p className="text-[10px] text-text-muted leading-relaxed">Address bar area — page-specific actions</p>
+              </div>
+              <div className="p-3 rounded-xl border" style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)' }}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Terminal size={14} style={{ color: '#6366F1' }} />
+                  <span className="text-[12px] font-semibold text-text-primary">Command Bar</span>
+                </div>
+                <p className="text-[10px] text-text-muted leading-relaxed">Ctrl+K — find anything instantly</p>
+              </div>
+              <div className="p-3 rounded-xl border" style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)' }}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <BarChart3 size={14} style={{ color: '#F59E0B' }} />
+                  <span className="text-[12px] font-semibold text-text-primary">Status Bar</span>
+                </div>
+                <p className="text-[10px] text-text-muted leading-relaxed">Below bookmarks — passive monitoring</p>
+              </div>
+            </div>
+          </div>
+        );
+
+      // Step 3: Your Power Features
+      case 3:
+        return (
+          <div className="text-center">
+            <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+              style={{ background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)' }}>
+              <Shield size={40} className="text-white" />
+            </div>
+            <h2 className="text-[22px] font-bold text-text-primary mb-2">Your Power Features</h2>
+            <p className="text-[13px] text-text-muted mb-5 max-w-[380px] mx-auto">
+              12 features built for Ghana's civil servants. Here are the highlights.
+            </p>
+            <div className="grid grid-cols-2 gap-2.5 max-w-[420px] mx-auto text-left">
+              {[
+                { icon: Building2, label: 'Gov Services Hub', desc: '25+ government portals', color: '#CE1126' },
+                { icon: Lock, label: 'Encrypted Messenger', desc: '.gov.gh secure chat', color: '#0EA5E9' },
+                { icon: Languages, label: 'Translation', desc: '7 Ghanaian languages', color: '#006B3F' },
+                { icon: Download, label: 'Offline Library', desc: 'Save pages for offline', color: '#6366F1' },
+                { icon: Smartphone, label: 'Mobile Money', desc: 'Payment tracking', color: '#F59E0B' },
+                { icon: Battery, label: 'Dumsor Guard', desc: 'Power outage protection', color: '#10B981' },
+              ].map(({ icon: Icon, label, desc, color }) => (
+                <div key={label} className="flex items-center gap-2.5 p-2.5 rounded-xl border"
+                  style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)' }}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: color }}>
+                    <Icon size={14} className="text-white" />
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold text-text-primary">{label}</div>
+                    <div className="text-[10px] text-text-muted">{desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      // Step 4: Quick Tips
+      case 4:
+        return (
+          <div className="text-center">
+            <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+              style={{ background: 'linear-gradient(135deg, #006B3F 0%, #10B981 100%)' }}>
+              <Keyboard size={40} className="text-white" />
+            </div>
+            <h2 className="text-[22px] font-bold text-text-primary mb-2">Quick Tips</h2>
+            <p className="text-[13px] text-text-muted mb-5 max-w-[380px] mx-auto">
+              A few things to help you get the most out of OS Browser.
+            </p>
+            <div className="max-w-[380px] mx-auto space-y-3 text-left">
+              {[
+                { tip: 'Press Ctrl+K to find anything', detail: 'Features, tabs, actions, settings — all searchable.' },
+                { tip: 'Click the sidebar icons to open feature panels', detail: 'Each icon represents a different tool from the Kente System.' },
+                { tip: 'Your data stays on your device — always', detail: 'No cloud sync, no telemetry, no tracking.' },
+                { tip: 'Right-click any page for quick actions', detail: 'Save offline, translate, screenshot, and more.' },
+              ].map(({ tip, detail }) => (
+                <div key={tip} className="flex items-start gap-3 p-3 rounded-xl"
+                  style={{ background: 'var(--color-surface-2)' }}>
+                  <ChevronRight size={14} className="shrink-0 mt-0.5" style={{ color: 'var(--color-accent)' }} />
+                  <div>
+                    <div className="text-[13px] font-semibold text-text-primary">{tip}</div>
+                    <div className="text-[11px] text-text-muted mt-0.5">{detail}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      // Step 5: Ready to Go
+      case 5:
+        return (
+          <div className="text-center">
+            <div className="w-28 h-28 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+              style={{ background: 'linear-gradient(135deg, #CE1126 0%, #FCD116 50%, #006B3F 100%)' }}>
+              <span className="text-[48px]">{'\u{1F1EC}\u{1F1ED}'}</span>
+            </div>
+            {/* Ghana flag stripe */}
+            <div className="flex h-1 rounded-full overflow-hidden mb-6 mx-auto max-w-[180px]">
+              <div className="flex-1" style={{ background: '#CE1126' }} />
+              <div className="flex-1" style={{ background: '#FCD116' }} />
+              <div className="flex-1" style={{ background: '#006B3F' }} />
+            </div>
+            <h2 className="text-[24px] font-bold text-text-primary mb-2">You're All Set!</h2>
+            <p className="text-[18px] text-text-primary mb-3">Akwaaba! {'\u{1F1EC}\u{1F1ED}'}</p>
+            <p className="text-[14px] text-text-secondary max-w-[380px] mx-auto mb-2">
+              Welcome! Start browsing and explore all 12 features designed to make your work easier, faster, and more secure.
+            </p>
+            <p className="text-[12px] text-text-muted max-w-[380px] mx-auto">
+              Press Ctrl+K at any time to find what you need, or explore the sidebar to discover your tools.
+            </p>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
 
-      <div className="w-[520px] rounded-2xl border shadow-2xl overflow-hidden"
+      <div className="w-[540px] rounded-2xl border shadow-2xl overflow-hidden"
         style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}>
 
         {/* Skip button */}
@@ -130,53 +286,18 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         </div>
 
         {/* Slide content */}
-        <div className="px-10 pb-2 pt-4 text-center" key={step}
+        <div className="px-10 pb-2 pt-4" key={step}
           style={{ animation: `slideIn${direction === 'next' ? 'Right' : 'Left'} 0.3s ease-out` }}>
-
-          {/* Icon */}
-          <div className="mb-6">{currentSlide.icon}</div>
-
-          {/* Title */}
-          <h2 className="text-[22px] font-bold text-text-primary mb-3">{currentSlide.title}</h2>
-
-          {/* Description or profile form */}
-          {currentSlide.desc ? (
-            <p className="text-[14px] text-text-secondary leading-relaxed max-w-[400px] mx-auto">
-              {currentSlide.desc}
-            </p>
-          ) : (
-            <div className="text-left max-w-[360px] mx-auto">
-              <p className="text-[13px] text-text-secondary text-center mb-5">
-                Set up your profile to personalize your experience.
-              </p>
-              <div className="mb-3">
-                <label className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1.5 block">Your Name</label>
-                <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)}
-                  placeholder="e.g. Ozzy" autoFocus
-                  className="w-full px-3 py-2.5 rounded-lg text-[14px] outline-none border"
-                  style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }} />
-              </div>
-              <div className="mb-2">
-                <label className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1.5 block">Email (optional)</label>
-                <input type="email" value={profileEmail} onChange={e => setProfileEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full px-3 py-2.5 rounded-lg text-[14px] outline-none border"
-                  style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }} />
-              </div>
-              <p className="text-[10px] text-text-muted text-center mt-2">
-                Your profile is stored locally on your device. Free forever.
-              </p>
-            </div>
-          )}
+          {renderStep()}
         </div>
 
-        {/* Bottom bar: dots + button */}
+        {/* Bottom bar: dots + buttons */}
         <div className="flex items-center justify-between px-8 py-5">
           {/* Progress dots */}
           <div className="flex gap-2">
-            {slides.map((_, i) => (
+            {Array.from({ length: totalSteps }).map((_, i) => (
               <button key={i} onClick={() => { setDirection(i > step ? 'next' : 'prev'); setStep(i); }}
-                className="w-2 h-2 rounded-full transition-all duration-200"
+                className="h-2 rounded-full transition-all duration-200"
                 style={{
                   background: i === step ? 'var(--color-accent)' : 'var(--color-border-2)',
                   width: i === step ? '24px' : '8px',
@@ -184,20 +305,36 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             ))}
           </div>
 
-          {/* CTA button */}
-          {step === totalSteps - 1 ? (
-            <button onClick={finish}
-              className="px-6 py-2.5 rounded-lg text-[14px] font-semibold transition-all hover:brightness-110"
-              style={{ background: 'var(--color-accent)', color: '#fff' }}>
-              Get Started
-            </button>
-          ) : (
-            <button onClick={next}
-              className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-[14px] font-semibold transition-all hover:brightness-110"
-              style={{ background: 'var(--color-accent)', color: '#fff' }}>
-              Next <ChevronRight size={16} />
-            </button>
-          )}
+          {/* Navigation buttons */}
+          <div className="flex items-center gap-2">
+            {step > 0 && step < totalSteps - 1 && (
+              <button onClick={prev}
+                className="px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all border"
+                style={{ borderColor: 'var(--color-border-1)', color: 'var(--color-text-secondary)' }}>
+                Back
+              </button>
+            )}
+
+            {step === 0 ? (
+              <button onClick={next}
+                className="px-6 py-2.5 rounded-lg text-[14px] font-semibold transition-all hover:brightness-110"
+                style={{ background: 'var(--color-accent)', color: '#fff' }}>
+                Let's Get You Set Up
+              </button>
+            ) : step === totalSteps - 1 ? (
+              <button onClick={finish}
+                className="px-6 py-2.5 rounded-lg text-[14px] font-semibold transition-all hover:brightness-110"
+                style={{ background: 'linear-gradient(135deg, #CE1126 0%, #006B3F 100%)', color: '#fff' }}>
+                Start Browsing
+              </button>
+            ) : (
+              <button onClick={next}
+                className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-[14px] font-semibold transition-all hover:brightness-110"
+                style={{ background: 'var(--color-accent)', color: '#fff' }}>
+                Next <ChevronRight size={16} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
