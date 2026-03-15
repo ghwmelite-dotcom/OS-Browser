@@ -11,7 +11,7 @@ export function registerSettingsHandlers(): void {
   ipcMain.handle(IPC.SETTINGS_UPDATE, (_event, data: Record<string, any>) => {
     const db = getDatabase();
     const allowed = [
-      'display_name', 'email', 'avatar_path', 'default_model',
+      'display_name', 'email', 'avatar_path', 'avatar_color', 'default_model',
       'theme', 'language', 'sidebar_position', 'ad_blocking',
       'privacy_mode', 'search_engine', 'sync_enabled', 'startup_mode',
     ];

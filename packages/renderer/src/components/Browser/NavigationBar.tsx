@@ -35,11 +35,11 @@ function getInitials(name: string): string {
 }
 
 // Reusable avatar component — shows photo if available, otherwise generated initials
-function ProfileAvatar({ name, avatarPath, size = 72, editable = false, onChangePhoto }: {
-  name: string; avatarPath?: string | null; size?: number; editable?: boolean; onChangePhoto?: () => void;
+function ProfileAvatar({ name, avatarPath, avatarColor, size = 72, editable = false, onChangePhoto }: {
+  name: string; avatarPath?: string | null; avatarColor?: string | null; size?: number; editable?: boolean; onChangePhoto?: () => void;
 }) {
   const initials = getInitials(name || 'U');
-  const bgColor = getAvatarColor(name || 'User');
+  const bgColor = avatarColor || getAvatarColor(name || 'User');
   const fontSize = size < 40 ? size * 0.4 : size * 0.38;
 
   return (
@@ -253,7 +253,7 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
             aria-label="Account" title="Account"
           >
             {settings?.email ? (
-              <ProfileAvatar name={settings.display_name || 'U'} avatarPath={(settings as any).avatar_path} size={26} />
+              <ProfileAvatar name={settings.display_name || 'U'} avatarPath={settings.avatar_path} avatarColor={(settings as any).avatar_color} size={26} />
             ) : (
               <User size={16} strokeWidth={1.8} className="text-text-secondary" />
             )}
@@ -300,7 +300,8 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                       <div className="flex justify-center mb-3">
                         <ProfileAvatar
                           name={settings.display_name || 'U'}
-                          avatarPath={(settings as any).avatar_path}
+                          avatarPath={settings.avatar_path}
+                          avatarColor={(settings as any).avatar_color}
                           size={80}
                           editable
                           onChangePhoto={() => document.getElementById('avatar-upload')?.click()}
@@ -409,7 +410,7 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                         {/* Avatar change */}
                         <p className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-2">Profile Photo</p>
                         <div className="flex items-center gap-4 mb-5">
-                          <ProfileAvatar name={settings.display_name || 'U'} avatarPath={settings.avatar_path} size={56} />
+                          <ProfileAvatar name={settings.display_name || 'U'} avatarPath={settings.avatar_path} avatarColor={(settings as any).avatar_color} size={56} />
                           <div className="flex flex-col gap-1.5">
                             <button onClick={() => document.getElementById('avatar-upload')?.click()}
                               className="px-3 py-1.5 rounded-lg text-[12px] font-medium"
@@ -429,20 +430,23 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                         </div>
 
                         {/* Theme color for avatar */}
-                        <p className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-2">Avatar Color (when no photo)</p>
+                        <p className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-2">Avatar Color</p>
                         <div className="grid grid-cols-4 gap-2 mb-4">
                           {AVATAR_COLORS.map((color, i) => (
-                            <button key={i} onClick={() => {
-                              // Remove custom photo to show the gradient avatar
-                              useSettingsStore.getState().updateSettings({ avatar_path: null });
+                            <button key={i} onClick={async () => {
+                              // Set this color as the avatar color and remove any custom photo
+                              await useSettingsStore.getState().updateSettings({ avatar_path: null, avatar_color: color });
                             }}
-                              className="w-full aspect-square rounded-xl hover:scale-105 transition-transform"
-                              style={{ background: color }} />
+                              className="w-full aspect-square rounded-xl hover:scale-110 transition-transform border-2"
+                              style={{
+                                background: color,
+                                borderColor: (settings as any).avatar_color === color ? 'var(--color-text-primary)' : 'transparent',
+                              }} />
                           ))}
                         </div>
 
                         <p className="text-[10px] text-text-muted text-center">
-                          Avatar color is auto-assigned based on your name
+                          Select a color for your avatar background
                         </p>
                       </div>
                     )}
