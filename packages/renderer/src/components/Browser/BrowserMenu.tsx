@@ -154,7 +154,7 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             <MenuItem icon={Key} label="Passwords and autofill" onClick={onOpenSettings} sub />
             <MenuItem icon={Clock} label="History" shortcut="Ctrl+H" onClick={onOpenHistory} />
             <MenuItem icon={Download} label="Downloads" shortcut="Ctrl+J" onClick={() => {
-              if (activeTabId) navigate(activeTabId, 'os-browser://downloads');
+              createTab('os-browser://downloads' as any);
             }} />
             <MenuItem icon={Star} label="Bookmarks and lists" shortcut="Ctrl+B" onClick={onOpenBookmarks} sub />
             <Separator />
