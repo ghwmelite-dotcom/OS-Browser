@@ -49,18 +49,22 @@ export function TitleBar() {
         className="flex items-center h-full"
         style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
       >
-        {/* Theme toggle */}
+        {/* Theme toggle — more prominent */}
         <button
           onClick={toggleTheme}
-          className="w-10 h-full flex items-center justify-center hover:bg-surface-2 transition-colors duration-100"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full hover:bg-surface-2 transition-all duration-150 mr-1"
           aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           title={isDark ? 'Light mode' : 'Dark mode'}
+          style={{ border: '1px solid var(--color-border-1)' }}
         >
           {isDark ? (
-            <Sun size={13} className="text-text-muted" />
+            <Sun size={13} className="text-ghana-gold" />
           ) : (
-            <Moon size={13} className="text-text-muted" />
+            <Moon size={13} className="text-text-secondary" />
           )}
+          <span className="text-[10px] font-medium" style={{ color: isDark ? 'var(--color-accent)' : 'var(--color-text-secondary)' }}>
+            {isDark ? 'Dark' : 'Light'}
+          </span>
         </button>
 
         {/* Minimize */}
