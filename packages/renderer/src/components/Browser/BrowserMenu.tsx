@@ -288,6 +288,12 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             }} />
             <Separator />
 
+            {/* Feature Directory */}
+            <MenuItem icon={Sparkles} label="Browse All Features" onClick={() => {
+              createTab('os-browser://features' as any);
+            }} />
+            <Separator />
+
             {/* Settings & about */}
             <MenuItem icon={BarChart3} label="Data Dashboard" onClick={() => {
               createTab('os-browser://data' as any);

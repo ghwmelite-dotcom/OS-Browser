@@ -10,6 +10,7 @@ import { FocusSettings } from '@/components/FocusMode';
 import { OmniBar } from './OmniBar';
 import { BrowserMenu } from './BrowserMenu';
 import { SavePageButton } from '@/components/Offline/SavePageButton';
+import { KenteToolbar } from '../KenteSystem/KenteToolbar';
 
 // Auto-generated avatar colors based on name hash
 const AVATAR_COLORS = [
@@ -154,6 +155,12 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
 
       {/* ── Right: Actions ── */}
       <div className="flex items-center gap-[6px] ml-3">
+        {/* Kente Toolbar */}
+        <KenteToolbar />
+
+        {/* Separator */}
+        <div className="w-px h-5 bg-border-1/40 mx-0.5" />
+
         {/* Share */}
         <NavButton
           onClick={() => {

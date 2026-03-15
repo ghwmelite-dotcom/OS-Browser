@@ -11,6 +11,7 @@ import { DataDashboard } from '../DataSaver/DataDashboard';
 import { DocumentsPage } from './DocumentsPage';
 import { GovHubPage } from './GovHubPage';
 import { OfflinePage } from './OfflinePage';
+import { FeatureDirectoryPage } from './FeatureDirectoryPage';
 
 // Detect if we're in a private window
 const isPrivateWindow = new URLSearchParams(window.location.search).get('private') === 'true';
@@ -90,6 +91,11 @@ export function ContentArea() {
   // Offline Library
   if (tabUrl === 'os-browser://offline') {
     return <OfflinePage />;
+  }
+
+  // Feature Directory
+  if (tabUrl === 'os-browser://features') {
+    return <FeatureDirectoryPage />;
   }
 
   // Real URLs — WebContentsView renders natively on top
