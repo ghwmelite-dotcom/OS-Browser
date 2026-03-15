@@ -120,12 +120,11 @@ function ConnectionBadge() {
 /* ─────────── auth gate ─────────── */
 
 function AuthGate() {
-  const { register, verify, authStep, authError, currentUserEmail } = useMessagingStore();
+  const { register, authStep, authError } = useMessagingStore();
 
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [department, setDepartment] = useState('');
-  const [code, setCode] = useState('');
   const [emailValid, setEmailValid] = useState<boolean | null>(null);
 
   const govGhRegex = /^[^\s@]+@[^\s@]+\.gov\.gh$/i;
@@ -145,15 +144,7 @@ function AuthGate() {
     await register(email, name, department);
   };
 
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!code.trim()) return;
-    await verify(currentUserEmail ?? email, code);
-  };
-
   const isRegistering = authStep === 'registering';
-  const isVerifying = authStep === 'verifying';
-  const showVerifyForm = authStep === 'verify' || authStep === 'verifying';
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 py-8" style={{ background: 'var(--color-bg)' }}>
@@ -175,9 +166,7 @@ function AuthGate() {
           </div>
           <h3 className="text-[15px] font-bold text-text-primary">Secure Government Messaging</h3>
           <p className="text-[11.5px] text-text-muted mt-1">
-            {showVerifyForm
-              ? 'Enter the verification code sent to your email'
-              : 'Register with your .gov.gh email to begin'}
+            Sign in with your .gov.gh email — instant access, no verification code needed
           </p>
         </div>
 
@@ -191,140 +180,94 @@ function AuthGate() {
           </div>
         )}
 
-        {!showVerifyForm ? (
-          /* ── Register form ── */
-          <form onSubmit={handleRegister} className="flex flex-col gap-3">
-            {/* Email */}
-            <div>
-              <label className="text-[10.5px] font-semibold text-text-muted uppercase tracking-wide mb-1 block">
-                Government Email
-              </label>
-              <div className="relative">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => handleEmailChange(e.target.value)}
-                  placeholder="name@ministry.gov.gh"
-                  className="w-full px-3 py-2 rounded-lg text-[12.5px] text-text-primary outline-none placeholder:text-text-muted transition-colors"
-                  style={{
-                    background: 'var(--color-surface-2)',
-                    border: `1.5px solid ${
-                      emailValid === null
-                        ? 'var(--color-border-1)'
-                        : emailValid
-                        ? '#006B3F'
-                        : '#CE1126'
-                    }`,
-                  }}
-                  required
-                />
-                {emailValid !== null && (
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold" style={{ color: emailValid ? '#006B3F' : '#CE1126' }}>
-                    {emailValid ? 'Valid' : 'Must be .gov.gh'}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Name */}
-            <div>
-              <label className="text-[10.5px] font-semibold text-text-muted uppercase tracking-wide mb-1 block">
-                Full Name
-              </label>
+        <form onSubmit={handleRegister} className="flex flex-col gap-3">
+          {/* Email */}
+          <div>
+            <label className="text-[10.5px] font-semibold text-text-muted uppercase tracking-wide mb-1 block">
+              Government Email
+            </label>
+            <div className="relative">
               <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Kwame Nkrumah"
-                className="w-full px-3 py-2 rounded-lg text-[12.5px] text-text-primary outline-none placeholder:text-text-muted"
-                style={{ background: 'var(--color-surface-2)', border: '1.5px solid var(--color-border-1)' }}
+                type="email"
+                value={email}
+                onChange={e => handleEmailChange(e.target.value)}
+                placeholder="name@ministry.gov.gh"
+                className="w-full px-3 py-2 rounded-lg text-[12.5px] text-text-primary outline-none placeholder:text-text-muted transition-colors"
+                style={{
+                  background: 'var(--color-surface-2)',
+                  border: `1.5px solid ${
+                    emailValid === null
+                      ? 'var(--color-border-1)'
+                      : emailValid
+                      ? '#006B3F'
+                      : '#CE1126'
+                  }`,
+                }}
                 required
               />
+              {emailValid !== null && (
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold" style={{ color: emailValid ? '#006B3F' : '#CE1126' }}>
+                  {emailValid ? '.gov.gh verified' : 'Must be .gov.gh'}
+                </span>
+              )}
             </div>
+          </div>
 
-            {/* Department */}
-            <div>
-              <label className="text-[10.5px] font-semibold text-text-muted uppercase tracking-wide mb-1 block">
-                Department / Ministry
-              </label>
-              <input
-                type="text"
-                value={department}
-                onChange={e => setDepartment(e.target.value)}
-                placeholder="Ministry of Finance"
-                className="w-full px-3 py-2 rounded-lg text-[12.5px] text-text-primary outline-none placeholder:text-text-muted"
-                style={{ background: 'var(--color-surface-2)', border: '1.5px solid var(--color-border-1)' }}
-                required
-              />
-            </div>
+          {/* Name */}
+          <div>
+            <label className="text-[10.5px] font-semibold text-text-muted uppercase tracking-wide mb-1 block">
+              Full Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Kwame Nkrumah"
+              className="w-full px-3 py-2 rounded-lg text-[12.5px] text-text-primary outline-none placeholder:text-text-muted"
+              style={{ background: 'var(--color-surface-2)', border: '1.5px solid var(--color-border-1)' }}
+              required
+            />
+          </div>
 
-            <button
-              type="submit"
-              disabled={isRegistering || !govGhRegex.test(email) || !name.trim() || !department.trim()}
-              className="w-full py-2.5 rounded-lg text-[13px] font-semibold text-white transition-opacity flex items-center justify-center gap-2"
-              style={{
-                background: '#006B3F',
-                opacity: isRegistering || !govGhRegex.test(email) || !name.trim() || !department.trim() ? 0.5 : 1,
-                cursor: isRegistering ? 'wait' : 'pointer',
-              }}
-            >
-              {isRegistering && <Loader2 size={14} className="animate-spin" />}
-              {isRegistering ? 'Registering...' : 'Register'}
-            </button>
+          {/* Department */}
+          <div>
+            <label className="text-[10.5px] font-semibold text-text-muted uppercase tracking-wide mb-1 block">
+              Department / Ministry
+            </label>
+            <input
+              type="text"
+              value={department}
+              onChange={e => setDepartment(e.target.value)}
+              placeholder="Ministry of Finance"
+              className="w-full px-3 py-2 rounded-lg text-[12.5px] text-text-primary outline-none placeholder:text-text-muted"
+              style={{ background: 'var(--color-surface-2)', border: '1.5px solid var(--color-border-1)' }}
+              required
+            />
+          </div>
 
-            <p className="text-[9.5px] text-text-muted text-center mt-1 leading-snug">
-              Only email addresses ending in .gov.gh are permitted.
-              A verification code will be sent to your inbox.
-            </p>
-          </form>
-        ) : (
-          /* ── Verify form ── */
-          <form onSubmit={handleVerify} className="flex flex-col gap-3">
-            <div
-              className="px-3 py-2 rounded-lg text-[11px]"
-              style={{ background: 'rgba(0, 107, 63, 0.08)', color: '#006B3F' }}
-            >
-              Code sent to <strong>{currentUserEmail}</strong>
-            </div>
+          <button
+            type="submit"
+            disabled={isRegistering || !govGhRegex.test(email) || !name.trim() || !department.trim()}
+            className="w-full py-2.5 rounded-lg text-[13px] font-semibold text-white transition-opacity flex items-center justify-center gap-2"
+            style={{
+              background: '#006B3F',
+              opacity: isRegistering || !govGhRegex.test(email) || !name.trim() || !department.trim() ? 0.5 : 1,
+              cursor: isRegistering ? 'wait' : 'pointer',
+            }}
+          >
+            {isRegistering && <Loader2 size={14} className="animate-spin" />}
+            {isRegistering ? 'Connecting...' : 'Sign In & Start Messaging'}
+          </button>
 
-            <div>
-              <label className="text-[10.5px] font-semibold text-text-muted uppercase tracking-wide mb-1 block">
-                Verification Code
-              </label>
-              <input
-                type="text"
-                value={code}
-                onChange={e => setCode(e.target.value)}
-                placeholder="Enter 6-digit code"
-                className="w-full px-3 py-2 rounded-lg text-[12.5px] text-text-primary outline-none placeholder:text-text-muted text-center tracking-[0.3em] font-mono"
-                style={{ background: 'var(--color-surface-2)', border: '1.5px solid var(--color-border-1)' }}
-                maxLength={6}
-                autoFocus
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isVerifying || !code.trim()}
-              className="w-full py-2.5 rounded-lg text-[13px] font-semibold text-white transition-opacity flex items-center justify-center gap-2"
-              style={{
-                background: '#006B3F',
-                opacity: isVerifying || !code.trim() ? 0.5 : 1,
-                cursor: isVerifying ? 'wait' : 'pointer',
-              }}
-            >
-              {isVerifying && <Loader2 size={14} className="animate-spin" />}
-              {isVerifying ? 'Verifying...' : 'Verify'}
-            </button>
-          </form>
-        )}
+          <p className="text-[9.5px] text-text-muted text-center mt-1 leading-snug">
+            Only .gov.gh email addresses are permitted. Your account is created instantly — no verification code needed.
+          </p>
+        </form>
       </div>
 
       {/* Skip / local mode link */}
       <button
         onClick={() => {
-          // Just dismiss the auth gate — sample data is already loaded
           useMessagingStore.setState({ authStep: 'authenticated', isAuthenticated: false });
         }}
         className="mt-4 text-[10.5px] text-text-muted underline underline-offset-2 hover:text-text-secondary transition-colors"

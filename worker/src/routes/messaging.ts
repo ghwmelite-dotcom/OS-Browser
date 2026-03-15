@@ -32,7 +32,7 @@ async function getAuthenticatedUser(env: Env, request: Request): Promise<UserSes
   return env.SESSIONS.get(`msg-session:${token}`, 'json') as Promise<UserSession | null>;
 }
 
-// ─── Registration ───────────────────────────────────────────────────────────
+// ─── Registration (Auto-approve .gov.gh emails) ─────────────────────────────
 
 messagingRoutes.post('/register', async (c) => {
   const body = await c.req.json<{ email?: string; name?: string; department?: string }>();
@@ -55,74 +55,7 @@ messagingRoutes.post('/register', async (c) => {
     return c.json({ error: 'department is required (min 2 characters)' }, 400);
   }
 
-  // Check for existing pending verification (prevent spam)
-  const existingCode = await c.env.SESSIONS.get(`verify:${email}`);
-  if (existingCode) {
-    return c.json(
-      { error: 'A verification code was already sent. Please wait before requesting a new one.' },
-      429
-    );
-  }
-
-  const code = generateVerificationCode();
-
-  // Store verification data with 10-minute TTL
-  await c.env.SESSIONS.put(
-    `verify:${email}`,
-    JSON.stringify({
-      code,
-      name: body.name.trim(),
-      department: body.department.trim(),
-      createdAt: Date.now(),
-    }),
-    { expirationTtl: 600 }
-  );
-
-  // Store pending contact info for lookup after verification
-  console.log(`[DEV] Verification code for ${email}: ${code}`);
-
-  // In development, return the code. In production, send via email.
-  const isDev = c.env.ENVIRONMENT !== 'production';
-
-  return c.json({
-    success: true,
-    message: 'Verification code sent to your email',
-    ...(isDev ? { devCode: code } : {}),
-  });
-});
-
-// ─── Verification ───────────────────────────────────────────────────────────
-
-messagingRoutes.post('/verify', async (c) => {
-  const body = await c.req.json<{ email?: string; code?: string }>();
-
-  if (!body.email || typeof body.email !== 'string') {
-    return c.json({ error: 'email is required' }, 400);
-  }
-
-  if (!body.code || typeof body.code !== 'string') {
-    return c.json({ error: 'code is required' }, 400);
-  }
-
-  const email = body.email.trim().toLowerCase();
-  const stored = await c.env.SESSIONS.get(`verify:${email}`, 'json') as {
-    code: string;
-    name: string;
-    department: string;
-    createdAt: number;
-  } | null;
-
-  if (!stored) {
-    return c.json({ error: 'No pending verification found. Please register again.' }, 400);
-  }
-
-  if (stored.code !== body.code.trim()) {
-    return c.json({ error: 'Invalid verification code' }, 400);
-  }
-
-  // Verification successful — clean up the code
-  await c.env.SESSIONS.delete(`verify:${email}`);
-
+  // Auto-approve: .gov.gh domain is proof of identity
   // Generate stable userId from email
   const encoder = new TextEncoder();
   const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(email));
@@ -132,19 +65,22 @@ messagingRoutes.post('/verify', async (c) => {
   // Generate session token
   const token = generateToken();
 
+  const name = body.name.trim();
+  const department = body.department.trim();
+
   // Create/update contact record
   const contact: Contact = {
     userId,
     email,
-    name: stored.name,
-    department: stored.department,
+    name,
+    department,
     registeredAt: Date.now(),
   };
 
   // Store contact persistently
   await c.env.MESSAGES.put(`contact:${userId}`, JSON.stringify(contact));
 
-  // Also add to the contacts index
+  // Add to the contacts index
   const contactIndex = (await c.env.MESSAGES.get<string[]>('contacts:index', 'json')) || [];
   if (!contactIndex.includes(userId)) {
     contactIndex.push(userId);
@@ -155,8 +91,8 @@ messagingRoutes.post('/verify', async (c) => {
   const session: UserSession = {
     userId,
     email,
-    name: stored.name,
-    department: stored.department,
+    name,
+    department,
     token,
     createdAt: Date.now(),
   };
@@ -165,7 +101,13 @@ messagingRoutes.post('/verify', async (c) => {
     expirationTtl: 60 * 60 * 24 * 30,
   });
 
-  return c.json({ success: true, userId, token, name: stored.name, department: stored.department });
+  return c.json({ success: true, userId, token, name, department });
+});
+
+// ─── Legacy verify endpoint (kept for backwards compatibility) ───────────────
+
+messagingRoutes.post('/verify', async (c) => {
+  return c.json({ error: 'Verification is no longer required. Use /register directly — .gov.gh emails are auto-approved.' }, 400);
 });
 
 // ─── Contacts ───────────────────────────────────────────────────────────────
