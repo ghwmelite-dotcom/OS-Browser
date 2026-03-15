@@ -8,6 +8,7 @@ export function useKeyboardShortcuts(callbacks: {
   onToggleBookmarks?: () => void;
   onToggleSettings?: () => void;
   onToggleCommandPalette?: () => void;
+  onToggleSplitScreen?: () => void;
 }) {
   const { createTab, closeTab, activeTabId, switchTab, tabs, reopenLastClosed } = useTabsStore();
   const { reload, stop, isLoading } = useNavigationStore();
@@ -68,6 +69,8 @@ export function useKeyboardShortcuts(callbacks: {
       else if (ctrl && key === 'j' && !shift) { e.preventDefault(); toggleSidebar(); }
       // Ctrl+Shift+O — AskOzzy
       else if (ctrl && shift && key === 'o') { e.preventDefault(); openPanel(activePanel === 'askozzy' ? 'none' : 'askozzy'); }
+      // Ctrl+Shift+S — Split Screen
+      else if (ctrl && shift && key === 's') { e.preventDefault(); callbacks.onToggleSplitScreen?.(); }
       // Escape — Close sidebar/panel
       else if (key === 'escape') { closePanel(); callbacks.onToggleHistory?.(); callbacks.onToggleBookmarks?.(); }
       // F11 — Fullscreen

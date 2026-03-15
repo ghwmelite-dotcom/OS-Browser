@@ -16,9 +16,11 @@ import { useSettingsStore } from './store/settings';
 import { useConnectivityStore } from './store/connectivity';
 import { useStatsStore } from './store/stats';
 import { useSidebarStore } from './store/sidebar';
+import { useSplitScreenStore } from './store/splitscreen';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { CommandPalette } from './components/CommandPalette';
 import { FloatingAIBar } from './components/FloatingAIBar';
+import { SplitScreenToolbar, SplitScreenContent, SplitScreenPicker } from './components/SplitScreen';
 
 export function App() {
   const { loadTabs, createTab } = useTabsStore();
@@ -31,12 +33,19 @@ export function App() {
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showSplitPicker, setShowSplitPicker] = useState(false);
+  const splitActive = useSplitScreenStore(s => s.isActive);
 
   useKeyboardShortcuts({
     onToggleHistory: () => setShowHistory(prev => !prev),
     onToggleBookmarks: () => setShowBookmarks(prev => !prev),
     onToggleSettings: () => setShowSettings(prev => !prev),
     onToggleCommandPalette: () => setShowCommandPalette(prev => !prev),
+    onToggleSplitScreen: () => {
+      const { isActive, deactivate } = useSplitScreenStore.getState();
+      if (isActive) deactivate();
+      else setShowSplitPicker(true);
+    },
   });
 
   useEffect(() => {
@@ -123,6 +132,16 @@ export function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const handler = () => {
+      const { isActive, deactivate } = useSplitScreenStore.getState();
+      if (isActive) deactivate();
+      else setShowSplitPicker(true);
+    };
+    window.addEventListener('os-browser:split-screen', handler);
+    return () => window.removeEventListener('os-browser:split-screen', handler);
+  }, []);
+
   return (
     <div className="h-screen w-screen flex flex-col bg-bg">
       <TitleBar />
@@ -138,9 +157,16 @@ export function App() {
       {/* Content + Sidebar */}
       <div className="flex-1 flex overflow-hidden">
         {/* Main content */}
-        <div className="flex-1 overflow-y-auto">
-          <ContentArea />
-          <FloatingAIBar />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {splitActive && <SplitScreenToolbar />}
+          {splitActive ? (
+            <SplitScreenContent />
+          ) : (
+            <div className="flex-1 overflow-y-auto">
+              <ContentArea />
+              <FloatingAIBar />
+            </div>
+          )}
         </div>
 
         {/* AI Sidebar */}
@@ -151,6 +177,8 @@ export function App() {
       </div>
 
       <StatusBar />
+
+      {showSplitPicker && <SplitScreenPicker onClose={() => setShowSplitPicker(false)} />}
 
       <CommandPalette isOpen={showCommandPalette} onClose={() => setShowCommandPalette(false)} />
 

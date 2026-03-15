@@ -3,7 +3,7 @@ import {
   MoreVertical, Plus, Copy, Star, Clock, Download, Settings, Shield,
   Printer, ZoomIn, ZoomOut, Maximize, User, HelpCircle, Info,
   Sparkles, MessageSquare, BarChart3, Globe, Trash2, Key,
-  ChevronRight, Search, Languages, FileText, LogIn, BookOpen
+  ChevronRight, Search, Languages, FileText, LogIn, BookOpen, Columns
 } from 'lucide-react';
 import { useTabsStore } from '@/store/tabs';
 import { useSettingsStore } from '@/store/settings';
@@ -161,6 +161,9 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             {/* AI features */}
             <MenuItem icon={MessageSquare} label="AI Assistant" shortcut="Ctrl+J" onClick={() => { close(); toggleSidebar(); }} />
             <MenuItem icon={Sparkles} label="AskOzzy" shortcut="Ctrl+Shift+O" onClick={() => { close(); openPanel('askozzy'); }} />
+            <MenuItem icon={Columns} label="Split Screen" shortcut="Ctrl+Shift+S" onClick={() => {
+              window.dispatchEvent(new CustomEvent('os-browser:split-screen'));
+            }} />
             <MenuItem icon={Globe} label="Government Portals" onClick={() => {
               if (activeTabId) navigate(activeTabId, 'os-browser://newtab');
             }} />
