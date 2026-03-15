@@ -203,109 +203,124 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
             )}
           </button>
 
-          {/* Profile popup */}
+          {/* Profile popup — Chrome-style */}
           {openDropdown === 'profile' && (
             <>
               <div className="fixed inset-0 z-[99]" onClick={closeDropdown} />
               <div
-                className="absolute top-[36px] right-0 w-[300px] rounded-xl border shadow-2xl z-[100] overflow-y-auto"
+                className="absolute top-[36px] right-0 w-[340px] rounded-2xl border shadow-2xl z-[100] overflow-hidden"
                 style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)', maxHeight: 'calc(100vh - 100px)' }}
               >
-                {/* Header */}
-                <div className="p-4 text-center border-b" style={{ borderColor: 'var(--color-border-1)' }}>
-                  <div className="w-12 h-12 rounded-2xl mx-auto mb-3 flex items-center justify-center"
-                    style={{ background: 'linear-gradient(135deg, #CE1126 0%, #FCD116 50%, #006B3F 100%)' }}>
-                    <svg width="24" height="24" viewBox="0 0 512 512">
-                      <path d="M256 90L370 140V270Q370 370 256 430Q142 370 142 270V140Z" fill="white" opacity=".95"/>
-                    </svg>
-                  </div>
-                  {settings?.email ? (
-                    <>
-                      <h3 className="text-[15px] font-bold text-text-primary">{settings.display_name}</h3>
-                      <p className="text-[12px] text-text-muted mt-0.5">{settings.email}</p>
-                    </>
-                  ) : (
-                    <>
-                      <h3 className="text-[15px] font-bold text-text-primary">Create Your Profile</h3>
-                      <p className="text-[12px] text-text-muted mt-0.5">Personalize your browsing experience</p>
-                    </>
-                  )}
-                </div>
-
-                <div className="p-4">
-                  {settings?.email ? (
-                    /* Already has a profile — show info + sign out */
-                    <div>
-                      <div className="flex items-center gap-3 p-3 rounded-lg mb-3" style={{ background: 'var(--color-surface-2)' }}>
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-[16px] font-bold text-white" style={{ background: 'var(--color-accent)' }}>
-                          {(settings.display_name || 'U').charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="text-[13px] font-semibold text-text-primary">{settings.display_name}</p>
-                          <p className="text-[11px] text-text-muted">{settings.email}</p>
-                        </div>
+                {settings?.email ? (
+                  /* ── Signed in view ── */
+                  <>
+                    {/* Large profile header */}
+                    <div className="px-6 pt-6 pb-5 text-center" style={{ background: 'var(--color-surface-2)' }}>
+                      <div className="w-[72px] h-[72px] rounded-full mx-auto mb-3 flex items-center justify-center text-[28px] font-bold text-white shadow-lg"
+                        style={{ background: 'linear-gradient(135deg, #CE1126 0%, #FCD116 50%, #006B3F 100%)' }}>
+                        {(settings.display_name || 'U').charAt(0).toUpperCase()}
                       </div>
-                      <button
-                        onClick={async () => {
+                      <h3 className="text-[16px] font-bold text-text-primary">{settings.display_name}</h3>
+                      <p className="text-[12px] text-text-muted mt-0.5">{settings.email}</p>
+                    </div>
+
+                    {/* Menu items */}
+                    <div className="py-2 border-b" style={{ borderColor: 'var(--color-border-1)' }}>
+                      {[
+                        { icon: '🔑', label: 'Passwords and autofill', onClick: () => { closeDropdown(); window.dispatchEvent(new CustomEvent('os-browser:currency-tools')); } },
+                        { icon: '⚙️', label: 'Manage your profile', onClick: () => { closeDropdown(); useTabsStore.getState().createTab('os-browser://settings'); } },
+                        { icon: '✏️', label: 'Customize profile', onClick: () => { closeDropdown(); useTabsStore.getState().createTab('os-browser://settings'); } },
+                      ].map(item => (
+                        <button key={item.label} onClick={item.onClick}
+                          className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
+                          <span className="text-[15px] w-5 text-center">{item.icon}</span>
+                          <span className="text-[13px] text-text-primary">{item.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Sign out */}
+                    <div className="py-2 border-b" style={{ borderColor: 'var(--color-border-1)' }}>
+                      <button onClick={async () => {
                           await window.osBrowser.settings.update({ display_name: 'User', email: '' });
                           useSettingsStore.getState().loadSettings();
                           closeDropdown();
                         }}
-                        className="w-full py-2 rounded-lg text-[12px] font-medium border hover:bg-surface-2 transition-colors"
-                        style={{ borderColor: 'var(--color-border-1)', color: 'var(--color-text-secondary)' }}
-                      >
-                        Sign Out
+                        className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
+                        <span className="text-[15px] w-5 text-center">🚪</span>
+                        <span className="text-[13px] text-text-primary">Sign out of OS Browser</span>
                       </button>
                     </div>
-                  ) : (
-                    /* No profile — create one */
-                    <div>
+
+                    {/* Other profiles section */}
+                    <div className="py-2">
+                      <p className="px-5 py-1.5 text-[12px] font-bold text-text-primary">Other profiles</p>
+                      <button onClick={() => { closeDropdown(); window.osBrowser?.newWindow?.(); }}
+                        className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: '#6366f1' }}>G</div>
+                        <span className="text-[13px] text-text-primary">Guest</span>
+                      </button>
+
+                      <div className="h-px my-1" style={{ background: 'var(--color-border-1)' }} />
+
+                      <button onClick={() => { closeDropdown(); }}
+                        className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
+                        <span className="text-[15px] w-5 text-center">👤</span>
+                        <span className="text-[13px]" style={{ color: 'var(--color-accent)' }}>Add a profile</span>
+                      </button>
+                      <button onClick={() => { closeDropdown(); window.osBrowser?.newPrivateWindow?.(); }}
+                        className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-surface-2 transition-colors">
+                        <span className="text-[15px] w-5 text-center">🕵️</span>
+                        <span className="text-[13px] text-text-primary">Open Guest profile</span>
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  /* ── Not signed in view ── */
+                  <>
+                    <div className="px-6 pt-6 pb-5 text-center" style={{ background: 'var(--color-surface-2)' }}>
+                      <div className="w-[72px] h-[72px] rounded-full mx-auto mb-3 flex items-center justify-center"
+                        style={{ background: 'var(--color-surface-3)' }}>
+                        <User size={32} className="text-text-muted" />
+                      </div>
+                      <h3 className="text-[16px] font-bold text-text-primary">Set Up Your Profile</h3>
+                      <p className="text-[12px] text-text-muted mt-1">Personalize your OS Browser experience</p>
+                    </div>
+
+                    <div className="p-5">
                       <div className="mb-3">
                         <label className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1.5 block">Your Name</label>
-                        <input
-                          type="text" value={profileName} onChange={e => setProfileName(e.target.value)}
-                          placeholder="e.g. Ozzy"
-                          className="w-full px-3 py-2 rounded-lg text-[13px] outline-none border"
-                          style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }}
-                          autoFocus
-                        />
+                        <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)}
+                          placeholder="e.g. Ozzy" autoFocus
+                          className="w-full px-3 py-2.5 rounded-lg text-[14px] outline-none border"
+                          style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }} />
                       </div>
                       <div className="mb-4">
                         <label className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1.5 block">Email (optional)</label>
-                        <input
-                          type="email" value={profileEmail} onChange={e => setProfileEmail(e.target.value)}
+                        <input type="email" value={profileEmail} onChange={e => setProfileEmail(e.target.value)}
                           placeholder="you@example.com"
-                          className="w-full px-3 py-2 rounded-lg text-[13px] outline-none border"
-                          style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }}
-                        />
+                          className="w-full px-3 py-2.5 rounded-lg text-[14px] outline-none border"
+                          style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }} />
                       </div>
-                      <button
-                        onClick={async () => {
+                      <button onClick={async () => {
                           if (!profileName.trim()) return;
-                          await window.osBrowser.settings.update({
-                            display_name: profileName.trim(),
-                            email: profileEmail.trim() || null,
-                          });
+                          await window.osBrowser.settings.update({ display_name: profileName.trim(), email: profileEmail.trim() || null });
                           useSettingsStore.getState().loadSettings();
-                          setProfileName('');
-                          setProfileEmail('');
+                          setProfileName(''); setProfileEmail('');
                           closeDropdown();
                         }}
                         disabled={!profileName.trim()}
-                        className="w-full py-2.5 rounded-lg text-[13px] font-semibold transition-all disabled:opacity-40"
-                        style={{ background: 'var(--color-accent)', color: '#fff' }}
-                      >
+                        className="w-full py-2.5 rounded-lg text-[14px] font-semibold transition-all disabled:opacity-40"
+                        style={{ background: 'var(--color-accent)', color: '#fff' }}>
                         Create Profile
                       </button>
                     </div>
-                  )}
-                </div>
 
-                <div className="px-4 pb-3">
-                  <p className="text-[10px] text-text-muted text-center">
-                    Your profile is stored locally on this device.
-                  </p>
-                </div>
+                    <div className="px-5 pb-4">
+                      <p className="text-[10px] text-text-muted text-center">Your profile is stored locally on this device. Free forever.</p>
+                    </div>
+                  </>
+                )}
               </div>
             </>
           )}
