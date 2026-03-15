@@ -1,6 +1,24 @@
 import React from 'react';
 import { Signal } from 'lucide-react';
 import { FeatureRegistry, StatusBarIndicatorProps } from '../registry';
+import { useTabsStore } from '@/store/tabs';
+
+const openNetworkDetails = () => {
+  useTabsStore.getState().createTab('os-browser://settings');
+};
+
+const suspendBackgroundTabs = () => {
+  const { tabs, activeTabId } = useTabsStore.getState();
+  // Mark non-active tabs as suspended by dispatching an event
+  const backgroundTabs = tabs.filter(t => t.id !== activeTabId);
+  window.dispatchEvent(new CustomEvent('os-browser:suspend-tabs', {
+    detail: { tabIds: backgroundTabs.map(t => t.id) },
+  }));
+};
+
+const resumeAllTabs = () => {
+  window.dispatchEvent(new CustomEvent('os-browser:resume-tabs'));
+};
 
 // ── Status Bar Indicator ────────────────────────────────────────────
 const NetworkIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onClick }) => {
@@ -12,7 +30,7 @@ const NetworkIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onCli
       gap: '4px',
       padding: '2px 8px',
       fontSize: '11px',
-      color: stripColor,
+      color: 'var(--color-text-primary)',
       background: 'transparent',
       border: 'none',
       cursor: 'pointer',
@@ -21,7 +39,7 @@ const NetworkIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onCli
     },
     title: 'Network — Click for details',
   },
-    React.createElement(Signal, { size: 12 }),
+    React.createElement(Signal, { size: 12, style: { color: stripColor } }),
     React.createElement('span', null, navigator.onLine ? 'Online' : 'Offline'),
   );
 };
@@ -47,7 +65,7 @@ const networkManagerFeature = {
         label: 'Run speed test',
         description: 'Test current network download and upload speed',
         keywords: ['speed', 'test', 'network', 'bandwidth', 'internet', 'mbps', 'connection'],
-        action: () => console.log('[Network] Run speed test'),
+        action: () => openNetworkDetails(),
         group: 'Network',
       },
       {
@@ -55,7 +73,7 @@ const networkManagerFeature = {
         label: 'Suspend background tabs',
         description: 'Pause inactive tabs to save bandwidth and memory',
         keywords: ['suspend', 'background', 'tabs', 'pause', 'freeze', 'save', 'memory'],
-        action: () => console.log('[Network] Suspend tabs'),
+        action: () => suspendBackgroundTabs(),
         group: 'Network',
       },
       {
@@ -63,7 +81,7 @@ const networkManagerFeature = {
         label: 'Resume all tabs',
         description: 'Resume all suspended background tabs',
         keywords: ['resume', 'tabs', 'wake', 'restore', 'unsuspend', 'activate'],
-        action: () => console.log('[Network] Resume tabs'),
+        action: () => resumeAllTabs(),
         group: 'Network',
       },
       {
@@ -71,7 +89,7 @@ const networkManagerFeature = {
         label: 'Network details',
         description: 'View detailed network connection information',
         keywords: ['network', 'details', 'info', 'status', 'connection', 'signal', 'latency'],
-        action: () => console.log('[Network] Show details'),
+        action: () => openNetworkDetails(),
         group: 'Network',
       },
     ],

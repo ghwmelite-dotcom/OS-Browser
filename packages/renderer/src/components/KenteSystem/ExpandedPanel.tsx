@@ -34,8 +34,8 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
       ref={panelRef}
       style={{
         width,
-        minWidth: 240,
-        maxWidth: 600,
+        minWidth: 280,
+        maxWidth: 'min(600px, calc(100vw - 48px))',
         display: 'flex',
         flexDirection: 'column',
         background: 'var(--color-surface-1)',
@@ -49,7 +49,7 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
         transition: 'transform 250ms ease-out, opacity 200ms ease-out',
       }}
     >
-      {/* ─── Panel Header ─── */}
+      {/* Panel Header */}
       <div
         style={{
           height: 36,
@@ -61,7 +61,15 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
           flexShrink: 0,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            overflow: 'hidden',
+            minWidth: 0,
+          }}
+        >
           {/* Colored dot — feature's stripColor */}
           <div
             style={{
@@ -78,6 +86,9 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
               fontWeight: 500,
               color: 'var(--color-text-primary)',
               letterSpacing: '-0.01em',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
             {feature.name}
@@ -99,6 +110,7 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
             color: 'var(--color-text-muted)',
             cursor: 'pointer',
             padding: 0,
+            flexShrink: 0,
             transition: 'background 150ms ease, color 150ms ease',
           }}
           onMouseEnter={(e) => {
@@ -114,13 +126,15 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
         </button>
       </div>
 
-      {/* ─── Panel Content ─── */}
+      {/* Panel Content */}
       <div
+        className="kente-panel-scroll"
         style={{
           flex: 1,
           overflowY: 'auto',
           overflowX: 'hidden',
           padding: 12,
+          wordBreak: 'break-word',
         }}
       >
         {PanelContent ? (
@@ -142,6 +156,22 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
           </div>
         )}
       </div>
+
+      <style>{`
+        .kente-panel-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .kente-panel-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .kente-panel-scroll::-webkit-scrollbar-thumb {
+          background: var(--color-border-2);
+          border-radius: 3px;
+        }
+        .kente-panel-scroll::-webkit-scrollbar-thumb:hover {
+          background: var(--color-text-muted);
+        }
+      `}</style>
     </div>
   );
 }

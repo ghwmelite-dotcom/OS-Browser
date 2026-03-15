@@ -2,6 +2,14 @@ import React from 'react';
 import { Languages, Globe } from 'lucide-react';
 import { FeatureRegistry, StatusBarIndicatorProps } from '../registry';
 
+const dispatchTranslation = () => {
+  window.dispatchEvent(new CustomEvent('os-browser:translation-panel'));
+};
+
+const translateTo = (lang: string) => {
+  window.dispatchEvent(new CustomEvent('os-browser:translate-to', { detail: { language: lang } }));
+};
+
 // ── Status Bar Indicator ────────────────────────────────────────────
 const TranslationIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onClick }) => {
   return React.createElement('button', {
@@ -12,7 +20,7 @@ const TranslationIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, o
       gap: '4px',
       padding: '2px 8px',
       fontSize: '11px',
-      color: stripColor,
+      color: 'var(--color-text-primary)',
       background: 'transparent',
       border: 'none',
       cursor: 'pointer',
@@ -21,7 +29,7 @@ const TranslationIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, o
     },
     title: 'Translation — Click to change language',
   },
-    React.createElement(Languages, { size: 12 }),
+    React.createElement(Languages, { size: 12, style: { color: stripColor } }),
     React.createElement('span', { style: { fontWeight: 600 } }, 'EN'),
   );
 };
@@ -45,37 +53,37 @@ const translationFeature = {
       icon: Globe,
       label: 'Translate Page',
       order: 3,
-      onClick: () => console.log('[Translation] Translate current page'),
+      onClick: () => dispatchTranslation(),
       dropdownItems: [
         {
           id: 'translation:twi',
           label: 'Translate to Twi',
-          onClick: () => console.log('[Translation] Translate to Twi'),
+          onClick: () => translateTo('twi'),
         },
         {
           id: 'translation:ga',
           label: 'Translate to Ga',
-          onClick: () => console.log('[Translation] Translate to Ga'),
+          onClick: () => translateTo('ga'),
         },
         {
           id: 'translation:ewe',
           label: 'Translate to Ewe',
-          onClick: () => console.log('[Translation] Translate to Ewe'),
+          onClick: () => translateTo('ewe'),
         },
         {
           id: 'translation:dagbani',
           label: 'Translate to Dagbani',
-          onClick: () => console.log('[Translation] Translate to Dagbani'),
+          onClick: () => translateTo('dagbani'),
         },
         {
           id: 'translation:hausa',
           label: 'Translate to Hausa',
-          onClick: () => console.log('[Translation] Translate to Hausa'),
+          onClick: () => translateTo('hausa'),
         },
         {
           id: 'translation:fante',
           label: 'Translate to Fante',
-          onClick: () => console.log('[Translation] Translate to Fante'),
+          onClick: () => translateTo('fante'),
         },
       ],
     },
@@ -85,7 +93,7 @@ const translationFeature = {
         label: 'Translate page',
         description: 'Translate the current page to a Ghanaian language',
         keywords: ['translate', 'page', 'language', 'convert', 'text'],
-        action: () => console.log('[Translation] Translate page'),
+        action: () => dispatchTranslation(),
         group: 'Translation',
       },
       {
@@ -93,7 +101,7 @@ const translationFeature = {
         label: 'Translate to Twi',
         description: 'Translate page content to Twi',
         keywords: ['twi', 'akan', 'translate', 'ashanti', 'language'],
-        action: () => console.log('[Translation] To Twi'),
+        action: () => translateTo('twi'),
         group: 'Translation',
       },
       {
@@ -101,7 +109,7 @@ const translationFeature = {
         label: 'Translate to Ga',
         description: 'Translate page content to Ga',
         keywords: ['ga', 'accra', 'translate', 'language'],
-        action: () => console.log('[Translation] To Ga'),
+        action: () => translateTo('ga'),
         group: 'Translation',
       },
       {
@@ -109,7 +117,7 @@ const translationFeature = {
         label: 'Translate to Ewe',
         description: 'Translate page content to Ewe',
         keywords: ['ewe', 'volta', 'translate', 'language'],
-        action: () => console.log('[Translation] To Ewe'),
+        action: () => translateTo('ewe'),
         group: 'Translation',
       },
       {
@@ -117,7 +125,7 @@ const translationFeature = {
         label: 'Open translation panel',
         description: 'Open the full translation interface',
         keywords: ['translation', 'panel', 'open', 'dictionary', 'lookup'],
-        action: () => console.log('[Translation] Open panel'),
+        action: () => dispatchTranslation(),
         group: 'Translation',
       },
     ],

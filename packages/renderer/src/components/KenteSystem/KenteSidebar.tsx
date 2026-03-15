@@ -10,6 +10,7 @@ import { ExpandedPanel } from './ExpandedPanel';
  * Sits on the LEFT side of the content area.
  * Icon rail: always visible when state !== 'hidden'.
  * Expanded panel: visible when state === 'expanded' and a panel is active.
+ * On small screens (< 800px), the expanded panel overlays content instead of pushing it.
  *
  * Keyboard shortcut: Ctrl+\ toggles sidebar visibility.
  */
@@ -17,6 +18,19 @@ export function KenteSidebar() {
   const features = useFeatureRegistry();
   const { state, activePanel, panelWidth, togglePanel, closePanel, toggleSidebar } =
     useKenteSidebarStore();
+
+  // Track window width for responsive overlay behavior
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth : 1024,
+  );
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isSmallScreen = windowWidth < 800;
 
   // Previous panel for crossfade tracking
   const prevPanelRef = useRef<string | null>(null);
@@ -36,7 +50,7 @@ export function KenteSidebar() {
   const effectiveWidth =
     activeFeature?.surfaces.sidebar?.defaultPanelWidth ?? panelWidth;
 
-  // ─── Keyboard shortcut: Ctrl+\ ───
+  // Keyboard shortcut: Ctrl+\
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === '\\') {
@@ -48,7 +62,7 @@ export function KenteSidebar() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [toggleSidebar]);
 
-  // ─── WebContentsView visibility management ───
+  // WebContentsView visibility management
   useEffect(() => {
     if (state === 'expanded' && activePanel) {
       window.osBrowser?.hideWebViews?.();
@@ -57,7 +71,7 @@ export function KenteSidebar() {
     }
   }, [state, activePanel]);
 
-  // ─── Crossfade: bump key when active panel changes ───
+  // Crossfade: bump key when active panel changes
   useEffect(() => {
     if (activePanel && activePanel !== prevPanelRef.current) {
       setContentKey((k) => k + 1);
@@ -65,12 +79,12 @@ export function KenteSidebar() {
     prevPanelRef.current = activePanel;
   }, [activePanel]);
 
-  // ─── Open settings ───
+  // Open settings
   const handleOpenSettings = useCallback(() => {
     window.dispatchEvent(new CustomEvent('os-browser:open-settings'));
   }, []);
 
-  // ─── Panel toggle from icon rail ───
+  // Panel toggle from icon rail
   const handleTogglePanel = useCallback(
     (featureId: string) => {
       togglePanel(featureId);
@@ -80,33 +94,71 @@ export function KenteSidebar() {
 
   if (state === 'hidden') return null;
 
-  return (
-    <div
-      style={{
-        display: 'flex',
-        height: '100%',
-        flexShrink: 0,
-        zIndex: 10,
-      }}
-    >
-      {/* Icon Rail — always present when sidebar is visible */}
-      <IconRail
-        features={sidebarFeatures}
-        activePanel={activePanel}
-        onTogglePanel={handleTogglePanel}
-        onOpenSettings={handleOpenSettings}
-      />
+  const showExpandedPanel = state === 'expanded' && activeFeature;
 
-      {/* Expanded Panel — only when state is 'expanded' and a feature is selected */}
-      {state === 'expanded' && activeFeature && (
-        <ExpandedPanel
-          key={contentKey}
-          feature={activeFeature}
-          width={effectiveWidth}
-          onClose={closePanel}
+  return (
+    <>
+      <div
+        style={{
+          display: 'flex',
+          height: '100%',
+          flexShrink: 0,
+          zIndex: 20,
+          position: 'relative',
+        }}
+      >
+        {/* Icon Rail — always present when sidebar is visible */}
+        <IconRail
+          features={sidebarFeatures}
+          activePanel={activePanel}
+          onTogglePanel={handleTogglePanel}
+          onOpenSettings={handleOpenSettings}
         />
+
+        {/* Expanded Panel — inline on large screens */}
+        {showExpandedPanel && !isSmallScreen && (
+          <ExpandedPanel
+            key={contentKey}
+            feature={activeFeature}
+            width={effectiveWidth}
+            onClose={closePanel}
+          />
+        )}
+      </div>
+
+      {/* Expanded Panel — overlay on small screens */}
+      {showExpandedPanel && isSmallScreen && (
+        <>
+          {/* Backdrop to dismiss panel */}
+          <div
+            onClick={closePanel}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0, 0, 0, 0.3)',
+              zIndex: 30,
+            }}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              left: 48,
+              top: 0,
+              bottom: 0,
+              zIndex: 40,
+              maxWidth: 'calc(100vw - 48px)',
+            }}
+          >
+            <ExpandedPanel
+              key={contentKey}
+              feature={activeFeature}
+              width={effectiveWidth}
+              onClose={closePanel}
+            />
+          </div>
+        </>
       )}
-    </div>
+    </>
   );
 }
 

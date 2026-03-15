@@ -1,6 +1,24 @@
 import React from 'react';
-import { Landmark } from 'lucide-react';
+import { Landmark, ExternalLink, Building, CreditCard, Shield, Heart, Zap, Droplets, FileCheck, MapPin, ChevronRight } from 'lucide-react';
 import { FeatureRegistry, SidebarPanelProps } from '../registry';
+import { useTabsStore } from '@/store/tabs';
+
+// ── Government service quick links ──────────────────────────────────
+const GOV_SERVICES = [
+  { label: 'Ghana.gov', url: 'https://ghana.gov.gh', icon: Building, desc: 'Official portal' },
+  { label: 'GIFMIS', url: 'https://gifmis.finance.gov.gh', icon: CreditCard, desc: 'Financial management' },
+  { label: 'GRA Tax Portal', url: 'https://gra.gov.gh', icon: FileCheck, desc: 'Tax filing & payments' },
+  { label: 'SSNIT', url: 'https://ssnit.org.gh', icon: Shield, desc: 'Pensions & benefits' },
+  { label: 'NIA / GhanaCard', url: 'https://nia.gov.gh', icon: CreditCard, desc: 'National ID services' },
+  { label: 'NHIS', url: 'https://nhis.gov.gh', icon: Heart, desc: 'Health insurance' },
+  { label: 'ECG', url: 'https://ecg.com.gh', icon: Zap, desc: 'Electricity bills' },
+  { label: 'GWCL', url: 'https://gwcl.com.gh', icon: Droplets, desc: 'Water services' },
+  { label: 'PPA', url: 'https://ppa.gov.gh', icon: FileCheck, desc: 'Procurement & tenders' },
+  { label: 'Lands Commission', url: 'https://mlnr.gov.gh', icon: MapPin, desc: 'Land registry' },
+];
+
+const openTab = (url: string) => useTabsStore.getState().createTab(url);
+const openGovHub = () => useTabsStore.getState().createTab('os-browser://gov');
 
 // ── Sidebar Panel ───────────────────────────────────────────────────
 const GovHubPanel: React.FC<SidebarPanelProps> = ({ width, stripColor, onClose }) => {
@@ -11,35 +29,120 @@ const GovHubPanel: React.FC<SidebarPanelProps> = ({ width, stripColor, onClose }
       display: 'flex',
       flexDirection: 'column' as const,
       borderLeft: `3px solid ${stripColor}`,
-      background: 'var(--panel-bg, #1a1a2e)',
-      color: 'var(--panel-text, #e0e0e0)',
+      background: 'var(--color-surface-1)',
+      color: 'var(--color-text-primary)',
     },
   },
+    // Header
     React.createElement('div', {
-      style: { padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+      style: {
+        padding: '16px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderBottom: '1px solid var(--color-border-1)',
+      },
     },
-      React.createElement('span', { style: { fontWeight: 600, fontSize: '14px' } }, 'Government Services'),
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        React.createElement(Landmark, { size: 16, style: { color: stripColor } }),
+        React.createElement('span', { style: { fontWeight: 600, fontSize: '14px' } }, 'Government Services'),
+      ),
       React.createElement('button', {
         onClick: onClose,
-        style: { background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '16px' },
+        style: {
+          background: 'transparent',
+          border: 'none',
+          color: 'var(--color-text-muted)',
+          cursor: 'pointer',
+          fontSize: '18px',
+          lineHeight: 1,
+          padding: '4px',
+          borderRadius: '4px',
+        },
       }, '\u00D7'),
     ),
-    React.createElement('div', { style: { padding: '12px 16px', fontSize: '13px', opacity: 0.7 } },
-      'Access GIFMIS, GRA, SSNIT, NIA, and more government services.',
+
+    // Description
+    React.createElement('div', {
+      style: { padding: '12px 16px', fontSize: '12px', color: 'var(--color-text-muted)' },
+    }, 'Quick access to Ghana government portals and services.'),
+
+    // Service list (scrollable)
+    React.createElement('div', {
+      style: { flex: 1, overflowY: 'auto' as const, padding: '0 8px' },
+    },
+      ...GOV_SERVICES.map(svc =>
+        React.createElement('button', {
+          key: svc.label,
+          onClick: () => openTab(svc.url),
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            width: '100%',
+            padding: '10px 8px',
+            margin: '2px 0',
+            background: 'transparent',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            color: 'var(--color-text-primary)',
+            textAlign: 'left' as const,
+            fontSize: '13px',
+            fontFamily: 'inherit',
+          },
+          onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
+            e.currentTarget.style.background = 'var(--color-surface-2)';
+          },
+          onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
+            e.currentTarget.style.background = 'transparent';
+          },
+        },
+          React.createElement('div', {
+            style: {
+              width: 32, height: 32,
+              borderRadius: '8px',
+              background: `${stripColor}18`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            },
+          }, React.createElement(svc.icon, { size: 16, style: { color: stripColor } })),
+          React.createElement('div', { style: { flex: 1, minWidth: 0 } },
+            React.createElement('div', { style: { fontWeight: 500, fontSize: '13px' } }, svc.label),
+            React.createElement('div', { style: { fontSize: '11px', color: 'var(--color-text-muted)', marginTop: '1px' } }, svc.desc),
+          ),
+          React.createElement(ChevronRight, { size: 14, style: { color: 'var(--color-text-muted)', flexShrink: 0 } }),
+        ),
+      ),
     ),
-    React.createElement('button', {
-      onClick: () => console.log('[GovHub] Navigate to os-browser://gov'),
-      style: {
-        margin: '8px 16px',
-        padding: '10px',
-        borderRadius: '8px',
-        border: `1px solid ${stripColor}`,
-        background: 'transparent',
-        color: stripColor,
-        cursor: 'pointer',
-        fontSize: '13px',
+
+    // Open Full Hub button
+    React.createElement('div', { style: { padding: '12px 16px', borderTop: '1px solid var(--color-border-1)' } },
+      React.createElement('button', {
+        onClick: openGovHub,
+        style: {
+          width: '100%',
+          padding: '10px',
+          borderRadius: '8px',
+          border: `1px solid ${stripColor}`,
+          background: `${stripColor}12`,
+          color: stripColor,
+          cursor: 'pointer',
+          fontSize: '13px',
+          fontWeight: 500,
+          fontFamily: 'inherit',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '6px',
+        },
       },
-    }, 'Open full Government Hub'),
+        React.createElement(ExternalLink, { size: 14 }),
+        'Open Full Government Hub',
+      ),
+    ),
   );
 };
 
@@ -65,7 +168,7 @@ const govHubFeature = {
         label: 'Open Government Hub',
         description: 'Browse all government services',
         keywords: ['government', 'gov', 'services', 'hub', 'portal', 'ghana'],
-        action: () => console.log('[GovHub] Open hub'),
+        action: () => openGovHub(),
         group: 'Government',
       },
       {
@@ -73,7 +176,7 @@ const govHubFeature = {
         label: 'Open GIFMIS',
         description: 'Ghana Integrated Financial Management Information System',
         keywords: ['gifmis', 'financial', 'management', 'budget', 'accounting', 'treasury'],
-        action: () => console.log('[GovHub] Open GIFMIS'),
+        action: () => openTab('https://gifmis.finance.gov.gh'),
         group: 'Government',
       },
       {
@@ -81,7 +184,7 @@ const govHubFeature = {
         label: 'Open GRA Portal',
         description: 'Ghana Revenue Authority — tax filing and payments',
         keywords: ['gra', 'tax', 'revenue', 'filing', 'vat', 'income', 'customs'],
-        action: () => console.log('[GovHub] Open GRA'),
+        action: () => openTab('https://gra.gov.gh'),
         group: 'Government',
       },
       {
@@ -89,7 +192,7 @@ const govHubFeature = {
         label: 'Open SSNIT Portal',
         description: 'Social Security and National Insurance Trust',
         keywords: ['ssnit', 'pension', 'social', 'security', 'insurance', 'retirement'],
-        action: () => console.log('[GovHub] Open SSNIT'),
+        action: () => openTab('https://ssnit.org.gh'),
         group: 'Government',
       },
       {
@@ -97,7 +200,7 @@ const govHubFeature = {
         label: 'Open NIA Portal',
         description: 'National Identification Authority — GhanaCard services',
         keywords: ['nia', 'ghanacard', 'identification', 'national', 'id', 'card'],
-        action: () => console.log('[GovHub] Open NIA'),
+        action: () => openTab('https://nia.gov.gh'),
         group: 'Government',
       },
       {
@@ -105,7 +208,7 @@ const govHubFeature = {
         label: 'Open Ghana.gov',
         description: 'Official Ghana Government portal',
         keywords: ['ghana', 'gov', 'official', 'government', 'portal', 'services'],
-        action: () => console.log('[GovHub] Open Ghana.gov'),
+        action: () => openTab('https://ghana.gov.gh'),
         group: 'Government',
       },
       {
@@ -113,7 +216,7 @@ const govHubFeature = {
         label: 'Open ECG Portal',
         description: 'Electricity Company of Ghana — bills and outages',
         keywords: ['ecg', 'electricity', 'power', 'bills', 'outage', 'prepaid', 'meter'],
-        action: () => console.log('[GovHub] Open ECG'),
+        action: () => openTab('https://ecg.com.gh'),
         group: 'Government',
       },
       {
@@ -121,7 +224,7 @@ const govHubFeature = {
         label: 'Open GWCL Portal',
         description: 'Ghana Water Company Limited — water services',
         keywords: ['gwcl', 'water', 'bills', 'service', 'utility'],
-        action: () => console.log('[GovHub] Open GWCL'),
+        action: () => openTab('https://gwcl.com.gh'),
         group: 'Government',
       },
       {
@@ -129,7 +232,7 @@ const govHubFeature = {
         label: 'Open PPA Portal',
         description: 'Public Procurement Authority — tenders and procurement',
         keywords: ['ppa', 'procurement', 'tender', 'public', 'contracts', 'bidding'],
-        action: () => console.log('[GovHub] Open PPA'),
+        action: () => openTab('https://ppa.gov.gh'),
         group: 'Government',
       },
       {
@@ -137,7 +240,7 @@ const govHubFeature = {
         label: 'Open Lands Commission',
         description: 'Lands Commission — land registry and title search',
         keywords: ['lands', 'commission', 'land', 'registry', 'title', 'property', 'deed'],
-        action: () => console.log('[GovHub] Open Lands Commission'),
+        action: () => openTab('https://mlnr.gov.gh'),
         group: 'Government',
       },
       {
@@ -145,7 +248,7 @@ const govHubFeature = {
         label: 'Open NHIS Portal',
         description: 'National Health Insurance Scheme',
         keywords: ['nhis', 'health', 'insurance', 'national', 'medical', 'hospital', 'clinic'],
-        action: () => console.log('[GovHub] Open NHIS'),
+        action: () => openTab('https://nhis.gov.gh'),
         group: 'Government',
       },
     ],
