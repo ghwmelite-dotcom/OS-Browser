@@ -34,6 +34,10 @@ import { TranslationPanel } from './components/Translation/TranslationPanel';
 import { LiteracyAssistant } from './components/DigitalLiteracy/LiteracyAssistant';
 import { ReportGenerator, type ReportData } from './components/ScreenshotReport/ReportGenerator';
 import { MobileMoneyPanel } from './components/MobileMoney/MobileMoneyPanel';
+import { initializeFeatures } from './features';
+import { KenteSidebar } from './components/KenteSystem/KenteSidebar';
+import { KenteStatusBar } from './components/KenteSystem/KenteStatusBar';
+import { KenteCommandBar } from './components/KenteSystem/KenteCommandBar';
 
 export function App() {
   const { loadTabs, createTab } = useTabsStore();
@@ -124,6 +128,7 @@ export function App() {
   useEffect(() => {
     const init = async () => {
       try {
+        initializeFeatures();
         await loadSettings();
         const settings = useSettingsStore.getState().settings as any;
         const startupMode = settings?.startup_mode || 'newtab';
@@ -333,6 +338,9 @@ export function App() {
 
       {/* Content + Sidebar */}
       <div className="flex-1 flex overflow-hidden">
+        {/* Kente Sidebar — left side */}
+        <KenteSidebar />
+
         {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {splitActive && <SplitScreenToolbar />}
@@ -384,7 +392,7 @@ export function App() {
       </div>
 
       <DownloadBar />
-      <StatusBar />
+      <KenteStatusBar />
 
       {showSplitPicker && <SplitScreenPicker onClose={() => setShowSplitPicker(false)} />}
 
@@ -396,7 +404,7 @@ export function App() {
         onClose={() => setReadingMode({ active: false, content: '', title: '', url: '' })}
       />
 
-      <CommandPalette isOpen={showCommandPalette} onClose={() => setShowCommandPalette(false)} />
+      <KenteCommandBar isOpen={showCommandPalette} onClose={() => setShowCommandPalette(false)} />
 
       {/* Overlay Panels */}
       {showHistory && <HistoryPanel onClose={() => setShowHistory(false)} />}
