@@ -7,6 +7,7 @@ export function useKeyboardShortcuts(callbacks: {
   onToggleHistory?: () => void;
   onToggleBookmarks?: () => void;
   onToggleSettings?: () => void;
+  onToggleCommandPalette?: () => void;
 }) {
   const { createTab, closeTab, activeTabId, switchTab, tabs, reopenLastClosed } = useTabsStore();
   const { reload, stop, isLoading } = useNavigationStore();
@@ -44,10 +45,15 @@ export function useKeyboardShortcuts(callbacks: {
       }
       // Ctrl+Shift+T — Reopen closed tab
       else if (ctrl && shift && key === 't') { e.preventDefault(); reopenLastClosed(); }
-      // Ctrl+L / Ctrl+K — Focus URL bar
-      else if (ctrl && (key === 'l' || key === 'k')) {
+      // Ctrl+L — Focus URL bar
+      else if (ctrl && key === 'l' && !shift) {
         e.preventDefault();
         (document.querySelector('[aria-label="Address bar"]') as HTMLInputElement)?.focus();
+      }
+      // Ctrl+K — Command Palette
+      else if (ctrl && key === 'k' && !shift) {
+        e.preventDefault();
+        callbacks.onToggleCommandPalette?.();
       }
       // F5 / Ctrl+R — Reload
       else if (key === 'f5' || (ctrl && key === 'r')) {
