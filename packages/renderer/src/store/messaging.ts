@@ -331,29 +331,24 @@ export const useMessagingStore = create<MessagingState>((set, get) => {
     register: async (email: string, name: string, department: string) => {
       set({ authStep: 'registering', authError: null });
       const result = await MessagingService.register(email, name, department);
-      if (result.success) {
-        set({ authStep: 'verify', currentUserEmail: email });
-        return true;
-      }
-      set({ authStep: 'idle', authError: result.message });
-      return false;
-    },
-
-    verify: async (email: string, code: string) => {
-      set({ authStep: 'verifying', authError: null });
-      const result = await MessagingService.verify(email, code);
-      if (result.success) {
+      if (result.success && result.userId && result.token) {
+        // Auto-approved — go straight to authenticated
         set({
           authStep: 'authenticated',
           isAuthenticated: true,
           currentUserId: result.userId,
           currentUserEmail: email,
         });
-        // After auth, try loading backend data
+        // Load backend data
         get().initialize();
         return true;
       }
-      set({ authStep: 'verify', authError: result.message ?? 'Verification failed' });
+      set({ authStep: 'idle', authError: result.message });
+      return false;
+    },
+
+    verify: async (_email: string, _code: string) => {
+      // Verification no longer needed — register auto-approves .gov.gh emails
       return false;
     },
 

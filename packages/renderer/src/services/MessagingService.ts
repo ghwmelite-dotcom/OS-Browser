@@ -45,11 +45,15 @@ class MessagingServiceClass {
 
   /* ──────────────── Auth ──────────────── */
 
+  /**
+   * Register and auto-authenticate with a .gov.gh email.
+   * No verification code needed — the .gov.gh domain is proof of identity.
+   */
   async register(
     email: string,
     name: string,
     department: string,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<{ success: boolean; userId?: string; token?: string; message: string }> {
     try {
       const res = await fetch(`${WORKER_URL}/api/v1/messaging/register`, {
         method: 'POST',
@@ -60,37 +64,25 @@ class MessagingServiceClass {
       if (!res.ok) {
         return { success: false, message: data.error ?? 'Registration failed' };
       }
-      this.email = email;
-      return { success: true, message: data.message ?? 'Verification code sent' };
-    } catch (err) {
-      return { success: false, message: 'Network error — please try again' };
-    }
-  }
-
-  async verify(
-    email: string,
-    code: string,
-  ): Promise<{ success: boolean; userId: string; token: string; message?: string }> {
-    try {
-      const res = await fetch(`${WORKER_URL}/api/v1/messaging/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        return { success: false, userId: '', token: '', message: data.error ?? 'Verification failed' };
-      }
+      // Auto-approved — set credentials immediately
       const { userId, token } = data;
       this.setCredentials(userId, token);
       this.email = email;
       try {
         localStorage.setItem(LS_KEY_EMAIL, email);
       } catch { /* noop */ }
-      return { success: true, userId, token };
+      return { success: true, userId, token, message: 'Account created successfully' };
     } catch {
-      return { success: false, userId: '', token: '', message: 'Network error — please try again' };
+      return { success: false, message: 'Network error — please try again' };
     }
+  }
+
+  /** @deprecated — verification is no longer required. Use register() directly. */
+  async verify(
+    _email: string,
+    _code: string,
+  ): Promise<{ success: boolean; userId: string; token: string; message?: string }> {
+    return { success: false, userId: '', token: '', message: 'Verification no longer required. Use register() instead.' };
   }
 
   setCredentials(userId: string, token: string): void {
