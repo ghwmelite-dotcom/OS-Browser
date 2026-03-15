@@ -4,6 +4,7 @@ import type { Env } from './types';
 import { aiRoutes } from './routes/ai';
 import { healthRoutes } from './routes/health';
 import { messagingRoutes } from './routes/messaging';
+import { downloadRoutes } from './routes/downloads';
 import { authMiddleware } from './middleware/auth';
 import { rateLimitMiddleware } from './middleware/rateLimit';
 
@@ -28,6 +29,7 @@ app.use('/api/v1/ai/*', authMiddleware);
 app.route('/api/v1', healthRoutes);
 app.route('/api/v1/ai', aiRoutes);
 app.route('/api/v1/messaging', messagingRoutes);
+app.route('/api/v1/downloads', downloadRoutes);
 
 export default app;
 
