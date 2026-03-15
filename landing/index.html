@@ -4,8 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OS Browser — Ghana's AI-Powered Desktop Browser</title>
-  <meta name="description" content="Download OS Browser — the AI-powered desktop browser built for Ghana's civil and public servants. Ad blocking, offline support, Twi translation, government portal quick-access." />
+  <meta name="description" content="Download OS Browser — the AI-powered desktop browser built for Ghana. 6 AI models, ad blocking, focus mode, split screen, GHS converter, Twi dictionary, screenshot tools, and 15+ keyboard shortcuts." />
   <meta name="theme-color" content="#0f1117" />
+  <link rel="canonical" href="https://www.osbrowser.askozzy.work" />
+  <meta property="og:title" content="OS Browser — Ghana's AI-Powered Desktop Browser" />
+  <meta property="og:description" content="Built-in AI sidebar with 6 models, network-level ad blocking, focus mode, split screen, GHS currency converter, Twi dictionary, and more." />
+  <meta property="og:url" content="https://www.osbrowser.askozzy.work" />
+  <meta property="og:type" content="website" />
   <link rel="icon" type="image/svg+xml" href="/icon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,6 +31,8 @@
       --red: #CE1126;
       --green: #006B3F;
       --accent: #D4A017;
+      --dark: #0f1117;
+      --dark-2: #171921;
     }
 
     html { scroll-behavior: smooth; }
@@ -79,19 +86,26 @@
       max-width: 800px; margin: 0 auto;
     }
     .hero-icon {
-      width: 64px; height: 64px; margin: 0 auto 24px; border-radius: 16px;
+      width: 72px; height: 72px; margin: 0 auto 24px; border-radius: 18px;
       overflow: hidden;
     }
     .hero-icon svg { width: 100%; height: 100%; }
     .hero h1 {
-      font-size: 48px; font-weight: 800; letter-spacing: -0.03em;
-      line-height: 1.1; margin-bottom: 16px;
+      font-size: 52px; font-weight: 800; letter-spacing: -0.03em;
+      line-height: 1.08; margin-bottom: 16px;
     }
     .hero h1 span { color: var(--gold); }
-    .hero p {
-      font-size: 17px; color: var(--text-2); max-width: 600px;
-      margin: 0 auto 40px; line-height: 1.7;
+    .hero .hero-sub {
+      font-size: 18px; color: var(--text-2); max-width: 640px;
+      margin: 0 auto 20px; line-height: 1.7;
     }
+    .hero .hero-stats {
+      display: flex; gap: 32px; justify-content: center; margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+    .hero .hero-stat { text-align: center; }
+    .hero .hero-stat strong { display: block; font-size: 28px; font-weight: 800; color: var(--gold); }
+    .hero .hero-stat span { font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
 
     /* ─── Download Cards ─── */
     .download-row {
@@ -176,18 +190,30 @@
     }
     .mockup-portal span { font-size: 10px; color: #9ca0ae; }
 
-    /* ─── Features Section ─── */
-    .features {
-      padding: 80px 40px;
-      max-width: 1000px; margin: 0 auto;
+    /* ─── Section Headings ─── */
+    .section-heading {
+      text-align: center; margin-bottom: 56px;
     }
-    .features h2 {
-      text-align: center; font-size: 36px; font-weight: 800;
+    .section-label {
+      display: inline-block; font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      padding: 4px 14px; border-radius: 100px; margin-bottom: 16px;
+    }
+    .label-gold { background: rgba(212,160,23,0.12); color: var(--gold); }
+    .label-green { background: rgba(0,107,63,0.12); color: var(--green); }
+    .label-red { background: rgba(206,17,38,0.12); color: var(--red); }
+    .section-heading h2 {
+      font-size: 36px; font-weight: 800;
       margin-bottom: 12px; letter-spacing: -0.02em;
     }
-    .features .subtitle {
-      text-align: center; color: var(--text-2); font-size: 16px;
-      margin-bottom: 56px;
+    .section-heading p {
+      color: var(--text-2); font-size: 16px; max-width: 560px; margin: 0 auto;
+    }
+
+    /* ─── Core Features Section ─── */
+    .features {
+      padding: 80px 40px;
+      max-width: 1100px; margin: 0 auto;
     }
     .features-grid {
       display: grid; grid-template-columns: repeat(3, 1fr);
@@ -195,7 +221,7 @@
     }
     .feature-card {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 16px; padding: 32px;
+      border-radius: 16px; padding: 28px;
       transition: all 0.2s;
     }
     .feature-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.06); transform: translateY(-2px); }
@@ -207,15 +233,103 @@
     .fi-gold { background: rgba(212,160,23,0.1); color: var(--gold); }
     .fi-green { background: rgba(0,107,63,0.1); color: var(--green); }
     .fi-red { background: rgba(206,17,38,0.1); color: var(--red); }
-    .feature-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
-    .feature-card p { font-size: 14px; color: var(--text-2); line-height: 1.6; }
+    .fi-dark { background: rgba(15,17,23,0.08); color: var(--text); }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .feature-card p { font-size: 13px; color: var(--text-2); line-height: 1.6; }
+    .feature-badge {
+      display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; padding: 2px 8px; border-radius: 4px; margin-bottom: 12px;
+    }
+    .badge-new { background: rgba(0,107,63,0.1); color: var(--green); }
+    .badge-core { background: rgba(212,160,23,0.1); color: var(--gold); }
+
+    /* ─── AI Section (Dark) ─── */
+    .ai-section {
+      background: var(--dark);
+      padding: 96px 40px;
+      color: #e8e8ec;
+      position: relative;
+      overflow: hidden;
+    }
+    .ai-section::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 0%, rgba(212,160,23,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 60% at 80% 100%, rgba(0,107,63,0.06) 0%, transparent 50%);
+    }
+    .ai-section .section-heading h2 { color: #e8e8ec; }
+    .ai-section .section-heading p { color: #9ca0ae; }
+    .ai-inner { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
+    .ai-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 24px; margin-bottom: 48px;
+    }
+    .ai-card {
+      background: rgba(23,25,33,0.8);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px; padding: 28px;
+      transition: all 0.2s;
+    }
+    .ai-card:hover {
+      border-color: rgba(212,160,23,0.3);
+      box-shadow: 0 8px 32px rgba(212,160,23,0.06);
+      transform: translateY(-2px);
+    }
+    .ai-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; color: #e8e8ec; }
+    .ai-card p { font-size: 13px; color: #9ca0ae; line-height: 1.6; }
+    .ai-card .feature-icon { margin-bottom: 16px; }
+    .ai-models {
+      display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+    }
+    .ai-model-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 100px; padding: 8px 20px;
+      font-size: 13px; font-weight: 600; color: #ccc;
+    }
+    .ai-model-chip .model-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+
+    /* ─── Ghana Section ─── */
+    .ghana-section {
+      padding: 96px 40px;
+      max-width: 1100px; margin: 0 auto;
+    }
+    .ghana-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 24px; margin-bottom: 48px;
+    }
+    .ghana-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 32px;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .ghana-card::after {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--red), var(--gold), var(--green));
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .ghana-card:hover::after { opacity: 1; }
+    .ghana-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.06); transform: translateY(-2px); }
+    .ghana-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .ghana-card p { font-size: 14px; color: var(--text-2); line-height: 1.6; }
+    .ghana-card .feature-icon { margin-bottom: 16px; }
+    .ghana-card-detail {
+      margin-top: 12px; font-size: 12px; color: var(--text-3);
+      padding-top: 12px; border-top: 1px solid var(--border);
+    }
 
     /* ─── Ghana Banner ─── */
     .ghana-banner {
       margin: 0 40px 80px;
-      max-width: 920px; margin-left: auto; margin-right: auto;
+      max-width: 1020px; margin-left: auto; margin-right: auto;
       background: linear-gradient(135deg, #CE1126 0%, #D4A017 50%, #006B3F 100%);
-      border-radius: 20px; padding: 48px; text-align: center; color: #fff;
+      border-radius: 20px; padding: 56px 48px; text-align: center; color: #fff;
       position: relative; overflow: hidden;
     }
     .ghana-banner::before {
@@ -225,17 +339,42 @@
     }
     .ghana-banner h2 { font-size: 32px; font-weight: 800; margin-bottom: 12px; position: relative; }
     .ghana-banner p { font-size: 16px; opacity: 0.9; margin-bottom: 8px; position: relative; }
-    .ghana-banner .flag { font-size: 40px; margin-bottom: 16px; position: relative; }
+
+    /* ─── Keyboard Shortcuts Section ─── */
+    .shortcuts-section {
+      padding: 80px 40px;
+      max-width: 800px; margin: 0 auto;
+    }
+    .shortcut-list {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .shortcut-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+    }
+    .shortcut-item span { color: var(--text-2); }
+    kbd {
+      display: inline-block; background: var(--surface-2);
+      border: 1px solid var(--border); border-radius: 5px;
+      padding: 2px 8px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      font-size: 11px; font-weight: 600; color: var(--text);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
 
     /* ─── Bottom CTA ─── */
     .bottom-cta {
-      padding: 80px 40px;
+      padding: 96px 40px;
       text-align: center;
       background: var(--surface);
       border-top: 1px solid var(--border);
     }
     .bottom-cta h2 {
-      font-size: 36px; font-weight: 800; margin-bottom: 12px;
+      font-size: 40px; font-weight: 800; margin-bottom: 12px;
       letter-spacing: -0.02em;
     }
     .bottom-cta h2 span { color: var(--gold); }
@@ -246,14 +385,26 @@
 
     /* ─── Footer ─── */
     footer {
-      padding: 32px 40px;
-      text-align: center;
+      padding: 48px 40px 32px;
       border-top: 1px solid var(--border);
-      font-size: 13px; color: var(--text-3);
+      max-width: 1100px; margin: 0 auto;
     }
-    footer a { color: var(--gold); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
-    .footer-row { display: flex; justify-content: center; gap: 24px; margin-bottom: 12px; }
+    .footer-grid {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 40px; margin-bottom: 40px;
+    }
+    .footer-brand { font-weight: 700; font-size: 16px; margin-bottom: 8px; }
+    .footer-brand-desc { font-size: 13px; color: var(--text-3); line-height: 1.6; }
+    .footer-col h4 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-bottom: 12px; }
+    .footer-col a { display: block; font-size: 13px; color: var(--text-2); text-decoration: none; margin-bottom: 8px; transition: color 0.15s; }
+    .footer-col a:hover { color: var(--gold); }
+    .footer-bottom {
+      padding-top: 24px; border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; color: var(--text-3);
+    }
+    .footer-bottom a { color: var(--gold); text-decoration: none; }
+    .footer-bottom a:hover { text-decoration: underline; }
 
     /* ─── Animations ─── */
     .fade-up {
@@ -273,13 +424,20 @@
     /* ─── Responsive ─── */
     @media (max-width: 768px) {
       .hero h1 { font-size: 32px; }
-      .hero p { font-size: 15px; }
-      .features-grid { grid-template-columns: 1fr; }
+      .hero .hero-sub { font-size: 15px; }
+      .hero .hero-stats { gap: 20px; }
+      .hero .hero-stat strong { font-size: 22px; }
+      .features-grid, .ai-grid { grid-template-columns: 1fr; }
+      .ghana-grid { grid-template-columns: 1fr; }
+      .shortcut-list { grid-template-columns: 1fr; }
       .mockup-grid { grid-template-columns: repeat(3, 1fr); }
       .download-row { flex-direction: column; align-items: center; }
       nav { padding: 0 20px; }
       .nav-links { display: none; }
-      .hero, .features, .bottom-cta { padding-left: 20px; padding-right: 20px; }
+      .hero, .features, .ai-section, .ghana-section, .shortcuts-section, .bottom-cta { padding-left: 20px; padding-right: 20px; }
+      .footer-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
+      .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
+      .ghana-banner { margin-left: 20px; margin-right: 20px; padding: 32px 24px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -291,7 +449,7 @@
 
 <!-- Nav -->
 <nav>
-  <a href="#" class="nav-brand">
+  <a href="https://www.osbrowser.askozzy.work" class="nav-brand">
     <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
       <defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#CE1126"/><stop offset="50%" stop-color="#FCD116"/><stop offset="100%" stop-color="#006B3F"/></linearGradient><linearGradient id="sh" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="#FCD116"/></linearGradient></defs>
       <rect width="512" height="512" rx="108" fill="url(#bg)"/><path d="M256 90L370 140V270Q370 370 256 430Q142 370 142 270V140Z" fill="url(#sh)" stroke="#000" stroke-width="4" opacity=".95"/><text x="256" y="310" text-anchor="middle" font-family="Georgia,serif" font-weight="900" font-size="160" fill="#0f1117" letter-spacing="-8">OS</text>
@@ -300,8 +458,9 @@
   </a>
   <div class="nav-links">
     <a href="#features">Features</a>
+    <a href="#ai">AI</a>
+    <a href="#ghana">Made for Ghana</a>
     <a href="#download">Download</a>
-    <a href="https://askozzy.ghwmelite.workers.dev" target="_blank">AskOzzy</a>
     <a href="https://github.com/ghwmelite-dotcom/OS-Browser" target="_blank">GitHub</a>
   </div>
   <a href="#download" class="nav-cta">Download Now</a>
@@ -309,7 +468,7 @@
 
 <!-- Announcement -->
 <div class="announce">
-  Built for Ghana's Civil & Public Servants &mdash; AI-Powered Browsing with AskOzzy Integration
+  Now with Command Palette, Split Screen, Focus Mode, Screenshot Tools & more &mdash; The most feature-rich browser built for Ghana
 </div>
 
 <!-- Hero -->
@@ -321,11 +480,30 @@
     </svg>
   </div>
   <h1 class="fade-up delay-1">
-    <span>OS Browser</span><br />AI-Powered Desktop Browser
+    <span>OS Browser</span><br />Ghana's AI-Powered<br />Desktop Browser
   </h1>
-  <p class="fade-up delay-2">
-    Built-in AI assistant, ad blocking, government portal quick-access, Twi translation, offline support, and AskOzzy integration &mdash; all in a beautiful Ghana-inspired browser.
+  <p class="hero-sub fade-up delay-2">
+    6 AI models built in. Network-level ad blocking. Focus mode. Split screen. GHS currency converter. Twi dictionary. Screenshot tools. 15+ keyboard shortcuts. All in one beautiful, privacy-first browser.
   </p>
+
+  <div class="hero-stats fade-up delay-2">
+    <div class="hero-stat">
+      <strong>6</strong>
+      <span>AI Models</span>
+    </div>
+    <div class="hero-stat">
+      <strong>15+</strong>
+      <span>Shortcuts</span>
+    </div>
+    <div class="hero-stat">
+      <strong>8</strong>
+      <span>Currencies</span>
+    </div>
+    <div class="hero-stat">
+      <strong>57</strong>
+      <span>Twi Words</span>
+    </div>
+  </div>
 
   <!-- Download Buttons -->
   <div class="download-row fade-up delay-3" id="download">
@@ -333,7 +511,7 @@
       <div class="dl-icon">
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/><path d="M15.5 8.5c-.828 0-1.5.895-1.5 2s.672 2 1.5 2M8.5 8.5c.828 0 1.5.895 1.5 2s-.672 2-1.5 2M12 17.5c1.38 0 2.5-.672 2.5-1.5h-5c0 .828 1.12 1.5 2.5 1.5z"/></svg>
       </div>
-      <div class="dl-label">Mac OS</div>
+      <div class="dl-label">macOS</div>
       <div class="dl-buttons">
         <button class="dl-btn dl-btn-primary" disabled title="Coming soon">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
@@ -387,76 +565,330 @@
   </div>
 </section>
 
-<!-- Features -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- CORE FEATURES                                               -->
+<!-- ═══════════════════════════════════════════════════════════ -->
 <section class="features" id="features">
-  <h2 class="fade-up">More Features</h2>
-  <p class="subtitle fade-up delay-1">Everything a civil servant needs, built into the browser</p>
+  <div class="section-heading fade-up">
+    <span class="section-label label-gold">Features</span>
+    <h2>Everything You Need, Built In</h2>
+    <p>A complete productivity browser with powerful tools for work, privacy, and focus.</p>
+  </div>
 
   <div class="features-grid">
+    <!-- Command Palette -->
     <div class="feature-card fade-up delay-1">
       <div class="feature-icon fi-gold">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
       </div>
-      <h3>AI Sidebar</h3>
-      <p>Chat with 6 AI models. Summarize pages, translate to Twi, draft letters, and research topics — all without leaving the browser.</p>
+      <span class="feature-badge badge-new">New</span>
+      <h3>Command Palette</h3>
+      <p>Press <kbd>Ctrl+K</kbd> to instantly search across tabs, bookmarks, history, and commands. The fastest way to navigate your browser.</p>
     </div>
+
+    <!-- Split Screen -->
     <div class="feature-card fade-up delay-2">
+      <div class="feature-icon fi-green">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+      </div>
+      <span class="feature-badge badge-new">New</span>
+      <h3>Split Screen View</h3>
+      <p>Browse two pages side by side. Perfect for comparing documents, referencing data, or multitasking without switching tabs.</p>
+    </div>
+
+    <!-- Focus Mode -->
+    <div class="feature-card fade-up delay-3">
+      <div class="feature-icon fi-red">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+      </div>
+      <span class="feature-badge badge-new">New</span>
+      <h3>Focus Mode</h3>
+      <p>Block distracting websites and track your focus time. Stay productive during work hours with customizable blocklists.</p>
+    </div>
+
+    <!-- Ad Blocking -->
+    <div class="feature-card fade-up delay-1">
       <div class="feature-icon fi-green">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       </div>
-      <h3>Ad Blocking</h3>
-      <p>Network-level blocking removes ads, trackers, and malware before they load. Saves bandwidth. Auto-whitelists government sites.</p>
+      <span class="feature-badge badge-core">Core</span>
+      <h3>Network-Level Ad Blocking</h3>
+      <p>Blocks ads, trackers, and malware at the network level before they load. Saves bandwidth. Automatically whitelists .gov.gh sites.</p>
     </div>
-    <div class="feature-card fade-up delay-3">
-      <div class="feature-icon fi-gold">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-      </div>
-      <h3>AskOzzy Integration</h3>
-      <p>One-click access to Ghana's sovereign AI platform for deep research, data analysis, and professional document drafting.</p>
-    </div>
-    <div class="feature-card fade-up delay-1">
-      <div class="feature-icon fi-red">
+
+    <!-- Privacy Mode -->
+    <div class="feature-card fade-up delay-2">
+      <div class="feature-icon fi-dark">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       </div>
-      <h3>Privacy First</h3>
-      <p>All data stays on your device. No cloud telemetry. Encrypted database. Privacy mode leaves zero trace. Built for government trust.</p>
+      <span class="feature-badge badge-core">Core</span>
+      <h3>Privacy Mode</h3>
+      <p>Private browsing that leaves zero trace. Encrypted local database. No cloud telemetry. All data stays on your device.</p>
     </div>
-    <div class="feature-card fade-up delay-2">
-      <div class="feature-icon fi-green">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20"/><path d="M5 20V4h4v16"/><path d="M15 20V8h4v12"/></svg>
-      </div>
-      <h3>Offline Support</h3>
-      <p>Cached pages work without internet. AI requests queue and process on reconnect. History and bookmarks always available.</p>
-    </div>
+
+    <!-- Tab Management -->
     <div class="feature-card fade-up delay-3">
       <div class="feature-icon fi-gold">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="4" rx="1"/><rect x="2" y="9" width="20" height="4" rx="1"/><rect x="2" y="15" width="20" height="4" rx="1"/></svg>
+      </div>
+      <span class="feature-badge badge-core">Core</span>
+      <h3>Color-Coded Tabs</h3>
+      <p>Organize your workflow with color-coded tabs and hover previews. See what's in each tab without switching to it.</p>
+    </div>
+
+    <!-- Reading Mode -->
+    <div class="feature-card fade-up delay-1">
+      <div class="feature-icon fi-green">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
       </div>
-      <h3>Gov Portal Hub</h3>
-      <p>Pre-loaded shortcuts to GIFMIS, CAGD, GRA, SSNIT, OHCS, E-SPAR and more. One click to any government service.</p>
+      <span class="feature-badge badge-new">New</span>
+      <h3>Reading Mode</h3>
+      <p>Strip away clutter for distraction-free reading. Clean typography, adjustable text size, and a calm reading experience.</p>
+    </div>
+
+    <!-- Screenshot Tool -->
+    <div class="feature-card fade-up delay-2">
+      <div class="feature-icon fi-red">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      </div>
+      <span class="feature-badge badge-new">New</span>
+      <h3>Screenshot Tool</h3>
+      <p>Capture visible area, full page, or a selected region. Save or copy to clipboard instantly. No extensions needed.</p>
+    </div>
+
+    <!-- Download Manager -->
+    <div class="feature-card fade-up delay-3">
+      <div class="feature-icon fi-dark">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </div>
+      <span class="feature-badge badge-new">New</span>
+      <h3>Download Manager</h3>
+      <p>Track and manage all your downloads in one place. Pause, resume, and organize files with a clean interface.</p>
+    </div>
+
+    <!-- Smart Window Sizing -->
+    <div class="feature-card fade-up delay-1">
+      <div class="feature-icon fi-gold">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><polyline points="15 3 15 9 21 9"/></svg>
+      </div>
+      <span class="feature-badge badge-new">New</span>
+      <h3>Smart Window Sizing</h3>
+      <p>Intelligent window management that remembers your preferred sizes and positions. Snap windows into place effortlessly.</p>
+    </div>
+
+    <!-- Session Restore -->
+    <div class="feature-card fade-up delay-2">
+      <div class="feature-icon fi-green">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+      </div>
+      <h3>Session Restore</h3>
+      <p>Continue exactly where you left off. All your tabs, scroll positions, and state are preserved across restarts.</p>
+    </div>
+
+    <!-- Gradient Avatars -->
+    <div class="feature-card fade-up delay-3">
+      <div class="feature-icon fi-red">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <h3>Custom Avatars</h3>
+      <p>Auto-generated gradient avatars with the option to upload your own photo. Personalize your browsing experience.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- AI-POWERED SECTION (Dark)                                   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="ai-section" id="ai">
+  <div class="ai-inner">
+    <div class="section-heading fade-up">
+      <span class="section-label label-gold">AI-Powered</span>
+      <h2>Your AI Assistant, Built In</h2>
+      <p>Six powerful AI models at your fingertips. Summarize pages, translate text, draft documents, and research topics without leaving the browser.</p>
+    </div>
+
+    <div class="ai-grid">
+      <div class="ai-card fade-up delay-1">
+        <div class="feature-icon fi-gold">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </div>
+        <h3>AI Sidebar</h3>
+        <p>A full AI chat panel that slides in from the side. Ask questions, get summaries, translate content, draft letters, and research any topic.</p>
+      </div>
+      <div class="ai-card fade-up delay-2">
+        <div class="feature-icon fi-green">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <h3>AskOzzy Integration</h3>
+        <p>One-click access to Ghana's sovereign AI platform for deep research, data analysis, professional document drafting, and more.</p>
+      </div>
+      <div class="ai-card fade-up delay-3">
+        <div class="feature-icon fi-gold">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
+        </div>
+        <h3>Floating AI Page Actions</h3>
+        <p>A context-aware floating toolbar appears on any webpage. Summarize, translate, explain, or ask questions about the content you are viewing.</p>
+      </div>
+    </div>
+
+    <!-- AI Model Chips -->
+    <div class="ai-models fade-up delay-4">
+      <div class="ai-model-chip">
+        <span class="model-dot" style="background:#7C3AED;"></span>
+        Llama
+      </div>
+      <div class="ai-model-chip">
+        <span class="model-dot" style="background:#2563EB;"></span>
+        DeepSeek
+      </div>
+      <div class="ai-model-chip">
+        <span class="model-dot" style="background:#F59E0B;"></span>
+        Mistral
+      </div>
+      <div class="ai-model-chip">
+        <span class="model-dot" style="background:#10B981;"></span>
+        Qwen
+      </div>
+      <div class="ai-model-chip">
+        <span class="model-dot" style="background:#EF4444;"></span>
+        Gemma
+      </div>
+      <div class="ai-model-chip">
+        <span class="model-dot" style="background: linear-gradient(135deg, var(--red), var(--gold), var(--green));"></span>
+        AskOzzy
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MADE FOR GHANA SECTION                                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="ghana-section" id="ghana">
+  <div class="section-heading fade-up">
+    <span class="section-label label-green">Made for Ghana</span>
+    <h2>Tools Built for Ghanaian Professionals</h2>
+    <p>Purpose-built features that understand the needs of Ghana's workforce.</p>
+  </div>
+
+  <div class="ghana-grid">
+    <!-- GHS Currency Converter -->
+    <div class="ghana-card fade-up delay-1">
+      <div class="feature-icon fi-gold">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      </div>
+      <h3>GHS Currency Converter</h3>
+      <p>Convert Ghana Cedis to 8 major currencies with live exchange rates. Quick access from the toolbar for instant conversions.</p>
+      <div class="ghana-card-detail">Supports USD, EUR, GBP, NGN, XOF, CNY, ZAR, KES</div>
+    </div>
+
+    <!-- SSNIT Calculator -->
+    <div class="ghana-card fade-up delay-2">
+      <div class="feature-icon fi-green">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
+      </div>
+      <h3>SSNIT Contribution Calculator</h3>
+      <p>Calculate your Social Security contributions, employer contributions, and projected benefits. Essential for every Ghanaian worker.</p>
+      <div class="ghana-card-detail">Employee (5.5%), Employer (13%), Total (18.5%)</div>
+    </div>
+
+    <!-- Twi Dictionary -->
+    <div class="ghana-card fade-up delay-1">
+      <div class="feature-icon fi-red">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M8 7h8"/><path d="M8 11h6"/></svg>
+      </div>
+      <h3>Twi Dictionary</h3>
+      <p>Look up Twi words and phrases organized across 5 categories. Learn greetings, numbers, common phrases, and more.</p>
+      <div class="ghana-card-detail">57 words across Greetings, Numbers, Common Phrases, Food, Family</div>
+    </div>
+
+    <!-- Gov Portal Hub -->
+    <div class="ghana-card fade-up delay-2">
+      <div class="feature-icon fi-gold">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+      </div>
+      <h3>Government Portal Hub</h3>
+      <p>Pre-loaded shortcuts to GIFMIS, CAGD, GRA, SSNIT, OHCS, E-SPAR and more. One click to any government service portal.</p>
+      <div class="ghana-card-detail">Auto-whitelists .gov.gh domains for ad blocking</div>
     </div>
   </div>
 </section>
 
 <!-- Ghana Banner -->
 <div class="ghana-banner fade-up">
-  <div class="flag">🇬🇭</div>
   <h2>Built for Ghana. By Ghana.</h2>
-  <p>Your data stays in Ghana. Sovereign. Private. Yours.</p>
-  <p style="font-size:13px;opacity:0.75;">Powered by OHCS</p>
+  <p>Your data stays on your device. Sovereign. Private. Yours.</p>
+  <p>Dark and light modes with Ghana-inspired themes. Offline support with queued AI requests.</p>
+  <p style="font-size:13px;opacity:0.75;margin-top:8px;">Powered by OHCS</p>
 </div>
 
-<!-- Bottom CTA -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- KEYBOARD SHORTCUTS                                          -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="shortcuts-section">
+  <div class="section-heading fade-up">
+    <span class="section-label label-gold">Productivity</span>
+    <h2>Keyboard-First Design</h2>
+    <p>15+ keyboard shortcuts to keep your hands on the keyboard and your workflow fast.</p>
+  </div>
+
+  <div class="shortcut-list fade-up delay-1">
+    <div class="shortcut-item">
+      <span>Command Palette</span>
+      <kbd>Ctrl + K</kbd>
+    </div>
+    <div class="shortcut-item">
+      <span>New Tab</span>
+      <kbd>Ctrl + T</kbd>
+    </div>
+    <div class="shortcut-item">
+      <span>Close Tab</span>
+      <kbd>Ctrl + W</kbd>
+    </div>
+    <div class="shortcut-item">
+      <span>AI Sidebar</span>
+      <kbd>Ctrl + J</kbd>
+    </div>
+    <div class="shortcut-item">
+      <span>Focus Mode</span>
+      <kbd>Ctrl + Shift + F</kbd>
+    </div>
+    <div class="shortcut-item">
+      <span>Split Screen</span>
+      <kbd>Ctrl + Shift + S</kbd>
+    </div>
+    <div class="shortcut-item">
+      <span>Reading Mode</span>
+      <kbd>Ctrl + Shift + R</kbd>
+    </div>
+    <div class="shortcut-item">
+      <span>Screenshot</span>
+      <kbd>Ctrl + Shift + X</kbd>
+    </div>
+    <div class="shortcut-item">
+      <span>Private Browsing</span>
+      <kbd>Ctrl + Shift + N</kbd>
+    </div>
+    <div class="shortcut-item">
+      <span>Downloads</span>
+      <kbd>Ctrl + Shift + D</kbd>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- BOTTOM CTA                                                  -->
+<!-- ═══════════════════════════════════════════════════════════ -->
 <section class="bottom-cta">
-  <h2 class="fade-up">Download <span>OS Browser</span> Now</h2>
-  <p class="fade-up delay-1">AI-Powered, Ad-Blocking, Privacy-First Browser for Ghana's Public Servants</p>
+  <h2 class="fade-up">Download <span>OS Browser</span> Today</h2>
+  <p class="fade-up delay-1">AI-Powered. Ad-Blocking. Privacy-First. Made for Ghana.</p>
 
   <div class="download-row fade-up delay-2">
     <div class="dl-card">
       <div class="dl-icon">
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/><path d="M15.5 8.5c-.828 0-1.5.895-1.5 2s.672 2 1.5 2M8.5 8.5c.828 0 1.5.895 1.5 2s-.672 2-1.5 2"/></svg>
       </div>
-      <div class="dl-label">Mac OS</div>
+      <div class="dl-label">macOS</div>
       <div class="dl-buttons">
         <button class="dl-btn dl-btn-primary" disabled>Apple Silicon</button>
         <button class="dl-btn dl-btn-primary" disabled>Intel</button>
@@ -474,18 +906,42 @@
           Download
         </a>
       </div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px;">Windows 10/11 &bull; 64-bit</div>
     </div>
   </div>
 </section>
 
 <!-- Footer -->
 <footer>
-  <div class="footer-row">
-    <a href="https://github.com/ghwmelite-dotcom/OS-Browser">GitHub</a>
-    <a href="https://askozzy.ghwmelite.workers.dev">AskOzzy</a>
-    <a href="https://ohcs.gov.gh">OHCS</a>
+  <div class="footer-grid">
+    <div>
+      <div class="footer-brand">OS Browser</div>
+      <p class="footer-brand-desc">Ghana's AI-powered desktop browser. Built with privacy, productivity, and local needs in mind. Free and open source.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="#features">Features</a>
+      <a href="#ai">AI Assistant</a>
+      <a href="#ghana">Ghana Tools</a>
+      <a href="#download">Download</a>
+    </div>
+    <div class="footer-col">
+      <h4>Resources</h4>
+      <a href="https://github.com/ghwmelite-dotcom/OS-Browser" target="_blank">GitHub</a>
+      <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases" target="_blank">Releases</a>
+      <a href="https://github.com/ghwmelite-dotcom/OS-Browser/issues" target="_blank">Report a Bug</a>
+    </div>
+    <div class="footer-col">
+      <h4>Connect</h4>
+      <a href="https://www.osbrowser.askozzy.work" target="_blank">Website</a>
+      <a href="https://askozzy.ghwmelite.workers.dev" target="_blank">AskOzzy</a>
+      <a href="https://ohcs.gov.gh" target="_blank">OHCS</a>
+    </div>
   </div>
-  <p>&copy; 2026 OHCS. Made with pride in Accra, Ghana 🇬🇭</p>
+  <div class="footer-bottom">
+    <span>&copy; 2026 OHCS. Made with pride in Accra, Ghana.</span>
+    <a href="https://www.osbrowser.askozzy.work">www.osbrowser.askozzy.work</a>
+  </div>
 </footer>
 
 </body>
