@@ -43,7 +43,7 @@ function getMilestoneProgress(count: number): number {
 
 // GET /api/v1/downloads/count — returns the current download count with milestone info
 downloadRoutes.get('/count', async (c) => {
-  const count = parseInt((await c.env.MESSAGES.get('download_count')) || '247', 10);
+  const count = parseInt((await c.env.MESSAGES.get('download_count')) || '0', 10);
   const lastMilestone = getLastMilestone(count);
   const nextMilestone = getNextMilestone(count);
   const progress = getMilestoneProgress(count);
@@ -73,7 +73,7 @@ downloadRoutes.get('/count', async (c) => {
 // Called when someone clicks the download button
 downloadRoutes.post('/track', async (c) => {
   const raw = await c.env.MESSAGES.get('download_count');
-  const currentCount = parseInt(raw || '247', 10);
+  const currentCount = parseInt(raw || '0', 10);
   const newCount = currentCount + 1;
   await c.env.MESSAGES.put('download_count', String(newCount));
   return c.json({ count: newCount });
@@ -90,7 +90,7 @@ downloadRoutes.get('/recent', async (c) => {
 downloadRoutes.post('/event', async (c) => {
   const body = await c.req.json<{ platform?: string }>().catch(() => ({}));
   const raw = await c.env.MESSAGES.get('download_count');
-  const currentCount = parseInt(raw || '247', 10);
+  const currentCount = parseInt(raw || '0', 10);
   const newCount = currentCount + 1;
   await c.env.MESSAGES.put('download_count', String(newCount));
 
@@ -143,4 +143,15 @@ downloadRoutes.get('/milestones', async (c) => {
   }
 
   return c.json({ milestones: achieved });
+});
+
+// POST /api/v1/downloads/reset — reset counter to 0 (admin only, for pre-launch cleanup)
+downloadRoutes.post('/reset', async (c) => {
+  await c.env.MESSAGES.put('download_count', '0');
+  await c.env.MESSAGES.put('download_recent', JSON.stringify([]));
+  // Clear milestone records
+  for (const m of MILESTONES) {
+    await c.env.MESSAGES.delete(`milestone:${m}`);
+  }
+  return c.json({ success: true, count: 0, message: 'Counter reset to 0 for official launch' });
 });
