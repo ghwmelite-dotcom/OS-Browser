@@ -73,6 +73,185 @@ const DEFAULT_CATEGORY = { bg: 'bg-ghana-gold-dim', text: 'text-ghana-gold' };
 
 const WORKER_URL = 'https://os-browser-worker.ghwmelite.workers.dev';
 
+/* ── Milestone configuration ── */
+const MILESTONE_CONFIG: Record<
+  number,
+  { name: string; level: string; confettiCount: number }
+> = {
+  500: { name: 'First 500', level: 'bronze', confettiCount: 20 },
+  1000: { name: 'One Thousand Strong', level: 'silver', confettiCount: 25 },
+  2500: { name: 'Community Rising', level: 'gold', confettiCount: 30 },
+  5000: { name: 'Five Thousand', level: 'gold', confettiCount: 30 },
+  10000: { name: 'Ten Thousand', level: 'platinum', confettiCount: 30 },
+  25000: { name: 'Quarter Century', level: 'diamond', confettiCount: 30 },
+  50000: { name: 'Fifty Thousand', level: 'star', confettiCount: 30 },
+  100000: { name: 'One Hundred Thousand', level: 'blackstar', confettiCount: 30 },
+};
+
+const GHANA_COLORS = ['#D4A017', '#CE1126', '#006B3F', '#FCD116', '#ffffff'];
+
+function getReachedMilestone(count: number): number | null {
+  const lastCelebrated = parseInt(localStorage.getItem('os_ntp_milestone') || '0', 10);
+  const milestones = Object.keys(MILESTONE_CONFIG)
+    .map(Number)
+    .sort((a, b) => a - b);
+  for (const m of milestones) {
+    if (count >= m && m > lastCelebrated) return m;
+  }
+  return null;
+}
+
+/* ── Lightweight CSS confetti for NTP ── */
+function MilestoneCelebration({
+  milestone,
+  onDismiss,
+}: {
+  milestone: number;
+  onDismiss: () => void;
+}) {
+  const config = MILESTONE_CONFIG[milestone];
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  useEffect(() => {
+    const timer = setTimeout(onDismiss, 8000);
+    return () => clearTimeout(timer);
+  }, [onDismiss]);
+
+  // Generate confetti pieces
+  const confettiPieces = useMemo(() => {
+    if (prefersReducedMotion) return [];
+    return Array.from({ length: config?.confettiCount || 20 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 2,
+      duration: Math.random() * 2 + 2,
+      color: GHANA_COLORS[Math.floor(Math.random() * GHANA_COLORS.length)],
+      size: Math.random() * 6 + 4,
+      rotation: Math.random() * 360,
+    }));
+  }, [config?.confettiCount, prefersReducedMotion]);
+
+  if (!config) return null;
+
+  const levelGradients: Record<string, string> = {
+    bronze: 'from-yellow-900/80 to-yellow-950/90',
+    silver: 'from-yellow-900/80 via-yellow-800/70 to-yellow-950/90',
+    gold: 'from-yellow-800/85 via-amber-700/70 to-yellow-900/85',
+    platinum: 'from-green-900/85 via-yellow-800/70 to-green-950/85',
+    diamond: 'from-purple-900/80 via-yellow-800/70 to-green-900/80',
+    star: 'from-red-900/70 via-yellow-800/70 to-green-900/70',
+    blackstar: 'from-red-900/70 via-yellow-700/80 to-green-900/70',
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      style={{ backdropFilter: 'blur(8px)', background: 'rgba(0,0,0,0.5)' }}
+      onClick={onDismiss}
+      role="dialog"
+      aria-label="Milestone celebration"
+    >
+      {/* CSS Confetti */}
+      {confettiPieces.map((p) => (
+        <div
+          key={p.id}
+          className="confetti-piece"
+          style={{
+            position: 'absolute',
+            left: `${p.left}%`,
+            top: '-10px',
+            width: `${p.size}px`,
+            height: `${p.size * 0.6}px`,
+            background: p.color,
+            borderRadius: p.id % 2 === 0 ? '50%' : '0',
+            transform: `rotate(${p.rotation}deg)`,
+            animation: `confettiDrop ${p.duration}s ease-out ${p.delay}s forwards`,
+            opacity: 0,
+          }}
+        />
+      ))}
+
+      {/* Celebration Card */}
+      <div
+        className={`relative rounded-[20px] p-8 text-center max-w-[360px] w-[90%] bg-gradient-to-br ${levelGradients[config.level] || levelGradients.bronze} border border-ghana-gold/20`}
+        style={{
+          boxShadow:
+            '0 24px 80px rgba(0,0,0,0.5), 0 0 48px rgba(212,160,23,0.15)',
+          animation: 'fadeUp 0.5s ease-out',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Ghana flag stripe */}
+        <div
+          className="absolute top-0 left-0 right-0 h-[3px] rounded-t-[20px] overflow-hidden"
+          style={{
+            background:
+              'linear-gradient(90deg, #CE1126 0%, #CE1126 33%, #D4A017 33%, #D4A017 66%, #006B3F 66%, #006B3F 100%)',
+          }}
+        />
+
+        {/* Star */}
+        <div
+          className="text-[56px] leading-none mb-3"
+          style={{
+            color: '#D4A017',
+            textShadow:
+              '0 0 24px rgba(212,160,23,0.5), 0 0 48px rgba(212,160,23,0.25)',
+            animation: prefersReducedMotion
+              ? 'none'
+              : 'milestoneStarPulse 2s ease-in-out infinite',
+          }}
+        >
+          &#9733;
+        </div>
+
+        <div
+          className="text-[10px] font-bold tracking-[0.2em] uppercase mb-2"
+          style={{ color: '#D4A017', opacity: 0.8 }}
+        >
+          MILESTONE REACHED
+        </div>
+
+        <div
+          className="text-[40px] font-bold leading-none mb-1"
+          style={{
+            color: 'var(--color-accent)',
+            fontVariantNumeric: 'tabular-nums',
+            textShadow: '0 0 20px rgba(212,160,23,0.3)',
+          }}
+        >
+          {new Intl.NumberFormat().format(milestone)}
+        </div>
+
+        <div
+          className="text-base font-semibold mb-2"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          {config.name}
+        </div>
+
+        <div className="text-sm italic" style={{ color: 'var(--color-text-secondary)', opacity: 0.7 }}>
+          Thank you, Ghana! &#127468;&#127469;
+        </div>
+
+        <button
+          onClick={onDismiss}
+          className="mt-4 px-5 py-2 rounded-xl text-xs font-semibold transition-all duration-200 hover:scale-105"
+          style={{
+            background: 'rgba(212,160,23,0.15)',
+            border: '1px solid rgba(212,160,23,0.2)',
+            color: '#D4A017',
+          }}
+        >
+          Celebrate!
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ── Animated number counter hook ── */
 function useAnimatedCount(target: number, duration = 1500): number {
   const [display, setDisplay] = useState(0);
@@ -106,7 +285,14 @@ function useAnimatedCount(target: number, duration = 1500): number {
 function DownloadCounterWidget() {
   const [count, setCount] = useState(0);
   const [error, setError] = useState(false);
+  const [nextMilestone, setNextMilestone] = useState<number | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [celebratingMilestone, setCelebratingMilestone] = useState<number | null>(null);
   const animatedCount = useAnimatedCount(count);
+
+  const handleDismiss = useCallback(() => {
+    setCelebratingMilestone(null);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,6 +304,16 @@ function DownloadCounterWidget() {
         if (!cancelled) {
           setCount(data.count || 0);
           setError(false);
+          setNextMilestone(data.nextMilestone ?? null);
+          setProgress(data.progress ?? 0);
+
+          // Check for milestone celebration
+          const currentCount = data.count || 0;
+          const reached = getReachedMilestone(currentCount);
+          if (reached) {
+            setCelebratingMilestone(reached);
+            localStorage.setItem('os_ntp_milestone', String(reached));
+          }
         }
       } catch {
         if (!cancelled) setError(true);
@@ -133,43 +329,75 @@ function DownloadCounterWidget() {
   const formatter = new Intl.NumberFormat();
 
   return (
-    <div
-      className="glass rounded-[16px] p-5 text-center transition-all duration-300 hover:-translate-y-[2px]"
-      style={{
-        maxWidth: 220,
-        margin: '0 auto',
-        borderColor: 'rgba(212, 160, 23, 0.1)',
-      }}
-    >
-      <div className="flex items-center justify-center gap-2 mb-2">
-        <Users size={14} className="text-ghana-gold" />
-        <span
-          className="text-[11px] font-semibold uppercase tracking-widest"
-          style={{ color: 'var(--color-accent)' }}
-        >
-          OS Browser Community
-        </span>
-      </div>
+    <>
+      {celebratingMilestone && (
+        <MilestoneCelebration
+          milestone={celebratingMilestone}
+          onDismiss={handleDismiss}
+        />
+      )}
       <div
-        className="text-2xl font-bold mb-1"
+        className="glass rounded-[16px] p-5 text-center transition-all duration-300 hover:-translate-y-[2px]"
         style={{
-          color: 'var(--color-accent)',
-          fontVariantNumeric: 'tabular-nums',
-          textShadow: '0 0 16px rgba(212, 160, 23, 0.25)',
+          maxWidth: 220,
+          margin: '0 auto',
+          borderColor: 'rgba(212, 160, 23, 0.1)',
         }}
       >
-        {formatter.format(animatedCount)}
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <Users size={14} className="text-ghana-gold" />
+          <span
+            className="text-[11px] font-semibold uppercase tracking-widest"
+            style={{ color: 'var(--color-accent)' }}
+          >
+            OS Browser Community
+          </span>
+        </div>
+        <div
+          className="text-2xl font-bold mb-1"
+          style={{
+            color: 'var(--color-accent)',
+            fontVariantNumeric: 'tabular-nums',
+            textShadow: '0 0 16px rgba(212, 160, 23, 0.25)',
+          }}
+        >
+          {formatter.format(animatedCount)}
+        </div>
+        <div className="flex items-center justify-center gap-1.5 text-text-muted">
+          <Download size={11} />
+          <span className="text-xs">downloads</span>
+        </div>
+
+        {/* Milestone progress */}
+        {nextMilestone && (
+          <div className="mt-3">
+            <div
+              className="h-[3px] rounded-full overflow-hidden"
+              style={{ background: 'rgba(212, 160, 23, 0.1)' }}
+            >
+              <div
+                className="h-full rounded-full transition-all duration-1000"
+                style={{
+                  width: `${progress}%`,
+                  background: 'linear-gradient(90deg, #D4A017, #F2C94C)',
+                }}
+              />
+            </div>
+            <div
+              className="text-[9px] mt-1.5 text-text-muted opacity-50"
+            >
+              {formatter.format(nextMilestone - count)} to {formatter.format(nextMilestone)}
+            </div>
+          </div>
+        )}
+
+        <div
+          className="text-[10px] mt-2 text-text-muted italic opacity-60"
+        >
+          Join the movement
+        </div>
       </div>
-      <div className="flex items-center justify-center gap-1.5 text-text-muted">
-        <Download size={11} />
-        <span className="text-xs">downloads</span>
-      </div>
-      <div
-        className="text-[10px] mt-2 text-text-muted italic opacity-60"
-      >
-        Join the movement
-      </div>
-    </div>
+    </>
   );
 }
 

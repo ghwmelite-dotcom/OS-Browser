@@ -707,6 +707,155 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
       .reveal, .kente-category, .stagger > * { opacity: 1; transform: none; }
+      .milestone-banner { animation: none !important; transform: translateY(0) !important; }
+    }
+
+    /* ═══════════════ MILESTONE CELEBRATIONS ═══════════════ */
+
+    /* Confetti keyframes */
+    @keyframes confettiFall {
+      0% { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
+      80% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(100vh) rotate(720deg) scale(0.5); }
+    }
+
+    /* Milestone Banner */
+    .milestone-banner {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 10000;
+      transform: translateY(-100%);
+      animation: milestoneBannerSlide 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      pointer-events: auto;
+    }
+    .milestone-banner.hiding {
+      animation: milestoneBannerHide 0.4s ease-in forwards;
+    }
+    @keyframes milestoneBannerSlide {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(0); }
+    }
+    @keyframes milestoneBannerHide {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-100%); opacity: 0; }
+    }
+
+    .milestone-banner-inner {
+      display: flex; align-items: center; gap: 20px;
+      padding: 20px 32px;
+      position: relative; overflow: hidden;
+    }
+
+    /* Level-specific backgrounds */
+    .milestone-banner.level-bronze .milestone-banner-inner {
+      background: linear-gradient(135deg, #1a1610 0%, #2a2010 50%, #1a1610 100%);
+      border-bottom: 2px solid rgba(212, 160, 23, 0.3);
+    }
+    .milestone-banner.level-silver .milestone-banner-inner {
+      background: linear-gradient(135deg, #12121a 0%, #1e1a10 40%, #12121a 100%);
+      border-bottom: 3px solid var(--gold);
+      box-shadow: 0 4px 24px rgba(212, 160, 23, 0.15);
+    }
+    .milestone-banner.level-gold .milestone-banner-inner {
+      background: linear-gradient(135deg, #1a1610 0%, #2e2410 30%, #1a1610 60%, #2e2410 100%);
+      border-bottom: 3px solid var(--gold);
+      box-shadow: 0 4px 32px rgba(212, 160, 23, 0.25);
+    }
+    .milestone-banner.level-platinum .milestone-banner-inner {
+      background: linear-gradient(135deg, #0a1a12 0%, #1a2a10 30%, #0a150a 60%, #1a2010 100%);
+      border-bottom: 3px solid var(--green-light);
+      box-shadow: 0 4px 40px rgba(0, 168, 107, 0.2), 0 4px 20px rgba(212, 160, 23, 0.15);
+    }
+    .milestone-banner.level-diamond .milestone-banner-inner {
+      background: linear-gradient(135deg, #1a0a1a 0%, #2a1a10 25%, #0a1a12 50%, #1a1a2a 75%, #2a1a10 100%);
+      border-bottom: 3px solid;
+      border-image: linear-gradient(90deg, var(--red), var(--gold), var(--green), var(--gold), var(--red)) 1;
+      box-shadow: 0 4px 48px rgba(212, 160, 23, 0.3);
+    }
+    .milestone-banner.level-star .milestone-banner-inner,
+    .milestone-banner.level-blackstar .milestone-banner-inner {
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1610 20%, #0a150a 40%, #1a0a10 60%, #0a0a0f 80%, #1a1610 100%);
+      border-bottom: 4px solid;
+      border-image: linear-gradient(90deg, var(--red), var(--gold), var(--green), var(--gold), var(--red)) 1;
+      box-shadow: 0 4px 56px rgba(212, 160, 23, 0.35), 0 2px 24px rgba(206, 17, 38, 0.1);
+    }
+
+    /* Ghana flag decorative stripe on banner */
+    .milestone-banner-inner::before {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--red) 0%, var(--red) 33%, var(--gold) 33%, var(--gold) 66%, var(--green) 66%, var(--green) 100%);
+      opacity: 0.6;
+    }
+
+    .milestone-star {
+      font-size: 48px; color: var(--gold);
+      text-shadow: 0 0 24px rgba(212, 160, 23, 0.5), 0 0 48px rgba(212, 160, 23, 0.25);
+      animation: milestoneStarGlow 2s ease-in-out infinite;
+      flex-shrink: 0; line-height: 1;
+    }
+    @keyframes milestoneStarGlow {
+      0%, 100% { text-shadow: 0 0 24px rgba(212, 160, 23, 0.5), 0 0 48px rgba(212, 160, 23, 0.25); transform: rotate(0deg); }
+      50% { text-shadow: 0 0 36px rgba(242, 201, 76, 0.8), 0 0 72px rgba(212, 160, 23, 0.4); transform: rotate(10deg); }
+    }
+
+    .milestone-content { flex: 1; min-width: 0; }
+
+    .milestone-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 4px;
+      opacity: 0.8;
+    }
+    .milestone-count {
+      font-family: var(--font-display);
+      font-size: 48px; font-weight: 700; line-height: 1.1;
+      background: linear-gradient(90deg, var(--gold) 0%, var(--gold-glow) 40%, var(--gold) 60%, var(--gold-glow) 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 3s linear infinite;
+    }
+    .milestone-name {
+      font-family: var(--font-display);
+      font-size: 16px; font-weight: 600;
+      color: var(--text-light); margin-top: 2px;
+    }
+    .milestone-tagline {
+      font-size: 13px; color: rgba(245, 240, 229, 0.4);
+      font-style: italic; margin-top: 4px;
+    }
+
+    .milestone-close {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(245, 240, 229, 0.5);
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 16px; flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .milestone-close:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: var(--text-light);
+    }
+
+    /* Milestone progress bar in download counter */
+    .milestone-progress {
+      margin-top: 8px; display: flex; align-items: center; gap: 8px;
+    }
+    .milestone-progress-bar {
+      flex: 1; height: 3px; border-radius: 2px;
+      background: rgba(212, 160, 23, 0.12);
+      overflow: hidden;
+    }
+    .milestone-progress-fill {
+      height: 100%; border-radius: 2px;
+      background: linear-gradient(90deg, var(--gold), var(--gold-glow));
+      transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .milestone-progress-label {
+      font-size: 10px; color: rgba(245, 240, 229, 0.3);
+      white-space: nowrap;
     }
   </style>
 </head>
@@ -767,6 +916,12 @@
       <span class="download-counter-number" id="downloadCount">0</span>
       <span class="download-counter-label">downloads and counting</span>
     </div>
+    <div class="milestone-progress" id="milestoneProgress" style="max-width:320px;margin:8px auto 0;">
+      <div class="milestone-progress-bar">
+        <div class="milestone-progress-fill" id="milestoneProgressFill" style="width:0%"></div>
+      </div>
+      <span class="milestone-progress-label" id="milestoneProgressLabel"></span>
+    </div>
   </div>
 </section>
 
@@ -778,6 +933,20 @@
       <div class="download-toast-text" id="toastText">Someone in Accra just downloaded OS Browser</div>
     </div>
     <div class="download-toast-time" id="toastTime">3 minutes ago</div>
+  </div>
+</div>
+
+<!-- Milestone celebration banner -->
+<div id="milestoneBanner" class="milestone-banner" style="display:none;">
+  <div class="milestone-banner-inner">
+    <div class="milestone-star">&#9733;</div>
+    <div class="milestone-content">
+      <div class="milestone-label">MILESTONE REACHED</div>
+      <div class="milestone-count" id="milestoneCount">1,000</div>
+      <div class="milestone-name" id="milestoneName">One Thousand Strong</div>
+      <div class="milestone-tagline">Thank you, Ghana! &#127468;&#127469;</div>
+    </div>
+    <button class="milestone-close" onclick="closeMilestoneBanner()" aria-label="Close milestone banner">&#10005;</button>
   </div>
 </div>
 
@@ -1227,8 +1396,188 @@
   const toastEl = document.getElementById('downloadToast');
   const toastTextEl = document.getElementById('toastText');
   const toastTimeEl = document.getElementById('toastTime');
+  const progressFill = document.getElementById('milestoneProgressFill');
+  const progressLabel = document.getElementById('milestoneProgressLabel');
   let currentDisplayCount = 0;
   let actualCount = 0;
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── Milestone configuration ──
+  const MILESTONE_CONFIG = {
+    500: { name: 'First 500', level: 'bronze', confetti: 30, fireworks: false },
+    1000: { name: 'One Thousand Strong', level: 'silver', confetti: 50, fireworks: false },
+    2500: { name: 'Community Rising', level: 'gold', confetti: 80, fireworks: true },
+    5000: { name: 'Five Thousand', level: 'gold', confetti: 100, fireworks: true },
+    10000: { name: 'Ten Thousand', level: 'platinum', confetti: 120, fireworks: true },
+    25000: { name: 'Quarter Century', level: 'diamond', confetti: 150, fireworks: true },
+    50000: { name: 'Fifty Thousand', level: 'star', confetti: 200, fireworks: true },
+    100000: { name: 'One Hundred Thousand', level: 'blackstar', confetti: 300, fireworks: true },
+  };
+
+  // ── Confetti system (CSS-animated, no libraries) ──
+  function createConfetti(count, colors) {
+    if (prefersReducedMotion) return;
+    count = count || 50;
+    colors = colors || ['#D4A017', '#CE1126', '#006B3F', '#FCD116', '#fff'];
+
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden;';
+    document.body.appendChild(container);
+
+    for (let i = 0; i < count; i++) {
+      const confetti = document.createElement('div');
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const size = Math.random() * 10 + 5;
+      const left = Math.random() * 100;
+      const delay = Math.random() * 2;
+      const duration = Math.random() * 3 + 2;
+      const rotation = Math.random() * 360;
+      const shape = Math.random() > 0.5 ? '50%' : '0';
+
+      confetti.style.cssText =
+        'position:absolute;top:-20px;left:' + left + '%;' +
+        'width:' + size + 'px;height:' + (size * 0.6) + 'px;' +
+        'background:' + color + ';border-radius:' + shape + ';' +
+        'transform:rotate(' + rotation + 'deg);' +
+        'animation:confettiFall ' + duration + 's ease-out ' + delay + 's forwards;' +
+        'opacity:0;';
+      container.appendChild(confetti);
+    }
+    setTimeout(function() { container.remove(); }, 6000);
+  }
+
+  // ── Fireworks system (canvas-based) ──
+  function launchFireworks(duration) {
+    if (prefersReducedMotion) return;
+    duration = duration || 5000;
+
+    var fwCanvas = document.createElement('canvas');
+    fwCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;';
+    fwCanvas.width = window.innerWidth;
+    fwCanvas.height = window.innerHeight;
+    document.body.appendChild(fwCanvas);
+    var fwCtx = fwCanvas.getContext('2d');
+
+    var fwParticles = [];
+    var fwColors = ['#D4A017', '#CE1126', '#006B3F', '#FCD116', '#FFD700'];
+
+    function createFirework() {
+      var x = Math.random() * fwCanvas.width;
+      var y = Math.random() * fwCanvas.height * 0.5;
+      var color = fwColors[Math.floor(Math.random() * fwColors.length)];
+      for (var i = 0; i < 30; i++) {
+        var angle = (Math.PI * 2 / 30) * i;
+        var speed = Math.random() * 3 + 1;
+        fwParticles.push({
+          x: x, y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          alpha: 1,
+          color: color,
+          size: Math.random() * 2 + 1,
+        });
+      }
+    }
+
+    var launchInterval = setInterval(createFirework, 300);
+
+    function animateFw() {
+      fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+      for (var i = fwParticles.length - 1; i >= 0; i--) {
+        var p = fwParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.03;
+        p.alpha -= 0.008;
+        if (p.alpha <= 0) { fwParticles.splice(i, 1); continue; }
+        fwCtx.beginPath();
+        fwCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        var hex = Math.floor(p.alpha * 255).toString(16);
+        if (hex.length < 2) hex = '0' + hex;
+        fwCtx.fillStyle = p.color + hex;
+        fwCtx.fill();
+      }
+      if (fwParticles.length > 0) requestAnimationFrame(animateFw);
+    }
+
+    createFirework();
+    animateFw();
+
+    setTimeout(function() {
+      clearInterval(launchInterval);
+      setTimeout(function() { fwCanvas.remove(); }, 3000);
+    }, duration);
+  }
+
+  // ── Show milestone banner ──
+  function showMilestoneBanner(milestone, config) {
+    var banner = document.getElementById('milestoneBanner');
+    var countEl = document.getElementById('milestoneCount');
+    var nameEl = document.getElementById('milestoneName');
+
+    // Remove previous level classes
+    banner.className = 'milestone-banner level-' + config.level;
+    countEl.textContent = new Intl.NumberFormat().format(milestone);
+    nameEl.textContent = config.name;
+
+    banner.style.display = '';
+
+    // Auto-dismiss after 10 seconds
+    setTimeout(function() { closeMilestoneBanner(); }, 10000);
+  }
+
+  function closeMilestoneBanner() {
+    var banner = document.getElementById('milestoneBanner');
+    banner.classList.add('hiding');
+    setTimeout(function() {
+      banner.style.display = 'none';
+      banner.classList.remove('hiding');
+    }, 500);
+  }
+
+  // ── Celebrate a milestone ──
+  function celebrate(milestone, config) {
+    // Show banner
+    showMilestoneBanner(milestone, config);
+
+    // Confetti
+    createConfetti(config.confetti);
+
+    // Fireworks for gold+ milestones
+    if (config.fireworks) {
+      var fwDuration = 5000;
+      if (config.level === 'platinum') fwDuration = 7000;
+      if (config.level === 'diamond') fwDuration = 9000;
+      if (config.level === 'star' || config.level === 'blackstar') fwDuration = 12000;
+      launchFireworks(fwDuration);
+    }
+  }
+
+  // ── Check milestones against localStorage ──
+  function checkMilestone(count) {
+    var lastCelebrated = parseInt(localStorage.getItem('os_milestone') || '0');
+    var milestones = Object.keys(MILESTONE_CONFIG).map(Number).sort(function(a, b) { return a - b; });
+
+    for (var i = 0; i < milestones.length; i++) {
+      var m = milestones[i];
+      if (count >= m && m > lastCelebrated) {
+        celebrate(m, MILESTONE_CONFIG[m]);
+        localStorage.setItem('os_milestone', String(m));
+        break; // celebrate one at a time
+      }
+    }
+  }
+
+  // ── Update milestone progress bar ──
+  function updateMilestoneProgress(count, nextMilestone, progress) {
+    if (nextMilestone && progressFill && progressLabel) {
+      progressFill.style.width = progress + '%';
+      progressLabel.textContent = new Intl.NumberFormat().format(nextMilestone - count) + ' to ' + new Intl.NumberFormat().format(nextMilestone);
+    } else if (progressLabel) {
+      progressFill.style.width = '100%';
+      progressLabel.textContent = 'All milestones reached!';
+    }
+  }
 
   // ── Easing: easeOutExpo ──
   function easeOutExpo(t) {
@@ -1269,6 +1618,9 @@
       const data = await res.json();
       const newCount = data.count || 0;
 
+      // Update milestone progress bar
+      updateMilestoneProgress(newCount, data.nextMilestone, data.progress);
+
       if (newCount !== actualCount) {
         const prevCount = actualCount;
         actualCount = newCount;
@@ -1276,10 +1628,26 @@
         if (prevCount === 0) {
           // Initial load — animate from 0
           animateCount(0, newCount, 2000);
+          // Check milestones on initial load
+          setTimeout(function() { checkMilestone(newCount); }, 2500);
         } else {
           // Update — animate from current to new
           flashCounter();
           animateCount(currentDisplayCount, newCount, 600);
+          // Check milestones on update
+          checkMilestone(newCount);
+        }
+      }
+
+      // Also check if API says milestone just reached
+      if (data.milestoneJustReached && data.lastMilestone) {
+        var lastCelebrated = parseInt(localStorage.getItem('os_milestone') || '0');
+        if (data.lastMilestone > lastCelebrated) {
+          var config = MILESTONE_CONFIG[data.lastMilestone];
+          if (config) {
+            celebrate(data.lastMilestone, config);
+            localStorage.setItem('os_milestone', String(data.lastMilestone));
+          }
         }
       }
     } catch (e) {
