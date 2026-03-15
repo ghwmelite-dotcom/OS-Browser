@@ -26,6 +26,8 @@ import { TwiDictionary } from './components/TwiDictionary';
 import { ReadingMode } from './components/ReadingMode';
 import { DownloadBar } from './components/DownloadBar';
 import { Onboarding } from './components/Onboarding';
+import { OfflineBanner } from './components/NetworkManager/OfflineBanner';
+import { useNetworkStore } from './store/network';
 
 export function App() {
   const { loadTabs, createTab } = useTabsStore();
@@ -162,6 +164,11 @@ export function App() {
       cleanup = initConnectivity();
     } catch {}
 
+    let networkCleanup: (() => void) | undefined;
+    try {
+      networkCleanup = useNetworkStore.getState().init();
+    } catch {}
+
     // Listen for tab events from main process
     const cleanups: (() => void)[] = [];
     try {
@@ -191,6 +198,7 @@ export function App() {
 
     return () => {
       cleanup?.();
+      networkCleanup?.();
       cleanups.forEach(c => c());
     };
   }, []);
@@ -240,6 +248,7 @@ export function App() {
         onOpenStats={() => useTabsStore.getState().createTab('os-browser://stats')}
       />
       <BookmarksBar />
+      <OfflineBanner />
 
       {/* Content + Sidebar */}
       <div className="flex-1 flex overflow-hidden">
