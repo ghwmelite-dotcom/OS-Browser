@@ -238,10 +238,10 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
               createTab('os-browser://settings' as any);
             }} />
             <MenuItem icon={HelpCircle} label="Help" onClick={() => {
-              createTab('os-browser://help' as any);
+              createTab('os-browser://docs' as any);
             }} />
             <MenuItem icon={Info} label="About OS Browser" onClick={() => {
-              createTab('os-browser://help' as any);
+              createTab('os-browser://docs' as any);
             }} />
           </div>
         </>
