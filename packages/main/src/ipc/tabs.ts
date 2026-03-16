@@ -288,68 +288,65 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     if (pwaDetectedTabs.has(detectionKey)) return;
     pwaDetectedTabs.add(detectionKey);
 
-    // Try up to 3 times with increasing delays (for SPAs that render late)
-    for (let attempt = 0; attempt < 3; attempt++) {
-      if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
+    try {
+      // Step 1: Find <link rel="manifest"> in the DOM via executeJavaScript
+      // This returns a simple string (not a Promise), so it works reliably
+      const manifestUrl: string | null = await wc.executeJavaScript(
+        `(function(){ var l = document.querySelector('link[rel="manifest"]'); return l ? new URL(l.href, location.href).href : null; })()`
+      );
 
-      try {
-        const manifestUrl = await wc.executeJavaScript(`
-          (function() {
-            var link = document.querySelector('link[rel="manifest"]');
-            if (link) return new URL(link.href, window.location.href).href;
-            return null;
-          })()
-        `);
+      if (!manifestUrl) return;
 
-        if (!manifestUrl) continue; // retry — manifest link might not be in DOM yet
+      // Step 2: Fetch the manifest from the MAIN PROCESS using Electron's net module
+      // This avoids the broken executeJavaScript + fetch Promise chain
+      const response = await net.fetch(manifestUrl);
+      if (!response.ok) return;
+      const manifestJson = await response.json() as any;
+      if (!manifestJson) return;
 
-        // Fetch manifest from within the page context (respects CORS)
-        const manifestJson = await wc.executeJavaScript(
-          `fetch(${JSON.stringify(manifestUrl)}).then(function(r){return r.json()}).catch(function(){return null})`
-        );
+      // Step 3: Check if it's installable
+      const display = manifestJson.display || '';
+      if (!['standalone', 'fullscreen', 'minimal-ui'].includes(display)) return;
 
-        if (!manifestJson) continue;
-
-        // Check if it's an installable PWA (standalone, fullscreen, or minimal-ui)
-        const display = manifestJson.display || '';
-        if (!['standalone', 'fullscreen', 'minimal-ui'].includes(display)) break; // has manifest but not installable
-
-        // Resolve the best icon URL
-        let iconUrl: string | null = null;
-        if (manifestJson.icons && manifestJson.icons.length > 0) {
-          const icon = manifestJson.icons.find((i: any) => i.sizes === '192x192')
-            || manifestJson.icons.find((i: any) => i.sizes === '512x512')
-            || manifestJson.icons[manifestJson.icons.length - 1];
-          try {
-            iconUrl = new URL(icon.src, manifestUrl).href;
-          } catch { /* invalid icon URL */ }
-        }
-
-        mainWindow.webContents.send('pwa:installable', {
-          tabId,
-          name: manifestJson.name || manifestJson.short_name || 'Web App',
-          shortName: manifestJson.short_name || manifestJson.name,
-          description: manifestJson.description || '',
-          iconUrl,
-          startUrl: manifestJson.start_url
-            ? new URL(manifestJson.start_url, loadUrl).href
-            : loadUrl,
-          display,
-          url: loadUrl,
-        });
-
-        console.log(`[PWA] Detected installable app: ${manifestJson.name} at ${loadUrl}`);
-        break; // success — stop retrying
-      } catch {
-        // Page might have navigated away — stop retrying
-        break;
+      // Step 4: Resolve icon URL
+      let iconUrl: string | null = null;
+      if (manifestJson.icons && manifestJson.icons.length > 0) {
+        const icon = manifestJson.icons.find((i: any) => i.sizes === '192x192')
+          || manifestJson.icons.find((i: any) => i.sizes === '512x512')
+          || manifestJson.icons[manifestJson.icons.length - 1];
+        try { iconUrl = new URL(icon.src, manifestUrl).href; } catch {}
       }
+
+      // Step 5: Send to renderer
+      mainWindow.webContents.send('pwa:installable', {
+        tabId,
+        name: manifestJson.name || manifestJson.short_name || 'Web App',
+        shortName: manifestJson.short_name || manifestJson.name,
+        description: manifestJson.description || '',
+        iconUrl,
+        startUrl: manifestJson.start_url
+          ? new URL(manifestJson.start_url, loadUrl).href
+          : loadUrl,
+        display,
+        url: loadUrl,
+      });
+
+      console.log(`[PWA] Detected: ${manifestJson.name} at ${loadUrl}`);
+    } catch (err) {
+      console.log(`[PWA] Detection failed for ${loadUrl}:`, err);
     }
   };
 
+  // Run detection after page loads — try twice for SPAs
   wc.on('did-finish-load', () => {
-    // Delay detection to give SPAs time to render their manifest link
-    setTimeout(detectPWA, 1500);
+    setTimeout(detectPWA, 500);
+    setTimeout(() => {
+      // Second attempt for SPAs that inject manifest link late
+      const key = `${tabId}:${wc.getURL()}`;
+      if (!pwaDetectedTabs.has(key)) return; // Already detected
+      pwaDetectedTabs.delete(key); // Allow retry
+      detectPWA();
+    }, 3000);
   });
 
   wc.on('page-favicon-updated', (_e, favicons) => {
