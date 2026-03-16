@@ -171,13 +171,23 @@ export class AdBlockService {
     }
 
     if (this.blocker) {
-      // Enable blocking on the default session
-      this.blocker.enableBlockingInSession(session.defaultSession);
+      // Enable network-level blocking on the default session
+      // Ghostery v2.14+ uses session.registerPreloadScript (Electron 35+)
+      // On Electron 33, this will fail — we catch and continue with cosmetic-only blocking
+      try {
+        this.blocker.enableBlockingInSession(session.defaultSession);
+        console.log('[AdBlock] Network blocking enabled via session');
+      } catch {
+        // Electron 33 doesn't support registerPreloadScript
+        // Network blocking unavailable — cosmetic filtering + YouTube blocking still work
+        console.warn('[AdBlock] Network blocking unavailable (requires Electron 35+). Cosmetic filtering and YouTube ad blocking are still active.');
+      }
 
-      // Track blocked requests
-      this.blocker.on('request-blocked', () => {
-        this.totalBlocked++;
-      });
+      try {
+        this.blocker.on('request-blocked', () => {
+          this.totalBlocked++;
+        });
+      } catch {}
     }
 
     // Register IPC handlers

@@ -156,8 +156,12 @@ app.whenReady().then(async () => {
   const db = getDatabase();
   seedDatabase(db);
 
-  // Initialize production-grade ad blocker before creating the window
-  await adBlockService.initialize();
+  // Initialize ad blocker — wrapped in try-catch so browser always starts
+  try {
+    await adBlockService.initialize();
+  } catch (err) {
+    console.error('[AdBlock] Initialization failed, browser starting without ad blocking:', err);
+  }
 
   createWindow();
 
