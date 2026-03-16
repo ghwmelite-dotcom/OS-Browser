@@ -397,6 +397,99 @@
       letter-spacing: 0.03em;
     }
 
+    /* ═══════════════ AD BLOCKER SECTION ═══════════════ */
+    .adblocker-section {
+      background: linear-gradient(180deg, #0a0a0f 0%, #0a1210 50%, #0a0a0f 100%);
+      position: relative; overflow: hidden;
+    }
+    .adblocker-section::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse 60% 50% at 70% 50%, rgba(0, 107, 63, 0.05) 0%, transparent 60%),
+                  radial-gradient(ellipse 40% 40% at 30% 40%, rgba(252, 209, 22, 0.03) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .adblocker-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 80px; align-items: center;
+      max-width: 1100px; margin: 0 auto;
+    }
+    .adblocker-features { display: flex; flex-direction: column; gap: 16px; }
+    .ab-feature {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: 20px; border-radius: 14px;
+      border: 1px solid rgba(252, 209, 22, 0.06);
+      background: rgba(0, 107, 63, 0.03);
+      transition: all 0.3s;
+      position: relative;
+    }
+    .ab-feature::before {
+      content: ''; position: absolute; top: 0; left: 0; bottom: 0;
+      width: 3px; border-radius: 3px 0 0 3px;
+      background: linear-gradient(180deg, var(--gold), var(--green));
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .ab-feature:hover {
+      border-color: rgba(252, 209, 22, 0.15);
+      background: rgba(0, 107, 63, 0.06);
+      transform: translateX(4px);
+    }
+    .ab-feature:hover::before { opacity: 1; }
+    .ab-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: rgba(252, 209, 22, 0.08);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gold); font-size: 18px; flex-shrink: 0;
+    }
+    .ab-title {
+      font-family: var(--font-display);
+      font-size: 14px; font-weight: 700; margin-bottom: 4px;
+      color: var(--text-light);
+    }
+    .ab-desc { font-size: 13px; opacity: 0.45; line-height: 1.6; }
+
+    /* Shield visual mockup */
+    .shield-mockup {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 24px;
+    }
+    .shield-visual {
+      position: relative;
+      width: 200px; height: 240px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .shield-visual svg {
+      width: 200px; height: 240px;
+      filter: drop-shadow(0 0 40px rgba(252, 209, 22, 0.15))
+              drop-shadow(0 0 80px rgba(0, 107, 63, 0.1));
+    }
+    .shield-badge {
+      position: absolute; top: -8px; right: -12px;
+      background: var(--red);
+      color: #fff; font-family: var(--font-display);
+      font-size: 13px; font-weight: 700;
+      padding: 6px 12px; border-radius: 100px;
+      box-shadow: 0 4px 16px rgba(206, 17, 38, 0.4);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .shield-stats {
+      display: flex; gap: 32px; text-align: center;
+    }
+    .shield-stat-value {
+      font-family: var(--font-display);
+      font-size: 24px; font-weight: 700;
+      color: var(--gold); line-height: 1;
+    }
+    .shield-stat-label {
+      font-size: 11px; color: rgba(245, 240, 229, 0.35);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 900px) {
+      .adblocker-grid { grid-template-columns: 1fr; gap: 40px; }
+      .shield-mockup { order: -1; }
+    }
+
     /* ═══════════════ MESSENGER SECTION ═══════════════ */
     .messenger-section {
       background: linear-gradient(180deg, #0a0a0f 0%, #0f1118 50%, #0a0a0f 100%);
@@ -876,6 +969,7 @@
   <div class="nav-links">
     <a href="#features">Features</a>
     <a href="#kente-system">Kente System</a>
+    <a href="#adblocker">Ad Blocker</a>
     <a href="#messenger">Messenger</a>
     <a href="#download">Download</a>
   </div>
@@ -899,7 +993,7 @@
   <p class="hero-sub">
     12 purpose-built features woven into a single, elegant experience.
     Encrypted messaging, 25 government portals, 7 local languages,
-    offline resilience &mdash; organized by the Kente System.
+    built-in ad blocker, offline resilience &mdash; organized by the Kente System.
   </p>
 
   <div class="hero-actions">
@@ -954,7 +1048,7 @@
 <div class="stats-ribbon">
   <div class="stat-item"><div class="stat-value">12</div><div class="stat-label">Features</div></div>
   <div class="stat-item"><div class="stat-value">25+</div><div class="stat-label">Gov Services</div></div>
-  <div class="stat-item"><div class="stat-value">7</div><div class="stat-label">Languages</div></div>
+  <div class="stat-item"><div class="stat-value">87K+</div><div class="stat-label">Ad Filters</div></div>
   <div class="stat-item"><div class="stat-value">E2E</div><div class="stat-label">Encrypted</div></div>
 </div>
 
@@ -1005,6 +1099,13 @@
           </div>
           <div class="feature-name">Network Manager</div>
           <div class="feature-desc">Monitors connection quality in real-time. Auto-suspends background tabs on slow connections to save bandwidth.</div>
+        </div>
+        <div class="feature-card" style="--card-color: #FCD116;">
+          <div class="feature-icon" style="--card-color: #FCD116;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div class="feature-name">Ad Blocker</div>
+          <div class="feature-desc">Built-in Ghostery-powered ad blocking with YouTube video ad defense. 87,000+ filter rules, per-site toggle, .gov.gh whitelisted.</div>
         </div>
       </div>
     </div>
@@ -1193,6 +1294,100 @@
       <div class="surface-name">Status Bar</div>
       <div class="surface-desc">Passive monitoring &mdash; data budget, network health, session protection.</div>
       <span class="surface-key">Glance</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ AD BLOCKER ═══════════════ -->
+<section id="adblocker" class="section adblocker-section">
+  <div class="section-header reveal">
+    <div class="section-eyebrow">Built-in Protection</div>
+    <h2 class="section-title">Browse without<br>interruption</h2>
+    <p class="section-desc">
+      A 5-layer ad defense system built directly into the browser.
+      No extensions needed &mdash; just clean, fast, distraction-free browsing.
+    </p>
+  </div>
+
+  <div class="adblocker-grid">
+    <div class="adblocker-features reveal stagger">
+      <div class="ab-feature">
+        <div class="ab-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        </div>
+        <div>
+          <div class="ab-title">YouTube Ad Blocking</div>
+          <div class="ab-desc">5-layer defense blocks pre-roll, mid-roll, and overlay ads. Watch videos without interruption.</div>
+        </div>
+      </div>
+      <div class="ab-feature">
+        <div class="ab-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div>
+          <div class="ab-title">87,000+ Filter Rules</div>
+          <div class="ab-desc">EasyList, EasyPrivacy, and uBlock Origin filters combined. Trackers, popups, and malware domains &mdash; all blocked.</div>
+        </div>
+      </div>
+      <div class="ab-feature">
+        <div class="ab-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+        <div>
+          <div class="ab-title">Per-Site Controls</div>
+          <div class="ab-desc">Toggle shields on or off for any website. Granular control when you need a site to work without filtering.</div>
+        </div>
+      </div>
+      <div class="ab-feature">
+        <div class="ab-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20"/><path d="M5 20V8l7-5 7 5v12"/><path d="M9 20v-4h6v4"/></svg>
+        </div>
+        <div>
+          <div class="ab-title">.gov.gh Whitelisted</div>
+          <div class="ab-desc">Government portals are never blocked. All .gov.gh domains are automatically whitelisted to ensure full functionality.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal" style="animation-delay: 0.2s;">
+      <div class="shield-mockup">
+        <div class="shield-visual">
+          <svg viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="shieldGrad" x1="100" y1="0" x2="100" y2="240" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#FCD116" stop-opacity="0.9"/>
+                <stop offset="50%" stop-color="#D4A017" stop-opacity="0.7"/>
+                <stop offset="100%" stop-color="#006B3F" stop-opacity="0.5"/>
+              </linearGradient>
+              <linearGradient id="shieldInner" x1="100" y1="30" x2="100" y2="200" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#FCD116" stop-opacity="0.15"/>
+                <stop offset="100%" stop-color="#006B3F" stop-opacity="0.08"/>
+              </linearGradient>
+            </defs>
+            <path d="M100 10 L180 50 L180 130 C180 180 100 230 100 230 C100 230 20 180 20 130 L20 50 Z"
+                  fill="url(#shieldInner)" stroke="url(#shieldGrad)" stroke-width="2.5"/>
+            <path d="M100 50 L140 70 L140 120 C140 150 100 175 100 175 C100 175 60 150 60 120 L60 70 Z"
+                  fill="none" stroke="url(#shieldGrad)" stroke-width="1" opacity="0.4"/>
+            <!-- Checkmark -->
+            <path d="M78 120 L93 135 L125 100" stroke="#FCD116" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+          <div class="shield-badge">247 blocked</div>
+        </div>
+        <div class="shield-stats">
+          <div>
+            <div class="shield-stat-value">87K+</div>
+            <div class="shield-stat-label">Filter Rules</div>
+          </div>
+          <div>
+            <div class="shield-stat-value">5-Layer</div>
+            <div class="shield-stat-label">YT Defense</div>
+          </div>
+          <div>
+            <div class="shield-stat-value">0ms</div>
+            <div class="shield-stat-label">Setup Time</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
