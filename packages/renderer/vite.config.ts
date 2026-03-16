@@ -7,4 +7,12 @@ export default defineConfig({
   base: './',
   build: { outDir: 'dist', emptyOutDir: true },
   resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
+  define: {
+    // matrix-js-sdk expects `global` to exist (Node.js convention)
+    global: 'globalThis',
+  },
+  optimizeDeps: {
+    // Ensure matrix-js-sdk and its crypto deps are pre-bundled
+    include: ['matrix-js-sdk'],
+  },
 });

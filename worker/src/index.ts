@@ -5,6 +5,7 @@ import { aiRoutes } from './routes/ai';
 import { healthRoutes } from './routes/health';
 import { messagingRoutes } from './routes/messaging';
 import { downloadRoutes } from './routes/downloads';
+import { govchatRoutes } from './routes/govchat';
 import { authMiddleware } from './middleware/auth';
 import { rateLimitMiddleware } from './middleware/rateLimit';
 
@@ -32,6 +33,7 @@ app.route('/api/v1', healthRoutes);
 app.route('/api/v1/ai', aiRoutes);
 app.route('/api/v1/messaging', messagingRoutes);
 app.route('/api/v1/downloads', downloadRoutes);
+app.route('/api/v1/govchat', govchatRoutes);
 
 export default app;
 

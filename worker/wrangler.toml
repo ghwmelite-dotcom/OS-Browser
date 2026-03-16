@@ -17,6 +17,7 @@ new_classes = ["ChatRoom", "UserPresence"]
 ENVIRONMENT = "development"
 APP_NAME = "OS Browser"
 DEFAULT_MODEL = "@cf/meta/llama-3-8b-instruct"
+MATRIX_HOMESERVER_URL = "https://matrix.org"
 
 [[kv_namespaces]]
 binding = "RATE_LIMITS"
@@ -33,6 +34,10 @@ id = "8054c890dab648d3b001a6aa61aee658"
 [[kv_namespaces]]
 binding = "MESSAGES"
 id = "410622ef993e4cab886b50f683f79602"
+
+[[kv_namespaces]]
+binding = "INVITE_CODES"
+id = "751234b46ae744fd94af9c615dc3dd98"
 
 # AI binding
 [ai]

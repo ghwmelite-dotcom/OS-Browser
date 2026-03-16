@@ -10,6 +10,8 @@ export interface Env {
   DEFAULT_MODEL: string;
   CHAT_ROOM: DurableObjectNamespace;
   USER_PRESENCE: DurableObjectNamespace;
+  INVITE_CODES: KVNamespace;
+  MATRIX_HOMESERVER_URL: string;
 }
 
 export interface Message {
@@ -45,4 +47,29 @@ export interface UserSession {
   department: string;
   token: string;
   createdAt: number;
+}
+
+export interface InviteCode {
+  code: string;
+  createdBy: string;
+  createdAt: number;
+  expiresAt: number;
+  maxUses: number;
+  usedCount: number;
+  department: string;
+  ministry: string;
+  isRevoked: boolean;
+}
+
+export interface GovChatSession {
+  userId: string;
+  staffId: string;
+  displayName: string;
+  department: string;
+  ministry: string;
+  token: string;
+  homeserverUrl: string;
+  deviceId: string;
+  createdAt: number;
+  role: 'user' | 'admin' | 'superadmin';
 }
