@@ -77,7 +77,7 @@ const messengerFeature = {
     sidebar: {
       panelComponent: GovChatSidebarPanel,
       order: 2,
-      defaultPanelWidth: 420,
+      defaultPanelWidth: 520,
       getBadgeCount: () => {
         try {
           return useGovChatStore.getState().rooms.reduce((sum, r) => sum + r.unreadCount, 0);
