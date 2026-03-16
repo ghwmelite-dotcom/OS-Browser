@@ -157,7 +157,7 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
       {!isAuthenticated ? (
         <LoginView />
       ) : (
-        <div className="flex-1 flex min-h-0 relative">
+        <div className="flex-1 flex min-h-0 min-w-0 relative overflow-hidden">
           {/* Chat list (left) */}
           <div
             className="flex flex-col border-r shrink-0"
@@ -167,7 +167,9 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
           </div>
 
           {/* Chat area (right) */}
-          {activeRoomId ? <ChatView /> : <EmptyState />}
+          <div className="flex-1 min-w-0 overflow-hidden">
+            {activeRoomId ? <ChatView /> : <EmptyState />}
+          </div>
         </div>
       )}
 
