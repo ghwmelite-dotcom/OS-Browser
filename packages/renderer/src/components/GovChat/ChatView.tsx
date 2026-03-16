@@ -241,7 +241,7 @@ export function ChatView() {
   const memberCount = room.members.length;
 
   return (
-    <div className="flex-1 flex flex-col min-w-0" style={{ background: 'var(--color-bg)' }}>
+    <div className="flex-1 flex flex-col min-w-0 h-full max-h-full overflow-hidden" style={{ background: 'var(--color-bg)' }}>
       {/* ── Chat Header ── */}
       <div
         className="flex items-center gap-3 px-4 py-2.5 border-b shrink-0"
