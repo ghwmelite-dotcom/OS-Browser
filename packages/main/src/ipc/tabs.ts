@@ -363,8 +363,15 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
 
     // Run after a short delay to not block page rendering
     setTimeout(async () => {
+      // Log to renderer console so user can see debug output
+      const logToRenderer = (msg: string) => {
+        try { mainWindow.webContents.executeJavaScript(`console.log('[PWA]', ${JSON.stringify(msg)})`); } catch {}
+      };
+
       try {
         const origin = new URL(loadUrl).origin;
+        logToRenderer(`Checking ${origin} for manifest...`);
+
         const paths = ['/manifest.json', '/manifest.webmanifest', '/site.webmanifest'];
         let manifestJson: any = null;
         let manifestUrl = '';
@@ -373,6 +380,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
           try {
             const url = origin + p;
             const res = await net.fetch(url);
+            logToRenderer(`${p} → ${res.status}`);
             if (res.ok) {
               const text = await res.text();
               try {
@@ -380,17 +388,26 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
                 if (parsed && (parsed.name || parsed.short_name)) {
                   manifestJson = parsed;
                   manifestUrl = url;
+                  logToRenderer(`Found valid manifest: ${parsed.name}, display=${parsed.display}`);
                   break;
                 }
               } catch { /* not valid JSON */ }
             }
-          } catch { /* fetch failed for this path */ }
+          } catch (e: any) {
+            logToRenderer(`${p} fetch error: ${e?.message || e}`);
+          }
         }
 
-        if (!manifestJson) return;
+        if (!manifestJson) {
+          logToRenderer('No valid manifest found');
+          return;
+        }
 
         const display = manifestJson.display || '';
-        if (!['standalone', 'fullscreen', 'minimal-ui'].includes(display)) return;
+        if (!['standalone', 'fullscreen', 'minimal-ui'].includes(display)) {
+          logToRenderer(`Not installable — display: ${display}`);
+          return;
+        }
 
         // Resolve icon
         let iconUrl: string | null = null;
@@ -401,6 +418,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
           try { iconUrl = new URL(icon.src, manifestUrl).href; } catch {}
         }
 
+        logToRenderer(`Sending pwa:installable to renderer — ${manifestJson.name}`);
         mainWindow.webContents.send('pwa:installable', {
           tabId,
           name: manifestJson.name || manifestJson.short_name || 'Web App',
