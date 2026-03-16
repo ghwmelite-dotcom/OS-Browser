@@ -29,8 +29,8 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
       const view = new WebContentsView();
       mainWindow.contentView.addChildView(view);
       resizeViewToContent(view, mainWindow);
-      view.webContents.loadURL(tabUrl);
       setupViewEvents(view, id, mainWindow);
+      view.webContents.loadURL(tabUrl);
       tabViews.set(id, view);
     }
 
@@ -65,8 +65,8 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
       const view = new WebContentsView();
       mainWindow.contentView.addChildView(view);
       resizeViewToContent(view, mainWindow);
-      view.webContents.loadURL(tab.url);
       setupViewEvents(view, id, mainWindow);
+      view.webContents.loadURL(tab.url);
       tabViews.set(id, view);
       if (isTabSuspended(id)) {
         markTabRestored(id);
