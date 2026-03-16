@@ -8,6 +8,9 @@ files:
   - packages/preload/dist/**/*
   - packages/renderer/dist/**/*
   - packages/shared/dist/**/*
+  - node_modules/@ghostery/**/*
+  - node_modules/cross-fetch/**/*
+  - node_modules/node-fetch/**/*
   - assets/icon.*
   - assets/tray-icon.png
   - "!**/*.ts"
