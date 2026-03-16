@@ -280,35 +280,72 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
 
   // PWA manifest detection — runs after page fully loads
   // Uses a delay + retry because SPAs often inject <link rel="manifest"> after initial render
+  // PWA detection — check for manifest.json after page loads
   const detectPWA = async () => {
     const loadUrl = wc.getURL();
-    if (!loadUrl || loadUrl.startsWith('os-browser://') || loadUrl.startsWith('about:')) return;
+    if (!loadUrl || loadUrl.startsWith('os-browser://') || loadUrl.startsWith('about:') || loadUrl.startsWith('data:')) return;
 
     const detectionKey = `${tabId}:${loadUrl}`;
     if (pwaDetectedTabs.has(detectionKey)) return;
     pwaDetectedTabs.add(detectionKey);
 
+    console.log(`[PWA] Checking ${loadUrl}...`);
+
+    // Approach 1: Try executeJavaScript to find manifest link in DOM
+    let manifestUrl: string | null = null;
     try {
-      // Step 1: Find <link rel="manifest"> in the DOM via executeJavaScript
-      // This returns a simple string (not a Promise), so it works reliably
-      const manifestUrl: string | null = await wc.executeJavaScript(
+      manifestUrl = await wc.executeJavaScript(
         `(function(){ var l = document.querySelector('link[rel="manifest"]'); return l ? new URL(l.href, location.href).href : null; })()`
       );
+      console.log(`[PWA] DOM query result: ${manifestUrl}`);
+    } catch (e) {
+      console.log(`[PWA] executeJavaScript failed, trying URL guessing:`, e);
+    }
 
-      if (!manifestUrl) return;
+    // Approach 2: If DOM query failed, try common manifest paths
+    if (!manifestUrl) {
+      const origin = new URL(loadUrl).origin;
+      const guesses = ['/manifest.json', '/manifest.webmanifest', '/site.webmanifest'];
+      for (const guess of guesses) {
+        try {
+          const testUrl = origin + guess;
+          const testRes = await net.fetch(testUrl);
+          if (testRes.ok) {
+            const ct = testRes.headers.get('content-type') || '';
+            if (ct.includes('json') || ct.includes('manifest')) {
+              manifestUrl = testUrl;
+              console.log(`[PWA] Found manifest via URL guessing: ${testUrl}`);
+              break;
+            }
+          }
+        } catch {}
+      }
+    }
 
-      // Step 2: Fetch the manifest from the MAIN PROCESS using Electron's net module
-      // This avoids the broken executeJavaScript + fetch Promise chain
+    if (!manifestUrl) {
+      console.log(`[PWA] No manifest found for ${loadUrl}`);
+      return;
+    }
+
+    // Fetch manifest from main process
+    try {
       const response = await net.fetch(manifestUrl);
-      if (!response.ok) return;
+      if (!response.ok) {
+        console.log(`[PWA] Manifest fetch failed: ${response.status}`);
+        return;
+      }
       const manifestJson = await response.json() as any;
       if (!manifestJson) return;
 
-      // Step 3: Check if it's installable
-      const display = manifestJson.display || '';
-      if (!['standalone', 'fullscreen', 'minimal-ui'].includes(display)) return;
+      console.log(`[PWA] Manifest parsed: display=${manifestJson.display}, name=${manifestJson.name}`);
 
-      // Step 4: Resolve icon URL
+      const display = manifestJson.display || '';
+      if (!['standalone', 'fullscreen', 'minimal-ui'].includes(display)) {
+        console.log(`[PWA] Not installable (display: ${display})`);
+        return;
+      }
+
+      // Resolve icon URL
       let iconUrl: string | null = null;
       if (manifestJson.icons && manifestJson.icons.length > 0) {
         const icon = manifestJson.icons.find((i: any) => i.sizes === '192x192')
@@ -317,8 +354,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
         try { iconUrl = new URL(icon.src, manifestUrl).href; } catch {}
       }
 
-      // Step 5: Send to renderer
-      mainWindow.webContents.send('pwa:installable', {
+      const pwaData = {
         tabId,
         name: manifestJson.name || manifestJson.short_name || 'Web App',
         shortName: manifestJson.short_name || manifestJson.name,
@@ -329,22 +365,22 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
           : loadUrl,
         display,
         url: loadUrl,
-      });
+      };
 
-      console.log(`[PWA] Detected: ${manifestJson.name} at ${loadUrl}`);
+      console.log(`[PWA] Sending to renderer: ${pwaData.name}`);
+      mainWindow.webContents.send('pwa:installable', pwaData);
     } catch (err) {
-      console.log(`[PWA] Detection failed for ${loadUrl}:`, err);
+      console.log(`[PWA] Manifest processing failed:`, err);
     }
   };
 
-  // Run detection after page loads — try twice for SPAs
   wc.on('did-finish-load', () => {
-    setTimeout(detectPWA, 500);
+    // First attempt after 800ms
+    setTimeout(detectPWA, 800);
+    // Second attempt after 3s for SPAs
     setTimeout(() => {
-      // Second attempt for SPAs that inject manifest link late
       const key = `${tabId}:${wc.getURL()}`;
-      if (!pwaDetectedTabs.has(key)) return; // Already detected
-      pwaDetectedTabs.delete(key); // Allow retry
+      pwaDetectedTabs.delete(key);
       detectPWA();
     }, 3000);
   });

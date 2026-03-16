@@ -214,6 +214,7 @@ function RailIconButton({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         aria-label={label}
+        title={label}
         style={{
           width: 36,
           height: 36,
