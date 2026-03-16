@@ -282,9 +282,11 @@ function BookmarkStar({ url }: { url: string }) {
 }
 
 // PWA install button — shown inside the URL bar when page is an installable PWA
+// Auto-shows install prompt after 3 seconds so users don't miss it
 function PWAInstallButton() {
   const [pwaData, setPwaData] = useState<any>(null);
   const [pulse, setPulse] = useState(true);
+  const autoPromptFired = useRef(false);
 
   useEffect(() => {
     const handleInstallable = (e: Event) => {
@@ -292,11 +294,27 @@ function PWAInstallButton() {
       if (data && data.tabId === useTabsStore.getState().activeTabId) {
         setPwaData(data);
         setPulse(true);
-        // Stop pulsing after 5 seconds
-        setTimeout(() => setPulse(false), 5000);
+        autoPromptFired.current = false;
+
+        // Auto-show the install prompt after 3 seconds
+        // Only if user hasn't dismissed this app before
+        setTimeout(() => {
+          if (autoPromptFired.current) return;
+          autoPromptFired.current = true;
+          try {
+            const dismissed = JSON.parse(localStorage.getItem('pwa_dismissed') || '[]');
+            if (dismissed.includes(data.startUrl)) return;
+          } catch {}
+          window.dispatchEvent(new CustomEvent('pwa:show-install-prompt', { detail: data }));
+        }, 3000);
+
+        setTimeout(() => setPulse(false), 8000);
       }
     };
-    const handleCleared = () => setPwaData(null);
+    const handleCleared = () => {
+      setPwaData(null);
+      autoPromptFired.current = false;
+    };
 
     window.addEventListener('pwa:installable', handleInstallable);
     window.addEventListener('pwa:installable-cleared', handleCleared);
@@ -312,6 +330,7 @@ function PWAInstallButton() {
     <button
       type="button"
       onClick={() => {
+        autoPromptFired.current = true;
         window.dispatchEvent(new CustomEvent('pwa:show-install-prompt', { detail: pwaData }));
       }}
       className="w-7 h-7 flex items-center justify-center rounded-full shrink-0 transition-all duration-200 hover:scale-110"
