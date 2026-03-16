@@ -29,7 +29,7 @@ import { Onboarding } from './components/Onboarding';
 import { OfflineBanner } from './components/NetworkManager/OfflineBanner';
 import { useNetworkStore } from './store/network';
 import { IdentityPanel } from './components/GhanaCard/IdentityPanel';
-import { MessagingPanel } from './components/Messaging/MessagingPanel';
+import { GovChatPanel } from './components/GovChat/GovChatPanel';
 import { TranslationPanel } from './components/Translation/TranslationPanel';
 import { LiteracyAssistant } from './components/DigitalLiteracy/LiteracyAssistant';
 import { ReportGenerator, type ReportData } from './components/ScreenshotReport/ReportGenerator';
@@ -429,7 +429,7 @@ export function App() {
         {showTranslationPanel && <TranslationPanel onClose={() => setShowTranslationPanel(false)} />}
 
         {/* Civil Service Messaging */}
-        {showMessaging && <MessagingPanel onClose={() => {
+        {showMessaging && <GovChatPanel onClose={() => {
           setShowMessaging(false);
           if (!showCurrencyTools && !showTwiDictionary && !isOpen) window.osBrowser?.showWebViews?.();
         }} />}

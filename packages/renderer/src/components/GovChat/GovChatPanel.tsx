@@ -18,7 +18,7 @@ function ConnectionBadge() {
     connected: { color: '#006B3F', label: 'Connected' },
     connecting: { color: '#D4A017', label: 'Connecting...' },
     syncing: { color: '#1565C0', label: 'Syncing...' },
-    disconnected: { color: '#CE1126', label: 'Offline' },
+    disconnected: { color: '#9E9E9E', label: 'Local mode' },
     error: { color: '#CE1126', label: 'Error' },
   };
 
