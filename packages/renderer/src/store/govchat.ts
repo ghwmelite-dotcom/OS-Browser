@@ -335,7 +335,8 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
             set({ connectionStatus: 'syncing', isSyncing: true });
             break;
           case 'ERROR':
-            set({ connectionStatus: 'error', isSyncing: false });
+            // Matrix sync failed — fall back to local mode gracefully
+            set({ connectionStatus: 'disconnected', isSyncing: false });
             break;
           case 'STOPPED':
             set({ connectionStatus: 'disconnected', isSyncing: false });
@@ -953,12 +954,8 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
           );
           set({ messages: { ...currentMessages, [roomId]: updated } });
         }, 500);
-      } finally {
-        // Revoke blob URL to prevent memory leak
-        if (message.voiceNote?.url?.startsWith('blob:')) {
-          URL.revokeObjectURL(message.voiceNote.url);
-        }
       }
+      // Note: blob URL is kept alive for playback — will be cleaned up on room delete or retention
     },
 
     addReaction: (roomId: string, eventId: string, emoji: string) => {

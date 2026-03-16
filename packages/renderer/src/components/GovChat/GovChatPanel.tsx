@@ -88,7 +88,7 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="h-full flex flex-col shrink-0"
+      className="h-full flex flex-col shrink-0 overflow-hidden"
       style={{
         width: '100%',
         background: 'var(--color-surface-1)',
@@ -167,7 +167,7 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
           </div>
 
           {/* Chat area (right) */}
-          <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
             {activeRoomId ? <ChatView /> : <EmptyState />}
           </div>
         </div>
