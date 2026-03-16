@@ -16,7 +16,44 @@ files:
   - "!**/*.ts"
   - "!**/*.tsx"
   - "!**/*.map"
+  - "!**/*.md"
+  - "!**/*.markdown"
+  - "!**/README*"
+  - "!**/CHANGELOG*"
+  - "!**/HISTORY*"
+  - "!**/LICENSE*"
+  - "!**/LICENCE*"
+  - "!**/.eslintrc*"
+  - "!**/.prettierrc*"
+  - "!**/test/**"
+  - "!**/tests/**"
+  - "!**/__tests__/**"
+  - "!**/docs/**"
+  - "!**/doc/**"
+  - "!**/example/**"
+  - "!**/examples/**"
+  - "!**/.github/**"
+  - "!**/.vscode/**"
+  - "!**/coverage/**"
+  - "!**/*.test.*"
+  - "!**/*.spec.*"
+  - "!**/*.d.ts.map"
+  - "!**/.DS_Store"
+  - "!**/tsconfig.json"
+  - "!**/tsconfig.*.json"
+  - "!**/.tsbuildinfo"
+  - "!**/*.tsbuildinfo"
+  - "!**/jest.config.*"
+  - "!**/Makefile"
+  - "!**/yarn.lock"
+  - "!**/package-lock.json"
+  - "!**/pnpm-lock.yaml"
 asar: true
+compression: maximum
+electronLanguages:
+  - en-US
+  - en-GB
+afterPack: ./scripts/afterPack.js
 win:
   target:
     - target: nsis
