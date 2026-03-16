@@ -17,7 +17,7 @@ new_classes = ["ChatRoom", "UserPresence"]
 ENVIRONMENT = "development"
 APP_NAME = "OS Browser"
 DEFAULT_MODEL = "@cf/meta/llama-3-8b-instruct"
-MATRIX_HOMESERVER_URL = "https://matrix.org"
+MATRIX_HOMESERVER_URL = "https://govchat.askozzy.work"
 
 [[kv_namespaces]]
 binding = "RATE_LIMITS"

@@ -28,7 +28,7 @@ const WORKER_URL = 'https://os-browser-worker.ghwmelite.workers.dev';
 const STORAGE_KEY = 'govchat_credentials';
 
 // Default homeserver for government deployment
-const DEFAULT_HOMESERVER = 'https://matrix.org';
+const DEFAULT_HOMESERVER = 'https://govchat.askozzy.work';
 
 // Lazy-loaded SDK reference
 let matrixSdk: typeof import('matrix-js-sdk') | null = null;

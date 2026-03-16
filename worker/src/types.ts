@@ -12,6 +12,7 @@ export interface Env {
   USER_PRESENCE: DurableObjectNamespace;
   INVITE_CODES: KVNamespace;
   MATRIX_HOMESERVER_URL: string;
+  SYNAPSE_REGISTRATION_SECRET: string;
 }
 
 export interface Message {

@@ -169,10 +169,98 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
     expirationTtl: remainingTtl,
   });
 
-  // Create session
-  const token = generateToken();
-  const deviceId = `GOVCHAT_${generateToken().slice(0, 12).toUpperCase()}`;
-  const userId = `@${body.staffId}:gov.gh`;
+  // Register user on Synapse homeserver via shared-secret registration
+  const homeserverUrl = c.env.MATRIX_HOMESERVER_URL || 'https://govchat.askozzy.work';
+  const serverName = new URL(homeserverUrl).hostname;
+  const matrixUserId = `@${body.staffId}:${serverName}`;
+  let matrixAccessToken = '';
+  let matrixDeviceId = '';
+
+  try {
+    // Generate HMAC for shared-secret registration
+    const registrationSecret = c.env.SYNAPSE_REGISTRATION_SECRET;
+    if (registrationSecret) {
+      // Step 1: Get a nonce from the server
+      const nonceRes = await fetch(`${homeserverUrl}/_synapse/admin/v1/register`, {
+        method: 'GET',
+      });
+      const nonceData = await nonceRes.json() as { nonce: string };
+      const nonce = nonceData.nonce;
+
+      // Step 2: Compute HMAC
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(registrationSecret),
+        { name: 'HMAC', hash: 'SHA-1' },
+        false,
+        ['sign'],
+      );
+
+      // HMAC message: nonce + NUL + username + NUL + password + NUL + "notadmin"
+      const password = `GovChat_${generateToken().slice(0, 16)}`;
+      const hmacMessage = `${nonce}\x00${body.staffId}\x00${password}\x00notadmin`;
+      const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(hmacMessage));
+      const mac = Array.from(new Uint8Array(signature))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      // Step 3: Register the user
+      const regRes = await fetch(`${homeserverUrl}/_synapse/admin/v1/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nonce,
+          username: body.staffId,
+          displayname: body.displayName,
+          password,
+          admin: false,
+          mac,
+        }),
+      });
+
+      if (regRes.ok) {
+        const regData = await regRes.json() as {
+          user_id: string;
+          access_token: string;
+          device_id: string;
+        };
+        matrixAccessToken = regData.access_token;
+        matrixDeviceId = regData.device_id;
+      } else {
+        const errBody = await regRes.text();
+        // User may already exist — try logging in instead
+        if (errBody.includes('User ID already taken')) {
+          const loginRes = await fetch(`${homeserverUrl}/_matrix/client/v3/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'm.login.password',
+              identifier: { type: 'm.id.user', user: body.staffId },
+              password,
+            }),
+          });
+          if (loginRes.ok) {
+            const loginData = await loginRes.json() as {
+              user_id: string;
+              access_token: string;
+              device_id: string;
+            };
+            matrixAccessToken = loginData.access_token;
+            matrixDeviceId = loginData.device_id;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    // Synapse registration failed — continue with local-only credentials
+    console.error('Synapse registration error:', err);
+  }
+
+  // Create session — use Matrix credentials if available, fallback to local
+  const token = matrixAccessToken || generateToken();
+  const deviceId = matrixDeviceId || `GOVCHAT_${generateToken().slice(0, 12).toUpperCase()}`;
+  const userId = matrixAccessToken ? matrixUserId : `@${body.staffId}:gov.gh`;
 
   const session: GovChatSession = {
     userId,
@@ -181,7 +269,7 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
     department: freshInvite.department,
     ministry: freshInvite.ministry,
     token,
-    homeserverUrl: c.env.MATRIX_HOMESERVER_URL || 'https://matrix.org',
+    homeserverUrl,
     deviceId,
     createdAt: Date.now(),
     role: 'user',
@@ -196,7 +284,7 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
     success: true,
     userId,
     accessToken: token,
-    homeserverUrl: session.homeserverUrl,
+    homeserverUrl,
     staffId: body.staffId,
     deviceId,
   });
