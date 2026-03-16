@@ -9,6 +9,9 @@
   },
   "dependencies": {
     "@os-browser/shared": "*",
+    "@ghostery/adblocker-electron": "*",
+    "@ghostery/adblocker-electron-preload": "*",
+    "cross-fetch": "*",
     "electron-updater": "^6.3.0"
   },
   "devDependencies": {

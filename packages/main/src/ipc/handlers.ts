@@ -4,7 +4,8 @@ import { registerSettingsHandlers } from './settings';
 import { registerTabHandlers } from './tabs';
 import { registerHistoryHandlers } from './history';
 import { registerBookmarkHandlers } from './bookmarks';
-import { initAdBlocker, getAdBlockStats } from '../services/adblock';
+// Old basic adblock replaced by adblock-engine.ts (Ghostery-based)
+// import { initAdBlocker, getAdBlockStats } from '../services/adblock';
 import { registerAIHandlers } from './ai';
 import { initConnectivityMonitor, getConnectivityStatus } from '../net/connectivity';
 import { initOfflineQueue, getQueueCount } from '../services/offline-queue';
@@ -209,8 +210,18 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
     };
   });
 
-  // Ad block stats
-  ipcMain.handle(IPC.ADBLOCK_STATS_UPDATE, () => getAdBlockStats());
+  // Ad block stats — now served by adblock-engine IPC handlers
+  // Legacy handler kept for compatibility with renderer stats display
+  ipcMain.handle(IPC.ADBLOCK_STATS_UPDATE, async () => {
+    try {
+      const { getAdBlockService } = require('../services/adblock-engine');
+      const svc = getAdBlockService();
+      const status = await ipcMain.emit('adblock:get-status');
+      return { ads_blocked: 0, trackers_blocked: 0 }; // Stats now tracked per-request in adblock-engine
+    } catch {
+      return { ads_blocked: 0, trackers_blocked: 0 };
+    }
+  });
 
   // Register domain handlers
   registerSettingsHandlers();
@@ -218,8 +229,7 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
   registerHistoryHandlers();
   registerBookmarkHandlers();
 
-  // Initialize ad blocker network interception
-  initAdBlocker();
+  // Ad blocker now initialized in main.ts via AdBlockService (Ghostery engine)
 
   // AI, connectivity, and offline queue
   registerAIHandlers(mainWindow);

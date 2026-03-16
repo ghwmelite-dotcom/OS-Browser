@@ -6,7 +6,16 @@
       "Bash(npm view:*)",
       "Bash(tasklist:*)",
       "Bash(curl:*)",
-      "WebFetch(domain:www.genspark.ai)"
+      "WebFetch(domain:www.genspark.ai)",
+      "Bash(gh release:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(TOKEN=\"108712c05be188bdae3d61f28c4af2b611742a55831657310760de4c3ced5cf3\" && USER_ID=\"90b4c19c26d3360b55b696b8ceb63c48be3f2cb3684528e8d8e465491b02632a\" && curl -s https://os-browser-worker.ghwmelite.workers.dev/api/v1/messaging/contacts -H \"Authorization: Bearer $TOKEN\" 2>&1)",
+      "Bash(TOKEN1=\"108712c05be188bdae3d61f28c4af2b611742a55831657310760de4c3ced5cf3\" && USER1=\"90b4c19c26d3360b55b696b8ceb63c48be3f2cb3684528e8d8e465491b02632a\" && USER2=\"0e53cd5827c9736127d42c0a376a7481f6a297da7c08a64afc239f3dc5ca946d\" && curl -s https://os-browser-worker.ghwmelite.workers.dev/api/v1/messaging/contacts -H \"Authorization: Bearer $TOKEN1\" 2>&1)",
+      "Bash(TOKEN1=\"108712c05be188bdae3d61f28c4af2b611742a55831657310760de4c3ced5cf3\" && USER1=\"90b4c19c26d3360b55b696b8ceb63c48be3f2cb3684528e8d8e465491b02632a\" && USER2=\"0e53cd5827c9736127d42c0a376a7481f6a297da7c08a64afc239f3dc5ca946d\" && curl -s -X POST https://os-browser-worker.ghwmelite.workers.dev/api/v1/messaging/conversations -H \"Authorization: Bearer $TOKEN1\" -H \"Content-Type: application/json\" -d \"{\\\\\"participantIds\\\\\":[\\\\\"$USER1\\\\\",\\\\\"$USER2\\\\\"]}\" 2>&1)",
+      "Bash(TOKEN1=\"108712c05be188bdae3d61f28c4af2b611742a55831657310760de4c3ced5cf3\" && curl -s https://os-browser-worker.ghwmelite.workers.dev/api/v1/messaging/conversations -H \"Authorization: Bearer $TOKEN1\" 2>&1)",
+      "Bash(CONV_ID=\"38ec7374-14a4-45b5-92f4-4f8b9308a4e0\" && TOKEN1=\"108712c05be188bdae3d61f28c4af2b611742a55831657310760de4c3ced5cf3\" && curl -s \"https://os-browser-worker.ghwmelite.workers.dev/api/v1/messaging/conversations/$CONV_ID/messages\" -H \"Authorization: Bearer $TOKEN1\" 2>&1)",
+      "Bash(TOKEN1=\"108712c05be188bdae3d61f28c4af2b611742a55831657310760de4c3ced5cf3\" && USER1=\"90b4c19c26d3360b55b696b8ceb63c48be3f2cb3684528e8d8e465491b02632a\" && CONV_ID=\"38ec7374-14a4-45b5-92f4-4f8b9308a4e0\" && curl -s -o /dev/null -w \"%{http_code}\" -H \"Upgrade: websocket\" -H \"Connection: Upgrade\" \"https://os-browser-worker.ghwmelite.workers.dev/api/v1/messaging/ws/$CONV_ID?userId=$USER1&token=$TOKEN1\" 2>&1)"
     ]
   }
 }
