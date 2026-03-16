@@ -12,6 +12,8 @@ import { registerAgentHandlers } from './agents';
 import { initTray } from '../services/tray';
 import { registerCredentialHandlers } from './credentials';
 import { initDownloadProtection } from '../services/downloads';
+import { initTabSuspension } from '../services/tab-suspension';
+import { getTabViews } from './tabs';
 import { initCertHandler } from '../services/cert-handler';
 import { registerBookmarkImportHandlers, registerBookmarkExportHandler } from '../services/bookmark-import';
 import { getDatabase } from '../db/database';
@@ -190,7 +192,7 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
     const allowed = ['name', 'url', 'category', 'position', 'is_visible'];
     const fields = Object.keys(data).filter(k => allowed.includes(k));
     if (fields.length === 0) return;
-    const sets = fields.map(f => `${f} = ?`).join(', ');
+    const sets = fields.map(f => `\`${f}\` = ?`).join(', ');
     const values = fields.map(f => data[f]);
     db.prepare(`UPDATE gov_portals SET ${sets} WHERE id = ?`).run(...values, id);
   });
@@ -235,6 +237,9 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
   initCertHandler(mainWindow);
   registerBookmarkImportHandlers(mainWindow);
   registerBookmarkExportHandler(mainWindow);
+
+  // Tab suspension — automatically suspends inactive tabs when over the concurrent limit
+  initTabSuspension(mainWindow, getTabViews());
 
   // System tray
   initTray(mainWindow);

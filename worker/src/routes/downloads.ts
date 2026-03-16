@@ -147,6 +147,11 @@ downloadRoutes.get('/milestones', async (c) => {
 
 // POST /api/v1/downloads/reset — reset counter to 0 (admin only, for pre-launch cleanup)
 downloadRoutes.post('/reset', async (c) => {
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader || authHeader !== `Bearer ${c.env.DEVICE_REGISTRATION_SECRET}`) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
   await c.env.MESSAGES.put('download_count', '0');
   await c.env.MESSAGES.put('download_recent', JSON.stringify([]));
   // Clear milestone records

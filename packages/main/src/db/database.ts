@@ -20,8 +20,18 @@ function loadFromDisk(): void {
     try {
       const raw = fs.readFileSync(dbPath, 'utf-8');
       tables = JSON.parse(raw);
+      // Create backup after successful load
+      try {
+        fs.writeFileSync(dbPath + '.bak', raw);
+      } catch { /* backup write failed — non-critical */ }
     } catch {
-      tables = {};
+      // Main file is corrupt — try loading from backup
+      try {
+        const bak = fs.readFileSync(dbPath + '.bak', 'utf-8');
+        tables = JSON.parse(bak);
+      } catch {
+        tables = {};
+      }
     }
   }
   dbLoaded = true;
@@ -30,7 +40,10 @@ function loadFromDisk(): void {
 function saveToDisk(): void {
   if (!dbDir) return;
   try {
-    fs.writeFileSync(getDbPath(), JSON.stringify(tables, null, 2), 'utf-8');
+    const dbPath = getDbPath();
+    const tempPath = dbPath + '.tmp';
+    fs.writeFileSync(tempPath, JSON.stringify(tables, null, 2), 'utf-8');
+    fs.renameSync(tempPath, dbPath);
   } catch {
     // Silently fail during shutdown
   }

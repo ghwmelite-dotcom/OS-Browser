@@ -98,7 +98,7 @@ messagingRoutes.post('/register', async (c) => {
   };
 
   await c.env.SESSIONS.put(`msg-session:${token}`, JSON.stringify(session), {
-    expirationTtl: 60 * 60 * 24 * 30,
+    expirationTtl: 60 * 60 * 24 * 7, // 7-day TTL — token is passed in WebSocket URL query params, so shorter sessions reduce exposure window
   });
 
   return c.json({ success: true, userId, token, name, department });

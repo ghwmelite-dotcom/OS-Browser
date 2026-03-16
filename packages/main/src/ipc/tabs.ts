@@ -3,7 +3,7 @@ import { IPC } from '@os-browser/shared';
 import { getDatabase } from '../db/database';
 import crypto from 'crypto';
 import path from 'path';
-import { cachePage } from '../services/page-cache';
+// import { cachePage } from '../services/page-cache'; // Disabled: automatic page caching removed (I5 security fix)
 import { isTabSuspended, markTabRestored } from '../services/tab-suspension';
 
 // Track which tabs have already had PWA detection run (once per page load)
@@ -132,7 +132,7 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     const allowed = ['title', 'url', 'favicon_path', 'is_pinned', 'is_muted', 'position'];
     const fields = Object.keys(data).filter(k => allowed.includes(k));
     if (fields.length === 0) return;
-    const sets = fields.map(f => `${f} = ?`).join(', ');
+    const sets = fields.map(f => `\`${f}\` = ?`).join(', ');
     const values = fields.map(f => data[f]);
     db.prepare(`UPDATE tabs SET ${sets} WHERE id = ?`).run(...values, id);
   });
@@ -193,15 +193,18 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     // Create a desktop shortcut (Windows)
     try {
       const { shell, app } = require('electron');
+      // Sanitize inputs to prevent command injection via shortcut args
+      const safeName = data.name.replace(/["\\/]/g, '');
+      const safeUrl = data.startUrl.replace(/"/g, '');
       const shortcutPath = path.join(
         app.getPath('appData'),
         'Microsoft/Windows/Start Menu/Programs',
-        `${data.name}.lnk`
+        `${safeName}.lnk`
       );
       shell.writeShortcutLink(shortcutPath, {
         target: process.execPath,
-        args: `--pwa-url="${data.startUrl}" --pwa-name="${data.name}"`,
-        description: data.name,
+        args: `--pwa-url="${safeUrl}" --pwa-name="${safeName}"`,
+        description: safeName,
       });
     } catch { /* shortcut creation failed — non-critical */ }
 
@@ -341,17 +344,10 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     mainWindow.webContents.send('tab:loading', { id: tabId, isLoading: false });
   });
 
-  wc.on('did-finish-load', async () => {
-    try {
-      const pageHtml = await wc.executeJavaScript('document.documentElement.outerHTML');
-      const pageTitle = await wc.executeJavaScript('document.title');
-      const pageUrl = wc.getURL();
-      if (pageUrl && !pageUrl.startsWith('os-browser://')) {
-        cachePage(pageUrl, pageHtml, pageTitle);
-      }
-    } catch { /* ignore errors from navigation */ }
-
-  });
+  // Page caching disabled — was caching every page load including potentially sensitive content
+  // (banking pages, email, etc.). Use the Offline Library "Save Page" feature instead for
+  // explicit user-initiated caching of specific pages.
+  // wc.on('did-finish-load', async () => { cachePage(...) });
 
   // ── PWA Detection ──────────────────────────────────────────────────
   // Uses async IIFE inside executeJavaScript (the correct Electron pattern)

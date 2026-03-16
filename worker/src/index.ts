@@ -19,7 +19,9 @@ app.use('*', cors({
   allowHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Rate limiting on all API routes
+// Rate limiting on all API routes — intentionally runs before auth middleware.
+// IP-based rate limiting on public routes (downloads, health) is desired to prevent abuse.
+// For authenticated routes (AI), the rate limiter provides an additional layer of DDoS protection.
 app.use('/api/v1/*', rateLimitMiddleware);
 
 // Device auth on AI routes
