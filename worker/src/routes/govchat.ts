@@ -360,3 +360,81 @@ govchatRoutes.get('/auth/me', async (c) => {
     createdAt: session.createdAt,
   });
 });
+
+// ---------------------------------------------------------------------------
+// GET /users — Superadmin lists all user sessions
+// ---------------------------------------------------------------------------
+
+govchatRoutes.get('/users', async (c) => {
+  const admin = await requireAdmin(c.env, c.req.raw);
+  if (admin instanceof Response) return admin;
+  if (admin.role !== 'superadmin') {
+    return c.json({ error: 'Only superadmins can manage users' }, 403);
+  }
+
+  const list = await c.env.SESSIONS.list({ prefix: 'govchat-session:' });
+  const users: GovChatSession[] = [];
+
+  for (const key of list.keys) {
+    const data = await c.env.SESSIONS.get(key.name, 'json');
+    if (data) {
+      const session = data as GovChatSession;
+      users.push({
+        userId: session.userId,
+        staffId: session.staffId,
+        displayName: session.displayName,
+        department: session.department,
+        ministry: session.ministry,
+        token: '', // Never expose tokens
+        homeserverUrl: session.homeserverUrl,
+        deviceId: session.deviceId,
+        createdAt: session.createdAt,
+        role: session.role,
+      });
+    }
+  }
+
+  return c.json({ users });
+});
+
+// ---------------------------------------------------------------------------
+// PUT /users/:staffId/role — Superadmin promotes/demotes a user
+// ---------------------------------------------------------------------------
+
+govchatRoutes.put('/users/:staffId/role', async (c) => {
+  const admin = await requireAdmin(c.env, c.req.raw);
+  if (admin instanceof Response) return admin;
+  if (admin.role !== 'superadmin') {
+    return c.json({ error: 'Only superadmins can change user roles' }, 403);
+  }
+
+  const targetStaffId = c.req.param('staffId');
+  const body = await c.req.json<{ role: 'user' | 'admin' | 'superadmin' }>();
+
+  if (!body.role || !['user', 'admin', 'superadmin'].includes(body.role)) {
+    return c.json({ error: 'Invalid role. Must be: user, admin, or superadmin' }, 400);
+  }
+
+  // Find the user's session key
+  const list = await c.env.SESSIONS.list({ prefix: 'govchat-session:' });
+  let found = false;
+
+  for (const key of list.keys) {
+    const data = await c.env.SESSIONS.get(key.name, 'json');
+    if (data) {
+      const session = data as GovChatSession;
+      if (session.staffId === targetStaffId) {
+        session.role = body.role;
+        await c.env.SESSIONS.put(key.name, JSON.stringify(session));
+        found = true;
+        break;
+      }
+    }
+  }
+
+  if (!found) {
+    return c.json({ error: 'User not found' }, 404);
+  }
+
+  return c.json({ success: true, staffId: targetStaffId, role: body.role });
+});
