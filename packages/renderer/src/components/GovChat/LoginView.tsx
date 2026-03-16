@@ -32,9 +32,9 @@ export function LoginView() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-6 py-8" style={{ background: 'var(--color-bg)' }}>
+    <div className="flex-1 flex flex-col items-center overflow-y-auto px-4 py-4" style={{ background: 'var(--color-bg)' }}>
       <div
-        className="w-full max-w-[340px] rounded-2xl border overflow-hidden"
+        className="w-full max-w-[300px] rounded-2xl border overflow-hidden"
         style={{
           background: 'var(--color-surface-1)',
           borderColor: 'var(--color-border-1)',
@@ -44,14 +44,14 @@ export function LoginView() {
         {/* Gold accent strip */}
         <div style={{ height: 4, background: '#D4A017' }} />
 
-        <div className="p-6">
+        <div className="p-4">
           {/* Header */}
-          <div className="text-center mb-5">
+          <div className="text-center mb-3">
             <div
-              className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3"
+              className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3"
               style={{ background: 'rgba(212, 160, 23, 0.12)' }}
             >
-              <Shield size={26} style={{ color: '#D4A017' }} />
+              <Shield size={20} style={{ color: '#D4A017' }} />
             </div>
             <h3 className="text-[15px] font-bold text-text-primary">
               GovChat — Secure Government Messenger
@@ -71,7 +71,7 @@ export function LoginView() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
             {/* Invite Code */}
             <div>
               <label className="text-[10.5px] font-semibold text-text-muted uppercase tracking-wide mb-1 block">
@@ -84,7 +84,7 @@ export function LoginView() {
                 placeholder="XXXXXXXX"
                 maxLength={8}
                 autoFocus
-                className="w-full px-3 py-2.5 rounded-lg text-[14px] font-mono tracking-widest text-text-primary text-center outline-none placeholder:text-text-muted uppercase"
+                className="w-full px-3 py-1.5 rounded-lg text-[14px] font-mono tracking-widest text-text-primary text-center outline-none placeholder:text-text-muted uppercase"
                 style={{
                   background: 'var(--color-surface-2)',
                   border: `1.5px solid ${
@@ -110,7 +110,7 @@ export function LoginView() {
                 value={staffId}
                 onChange={e => setStaffId(e.target.value)}
                 placeholder="GH-12345"
-                className="w-full px-3 py-2 rounded-lg text-[12.5px] text-text-primary outline-none placeholder:text-text-muted"
+                className="w-full px-3 py-1.5 rounded-lg text-[12.5px] text-text-primary outline-none placeholder:text-text-muted"
                 style={{
                   background: 'var(--color-surface-2)',
                   border: '1.5px solid var(--color-border-1)',
@@ -128,7 +128,7 @@ export function LoginView() {
                 value={displayName}
                 onChange={e => setDisplayName(e.target.value)}
                 placeholder="Kwame Nkrumah"
-                className="w-full px-3 py-2 rounded-lg text-[12.5px] text-text-primary outline-none placeholder:text-text-muted"
+                className="w-full px-3 py-1.5 rounded-lg text-[12.5px] text-text-primary outline-none placeholder:text-text-muted"
                 style={{
                   background: 'var(--color-surface-2)',
                   border: '1.5px solid var(--color-border-1)',
@@ -162,7 +162,7 @@ export function LoginView() {
       {/* Local mode link */}
       <button
         onClick={continueLocalMode}
-        className="mt-4 text-[10.5px] text-text-muted underline underline-offset-2 hover:text-text-secondary transition-colors"
+        className="shrink-0 mt-4 text-[10.5px] text-text-muted underline underline-offset-2 hover:text-text-secondary transition-colors"
       >
         Continue in local mode (offline)
       </button>
