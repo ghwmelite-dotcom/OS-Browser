@@ -221,11 +221,15 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
 function resizeViewToContent(view: WebContentsView, win: BrowserWindow): void {
   const bounds = win.getContentBounds();
   // Browser chrome heights (measured from actual components):
-  // TitleBar: 32px, TabBar: 36px, NavigationBar: 44px, BookmarksBar: 28px, KenteStatusBar: 28px = 168px
+  // TitleBar: 32px, TabBar: 36px, NavigationBar: 44px = 112px base
+  // BookmarksBar: ~28px, KenteStatusBar: ~28px = 56px additional
+  // Total: 168px when all visible
   const topOffset = 168;
   // Kente Sidebar icon rail width = 48px (always visible on the left)
   const sidebarWidth = 48;
-  const height = Math.max(100, bounds.height - topOffset);
+  // Bottom safety margin — prevents covering the Windows taskbar on maximize
+  const bottomMargin = 2;
+  const height = Math.max(100, bounds.height - topOffset - bottomMargin);
   const width = Math.max(100, bounds.width - sidebarWidth);
   view.setBounds({ x: sidebarWidth, y: topOffset, width, height });
 }

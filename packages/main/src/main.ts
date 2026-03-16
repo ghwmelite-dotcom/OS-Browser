@@ -71,10 +71,13 @@ function createWindow() {
   // Fix: frameless windows on Windows overlap the taskbar when maximized.
   // Constrain the maximized bounds to the display's work area.
   mainWindow.on('maximize', () => {
-    const { screen } = require('electron');
-    const display = screen.getDisplayMatching(mainWindow!.getBounds());
-    const { x, y, width, height } = display.workArea;
-    mainWindow!.setBounds({ x, y, width, height });
+    setTimeout(() => {
+      if (!mainWindow || !mainWindow.isMaximized()) return;
+      const { screen } = require('electron');
+      const display = screen.getDisplayMatching(mainWindow.getBounds());
+      const { x, y, width, height } = display.workArea;
+      mainWindow.setBounds({ x, y, width, height });
+    }, 50);
   });
 
   // Register IPC handlers

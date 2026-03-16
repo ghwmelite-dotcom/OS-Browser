@@ -39,6 +39,15 @@ function ToolbarButton({
     }
   }, []);
 
+  // Hide/show WebContentsViews when dropdown opens/closes
+  useEffect(() => {
+    if (showDropdown) {
+      (window as any).osBrowser?.hideWebViews?.();
+    } else {
+      (window as any).osBrowser?.showWebViews?.();
+    }
+  }, [showDropdown]);
+
   // Close dropdown on outside click
   useEffect(() => {
     if (!showDropdown) return;
