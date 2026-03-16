@@ -1,3 +1,7 @@
+/**
+ * @deprecated Replaced by routes/govchat.ts (GovChat invite code API).
+ * This file is kept for reference during migration and will be removed once GovChat is fully verified.
+ */
 import { Hono } from 'hono';
 import type { Env, Contact, Conversation, UserSession } from '../types';
 

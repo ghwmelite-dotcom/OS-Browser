@@ -1,4 +1,7 @@
 /**
+ * @deprecated Replaced by Matrix Olm/Megolm encryption in MatrixClientService (GovChat).
+ * This file is kept for reference during migration and will be removed once GovChat is fully verified.
+ *
  * CryptoService — End-to-end encryption for Civil Service Messenger
  *
  * Uses Web Crypto API (available in Electron's Chromium runtime):

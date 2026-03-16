@@ -1,3 +1,7 @@
+/**
+ * @deprecated GovChat uses Matrix homeserver for presence. This Durable Object is kept
+ * for reference during migration and will be removed once GovChat is fully verified.
+ */
 import type { Env } from '../types';
 
 interface PresenceRecord {

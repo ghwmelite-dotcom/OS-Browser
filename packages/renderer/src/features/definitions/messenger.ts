@@ -1,14 +1,23 @@
 import React from 'react';
-import { MessageCircle } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { FeatureRegistry, StatusBarIndicatorProps, SidebarPanelProps } from '../registry';
-import { MessagingPanel } from '@/components/Messaging/MessagingPanel';
+import { useGovChatStore } from '@/store/govchat';
+
+// Lazy-load GovChatPanel to keep initial bundle small (~600KB matrix-js-sdk)
+const LazyGovChatPanel = React.lazy(() =>
+  import('@/components/GovChat/GovChatPanel').then(m => ({ default: m.GovChatPanel }))
+);
 
 const dispatchMessaging = () => {
   window.dispatchEvent(new CustomEvent('os-browser:messaging'));
 };
 
 // ── Status Bar Indicator ────────────────────────────────────────────
-const MessengerIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onClick }) => {
+const GovChatIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onClick }) => {
+  const unreadCount = useGovChatStore(s =>
+    s.rooms.reduce((sum, r) => sum + r.unreadCount, 0)
+  );
+
   return React.createElement('button', {
     onClick,
     style: {
@@ -24,65 +33,84 @@ const MessengerIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onC
       fontFamily: 'inherit',
       whiteSpace: 'nowrap' as const,
     },
-    title: 'Messenger — Click to open',
+    title: 'GovChat — Secure Government Messenger',
   },
-    React.createElement(MessageCircle, { size: 12, style: { color: stripColor } }),
-    React.createElement('span', null, '0'),
+    React.createElement(Shield, { size: 12, style: { color: stripColor } }),
+    React.createElement('span', null, unreadCount > 0 ? String(unreadCount) : '0'),
   );
 };
 
 // ── Sidebar Panel ───────────────────────────────────────────────────
-const MessengerPanel: React.FC<SidebarPanelProps> = ({ onClose }) => {
-  return React.createElement(MessagingPanel, { onClose });
+const GovChatSidebarPanel: React.FC<SidebarPanelProps> = ({ onClose }) => {
+  return React.createElement(
+    React.Suspense,
+    { fallback: React.createElement('div', {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        color: 'var(--color-text-muted)',
+        fontSize: '12px',
+      },
+    }, 'Loading GovChat...') },
+    React.createElement(LazyGovChatPanel, { onClose })
+  );
 };
 
 // ── Feature Definition ──────────────────────────────────────────────
 const messengerFeature = {
   id: 'messenger',
-  name: 'Messenger',
-  description: 'Secure, encrypted messaging for government communication.',
-  stripColor: '#3B8BD4',
-  icon: MessageCircle,
+  name: 'GovChat',
+  description: 'Matrix-based secure messenger for government communication with E2E encryption.',
+  stripColor: '#D4A017',
+  icon: Shield,
   category: 'communication' as const,
   shortcut: 'Ctrl+Shift+M',
   defaultEnabled: true,
   surfaces: {
     statusBar: {
-      component: MessengerIndicator,
+      component: GovChatIndicator,
       position: 'right' as const,
       order: 1,
     },
     sidebar: {
-      panelComponent: MessengerPanel,
+      panelComponent: GovChatSidebarPanel,
       order: 2,
-      defaultPanelWidth: 380,
-      getBadgeCount: () => 0,
+      defaultPanelWidth: 420,
+      getBadgeCount: () => {
+        try {
+          return useGovChatStore.getState().rooms.reduce((sum, r) => sum + r.unreadCount, 0);
+        } catch {
+          return 0;
+        }
+      },
     },
     commandBar: [
       {
         id: 'messenger:open',
-        label: 'Open messenger',
-        description: 'Open the messenger panel',
-        keywords: ['messenger', 'messages', 'chat', 'open', 'communication'],
+        label: 'Open GovChat',
+        description: 'Open the GovChat secure messenger',
+        keywords: ['govchat', 'messenger', 'messages', 'chat', 'open', 'communication', 'matrix'],
         action: () => dispatchMessaging(),
         shortcut: 'Ctrl+Shift+M',
-        group: 'Messenger',
+        group: 'GovChat',
       },
       {
         id: 'messenger:new',
         label: 'New message',
-        description: 'Start a new conversation',
+        description: 'Start a new GovChat conversation',
         keywords: ['new', 'message', 'compose', 'write', 'send', 'chat'],
         action: () => dispatchMessaging(),
-        group: 'Messenger',
+        group: 'GovChat',
       },
       {
         id: 'messenger:search',
         label: 'Search messages',
-        description: 'Search through message history',
+        description: 'Search through GovChat message history',
         keywords: ['search', 'messages', 'find', 'conversation', 'history', 'lookup'],
         action: () => dispatchMessaging(),
-        group: 'Messenger',
+        group: 'GovChat',
       },
     ],
   },

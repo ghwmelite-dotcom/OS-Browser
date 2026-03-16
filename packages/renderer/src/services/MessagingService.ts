@@ -1,4 +1,7 @@
 /**
+ * @deprecated Replaced by MatrixClientService (GovChat). This file is kept for reference
+ * during migration and will be removed once GovChat is fully verified.
+ *
  * MessagingService — singleton WebSocket service for real-time messaging.
  *
  * Manages WebSocket connections per conversation, REST API calls, auth,

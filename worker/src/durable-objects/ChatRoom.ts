@@ -1,3 +1,7 @@
+/**
+ * @deprecated GovChat uses Matrix homeserver for chat rooms. This Durable Object is kept
+ * for reference during migration and will be removed once GovChat is fully verified.
+ */
 import type { Env, Message } from '../types';
 
 const MAX_MESSAGES_PER_CONVERSATION = 500;

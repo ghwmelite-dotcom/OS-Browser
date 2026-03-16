@@ -1,4 +1,7 @@
 /**
+ * @deprecated Replaced by Matrix Olm/Megolm key exchange in MatrixClientService (GovChat).
+ * This file is kept for reference during migration and will be removed once GovChat is fully verified.
+ *
  * KeyExchange — ECDH key exchange protocol for Civil Service Messenger
  *
  * Protocol flow:

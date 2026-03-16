@@ -1,3 +1,7 @@
+/**
+ * @deprecated Replaced by store/govchat.ts (GovChat Zustand store).
+ * This file is kept for reference during migration and will be removed once GovChat is fully verified.
+ */
 import { create } from 'zustand';
 import { MessagingService } from '@/services/MessagingService';
 
