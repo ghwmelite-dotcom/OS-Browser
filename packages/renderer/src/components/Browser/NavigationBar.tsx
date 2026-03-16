@@ -355,6 +355,9 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
 
                 {/* Footer */}
                 <div className="px-5 pb-4">
+                  <p className="text-[10px] text-text-muted text-center mb-1">
+                    Reload page for changes to take effect
+                  </p>
                   <p className="text-[10px] text-text-muted text-center">
                     Powered by Ghostery engine with EasyList filters
                   </p>
