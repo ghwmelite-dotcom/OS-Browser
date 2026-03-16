@@ -37,7 +37,6 @@ export function IconRail({
         flexShrink: 0,
         height: '100%',
         justifyContent: 'space-between',
-        overflow: 'hidden',
       }}
     >
       {/* Feature icons — scrollable when window is small */}
@@ -152,7 +151,9 @@ function RailIconButton({
 }) {
   const [hovered, setHovered] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const tooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     return () => {
@@ -162,7 +163,13 @@ function RailIconButton({
 
   const handleMouseEnter = () => {
     setHovered(true);
-    tooltipTimer.current = setTimeout(() => setShowTooltip(true), 200);
+    tooltipTimer.current = setTimeout(() => {
+      if (buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        setTooltipPos({ x: rect.right + 8, y: rect.top + rect.height / 2 });
+      }
+      setShowTooltip(true);
+    }, 200);
   };
 
   const handleMouseLeave = () => {
@@ -202,6 +209,7 @@ function RailIconButton({
       )}
 
       <button
+        ref={buttonRef}
         onClick={onClick}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -250,24 +258,24 @@ function RailIconButton({
         )}
       </button>
 
-      {/* Tooltip */}
+      {/* Tooltip — uses position:fixed to escape overflow clipping */}
       {showTooltip && (
         <div
           style={{
-            position: 'absolute',
-            left: 52,
-            top: '50%',
+            position: 'fixed',
+            left: tooltipPos.x,
+            top: tooltipPos.y,
             transform: 'translateY(-50%)',
             background: 'var(--color-surface-3)',
             color: 'var(--color-text-primary)',
             fontSize: 11,
-            fontWeight: 500,
-            padding: '4px 8px',
-            borderRadius: 4,
+            fontWeight: 600,
+            padding: '5px 10px',
+            borderRadius: 6,
             whiteSpace: 'nowrap',
             pointerEvents: 'none',
-            zIndex: 1000,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            zIndex: 9999,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
             border: '1px solid var(--color-border-1)',
           }}
         >
