@@ -349,11 +349,10 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
 
   });
 
-  // PWA manifest detection — runs after page fully loads
-  // Uses a delay + retry because SPAs often inject <link rel="manifest"> after initial render
-  // PWA detection — NO executeJavaScript (broken on WebContentsView)
-  // Instead, directly fetch common manifest paths from the main process
-  wc.on('did-finish-load', () => {
+  // ── PWA Detection ──────────────────────────────────────────────────
+  // Uses async IIFE inside executeJavaScript (the correct Electron pattern)
+  // plus net.fetch fallback for URL guessing
+  wc.on('did-finish-load', async () => {
     const loadUrl = wc.getURL();
     if (!loadUrl || loadUrl.startsWith('os-browser://') || loadUrl.startsWith('about:') || loadUrl.startsWith('data:')) return;
 
@@ -361,76 +360,86 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     if (pwaDetectedTabs.has(detectionKey)) return;
     pwaDetectedTabs.add(detectionKey);
 
-    // Run after a short delay to not block page rendering
-    setTimeout(async () => {
-      // Log to renderer console so user can see debug output
-      const logToRenderer = (msg: string) => {
-        try { mainWindow.webContents.executeJavaScript(`console.log('[PWA]', ${JSON.stringify(msg)})`); } catch {}
-      };
+    // Wait a moment for page to settle
+    await new Promise(r => setTimeout(r, 1000));
 
+    let manifestJson: any = null;
+    let manifestUrl = '';
+
+    // Approach 1: Use async IIFE in executeJavaScript — fetches manifest from page context
+    try {
+      const result = await wc.executeJavaScript(`
+        (async () => {
+          try {
+            const link = document.querySelector('link[rel="manifest"]');
+            if (!link) return null;
+            const r = await fetch(link.href);
+            if (!r.ok) return null;
+            return { url: link.href, manifest: await r.json() };
+          } catch (e) { return null; }
+        })()
+      `);
+      if (result && result.manifest) {
+        manifestJson = result.manifest;
+        manifestUrl = result.url;
+      }
+    } catch { /* executeJavaScript failed — try fallback */ }
+
+    // Approach 2: Fallback — probe common manifest paths via net.fetch from main process
+    if (!manifestJson) {
       try {
         const origin = new URL(loadUrl).origin;
-        logToRenderer(`Checking ${origin} for manifest...`);
-
         const paths = ['/manifest.json', '/manifest.webmanifest', '/site.webmanifest'];
-        let manifestJson: any = null;
-        let manifestUrl = '';
-
         for (const p of paths) {
           try {
             const url = origin + p;
             const res = await net.fetch(url);
-            logToRenderer(`${p} → ${res.status}`);
             if (res.ok) {
-              const text = await res.text();
-              try {
-                const parsed = JSON.parse(text);
-                if (parsed && (parsed.name || parsed.short_name)) {
-                  manifestJson = parsed;
-                  manifestUrl = url;
-                  logToRenderer(`Found valid manifest: ${parsed.name}, display=${parsed.display}`);
-                  break;
-                }
-              } catch { /* not valid JSON */ }
+              const json = await res.json() as any;
+              if (json && (json.name || json.short_name)) {
+                manifestJson = json;
+                manifestUrl = url;
+                break;
+              }
             }
-          } catch (e: any) {
-            logToRenderer(`${p} fetch error: ${e?.message || e}`);
-          }
+          } catch { /* this path didn't work */ }
         }
+      } catch { /* URL parsing failed */ }
+    }
 
-        if (!manifestJson) {
-          logToRenderer('No valid manifest found');
-          return;
-        }
+    if (!manifestJson) return;
 
-        const display = manifestJson.display || '';
-        if (!['standalone', 'fullscreen', 'minimal-ui'].includes(display)) {
-          logToRenderer(`Not installable — display: ${display}`);
-          return;
-        }
+    // Validate installability (Chrome's criteria)
+    const display = manifestJson.display || '';
+    if (!['standalone', 'fullscreen', 'minimal-ui', 'window-controls-overlay'].includes(display)) return;
+    if (!manifestJson.name && !manifestJson.short_name) return;
+    if (manifestJson.prefer_related_applications === true) return;
 
-        // Resolve icon
-        let iconUrl: string | null = null;
-        if (manifestJson.icons && manifestJson.icons.length > 0) {
-          const icon = manifestJson.icons.find((i: any) => i.sizes === '192x192')
-            || manifestJson.icons.find((i: any) => i.sizes === '512x512')
-            || manifestJson.icons[manifestJson.icons.length - 1];
-          try { iconUrl = new URL(icon.src, manifestUrl).href; } catch {}
-        }
+    const isSecure = loadUrl.startsWith('https://') || /^http:\/\/(localhost|127\.0\.0\.1)/.test(loadUrl);
+    if (!isSecure) return;
 
-        logToRenderer(`Sending pwa:installable to renderer — ${manifestJson.name}`);
-        mainWindow.webContents.send('pwa:installable', {
-          tabId,
-          name: manifestJson.name || manifestJson.short_name || 'Web App',
-          shortName: manifestJson.short_name || manifestJson.name,
-          description: manifestJson.description || '',
-          iconUrl,
-          startUrl: manifestJson.start_url ? new URL(manifestJson.start_url, loadUrl).href : loadUrl,
-          display,
-          url: loadUrl,
-        });
-      } catch { /* ignore */ }
-    }, 500);
+    // Resolve icon URL
+    let iconUrl: string | null = null;
+    if (manifestJson.icons && manifestJson.icons.length > 0) {
+      const icon = manifestJson.icons.find((i: any) => i.sizes === '192x192')
+        || manifestJson.icons.find((i: any) => i.sizes === '512x512')
+        || manifestJson.icons[manifestJson.icons.length - 1];
+      try { iconUrl = new URL(icon.src, manifestUrl || loadUrl).href; } catch {}
+    }
+
+    // Send to renderer
+    mainWindow.webContents.send('pwa:installable', {
+      tabId,
+      name: manifestJson.name || manifestJson.short_name || 'Web App',
+      shortName: manifestJson.short_name || manifestJson.name,
+      description: manifestJson.description || '',
+      iconUrl,
+      startUrl: manifestJson.start_url
+        ? new URL(manifestJson.start_url, manifestUrl || loadUrl).href
+        : loadUrl,
+      display,
+      url: loadUrl,
+    });
   });
 
   wc.on('page-favicon-updated', (_e, favicons) => {
