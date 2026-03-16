@@ -333,14 +333,16 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     `).run(url, '');
 
     // Apply cosmetic filters + YouTube ad blocking
-    try { getAdBlockService().applyCosmeticFilters(wc, url); } catch {}
+    const adblock = getAdBlockService();
+    if (adblock) try { adblock.applyCosmeticFilters(wc, url); } catch {}
   });
 
   wc.on('did-navigate-in-page', (_e, url) => {
     mainWindow.webContents.send('tab:url-updated', { id: tabId, url, canGoBack: wc.canGoBack(), canGoForward: wc.canGoForward() });
 
     // Apply cosmetic filters + YouTube ad blocking (YouTube is a SPA)
-    try { getAdBlockService().applyCosmeticFilters(wc, url); } catch {}
+    const adblock2 = getAdBlockService();
+    if (adblock2) try { adblock2.applyCosmeticFilters(wc, url); } catch {}
   });
 
   wc.on('did-start-loading', () => {

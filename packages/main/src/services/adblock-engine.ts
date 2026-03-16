@@ -3,6 +3,7 @@ import { ElectronBlocker } from '@ghostery/adblocker-electron';
 import fetch from 'cross-fetch';
 import fs from 'fs';
 import path from 'path';
+import { getDatabase } from '../db/database';
 
 // ── Filter list URLs ────────────────────────────────────────────────────────
 const FILTER_LIST_URLS = [
@@ -10,8 +11,6 @@ const FILTER_LIST_URLS = [
   'https://easylist.to/easylist/easyprivacy.txt',
   'https://pgl.yoyo.org/adservers/serverlist.php?hostformat=adblockplus&showintro=1&mimetype=plaintext',
   'https://secure.fanboy.co.nz/fanboy-annoyance.txt',
-  'https://raw.githubusercontent.com/nicktejeda/nicktejeda-blocklist/master/nicktejeda-blocklist-V2.txt',
-  'https://raw.githubusercontent.com/nicktejeda/nicktejeda-blocklist/master/nicktejeda-blocklist-V1.txt',
 ];
 
 // ── YouTube Ad Blocker Script ───────────────────────────────────────────────
@@ -92,13 +91,12 @@ const YOUTUBE_AD_BLOCK_SCRIPT = `
 
   // ── Layer 4: Suppress anti-adblock detection ──
   try {
-    const origDefine = Object.defineProperty;
-    Object.defineProperty = function(obj, prop, desc) {
-      if (prop === 'adBlocksFound' || prop === 'hasAdBlocker') {
-        desc = { ...desc, value: 0, writable: true };
-      }
-      return origDefine.call(this, obj, prop, desc);
-    };
+    Object.defineProperty(window, 'adBlocksFound', {
+      configurable: true, get() { return 0; }, set() {}
+    });
+    Object.defineProperty(window, 'hasAdBlocker', {
+      configurable: true, get() { return false; }, set() {}
+    });
   } catch {}
 
   // ── Layer 5: CSS cosmetic hiding of YouTube ad elements ──
@@ -141,7 +139,7 @@ export class AdBlockService {
   private blocker: ElectronBlocker | null = null;
   private enabled = true;
   private whitelistedSites = new Set<string>();
-  private blockedCounts = new Map<number, number>();
+  private totalBlocked = 0;
   private updateTimer: ReturnType<typeof setInterval> | null = null;
   private cachePath: string = '';
 
@@ -177,14 +175,16 @@ export class AdBlockService {
       this.blocker.enableBlockingInSession(session.defaultSession);
 
       // Track blocked requests
-      this.blocker.on('request-blocked', (request: { tabId: number }) => {
-        const tabId = request.tabId ?? -1;
-        this.blockedCounts.set(tabId, (this.blockedCounts.get(tabId) || 0) + 1);
+      this.blocker.on('request-blocked', () => {
+        this.totalBlocked++;
       });
     }
 
     // Register IPC handlers
     this.registerIPC();
+
+    // Load persisted whitelist from database
+    this.loadWhitelist();
 
     // Schedule background updates every 24 hours
     this.updateTimer = setInterval(() => {
@@ -276,18 +276,49 @@ export class AdBlockService {
 
   /**
    * Extract domain from hostname (e.g. "www.example.com" -> "example.com")
+   * Handles common multi-part TLDs like .co.uk, .com.au, etc.
    */
   private getDomain(hostname: string): string {
+    const multiPartTlds = ['.co.uk', '.com.au', '.co.za', '.gov.gh', '.edu.gh', '.com.gh', '.org.gh', '.co.in', '.co.jp', '.com.br', '.co.kr'];
+    for (const tld of multiPartTlds) {
+      if (hostname.endsWith(tld)) {
+        const withoutTld = hostname.slice(0, -tld.length);
+        const parts = withoutTld.split('.');
+        return parts[parts.length - 1] + tld;
+      }
+    }
     const parts = hostname.split('.');
     if (parts.length <= 2) return hostname;
     return parts.slice(-2).join('.');
+  }
+
+  private loadWhitelist(): void {
+    try {
+      const db = getDatabase();
+      const rows = db.prepare("SELECT hostname FROM adblock_whitelist").all() as any[];
+      for (const row of rows) {
+        if (row.hostname) this.whitelistedSites.add(row.hostname);
+      }
+    } catch {}
+  }
+
+  private saveWhitelist(): void {
+    try {
+      const db = getDatabase();
+      // Clear existing whitelist entries
+      db.prepare("DELETE FROM adblock_whitelist").run();
+      // Insert current whitelist entries
+      for (const hostname of this.whitelistedSites) {
+        db.prepare("INSERT INTO adblock_whitelist (hostname) VALUES (?)").run(hostname);
+      }
+    } catch {}
   }
 
   private registerIPC(): void {
     ipcMain.handle('adblock:get-status', () => {
       return {
         enabled: this.enabled,
-        totalBlocked: this.getTotalBlocked(),
+        totalBlocked: this.totalBlocked,
         whitelistedSites: Array.from(this.whitelistedSites),
       };
     });
@@ -310,6 +341,7 @@ export class AdBlockService {
       } else {
         this.whitelistedSites.add(hostname);
       }
+      this.saveWhitelist();
       return { whitelisted: this.whitelistedSites.has(hostname) };
     });
 
@@ -326,16 +358,8 @@ export class AdBlockService {
     });
 
     ipcMain.handle('adblock:get-blocked-count', () => {
-      return { totalBlocked: this.getTotalBlocked() };
+      return { totalBlocked: this.totalBlocked };
     });
-  }
-
-  private getTotalBlocked(): number {
-    let total = 0;
-    for (const count of this.blockedCounts.values()) {
-      total += count;
-    }
-    return total;
   }
 
   destroy(): void {
@@ -361,10 +385,7 @@ export class AdBlockService {
 // Singleton instance — exported so tabs.ts can import it
 let adBlockServiceInstance: AdBlockService | null = null;
 
-export function getAdBlockService(): AdBlockService {
-  if (!adBlockServiceInstance) {
-    adBlockServiceInstance = new AdBlockService();
-  }
+export function getAdBlockService(): AdBlockService | null {
   return adBlockServiceInstance;
 }
 

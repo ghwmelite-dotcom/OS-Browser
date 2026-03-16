@@ -419,6 +419,7 @@ export function runMigrations(): void {
   ensureTable('gov_portals');
   ensureTable('credentials');
   ensureTable('window_state');
+  ensureTable('adblock_whitelist');
 
   // Ensure default user profile
   const profile = ensureTable('user_profile');
