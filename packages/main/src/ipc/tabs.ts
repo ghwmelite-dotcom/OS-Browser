@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import path from 'path';
 // import { cachePage } from '../services/page-cache'; // Disabled: automatic page caching removed (I5 security fix)
 import { isTabSuspended, markTabRestored } from '../services/tab-suspension';
+import { getAdBlockService } from '../services/adblock-engine';
 
 // Track which tabs have already had PWA detection run (once per page load)
 const pwaDetectedTabs = new Set<string>();
@@ -330,10 +331,16 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
       INSERT INTO history (url, title, last_visited_at) VALUES (?, ?, datetime('now'))
       ON CONFLICT(url) DO UPDATE SET visit_count = visit_count + 1, last_visited_at = datetime('now'), title = excluded.title
     `).run(url, '');
+
+    // Apply cosmetic filters + YouTube ad blocking
+    try { getAdBlockService().applyCosmeticFilters(wc, url); } catch {}
   });
 
   wc.on('did-navigate-in-page', (_e, url) => {
     mainWindow.webContents.send('tab:url-updated', { id: tabId, url, canGoBack: wc.canGoBack(), canGoForward: wc.canGoForward() });
+
+    // Apply cosmetic filters + YouTube ad blocking (YouTube is a SPA)
+    try { getAdBlockService().applyCosmeticFilters(wc, url); } catch {}
   });
 
   wc.on('did-start-loading', () => {

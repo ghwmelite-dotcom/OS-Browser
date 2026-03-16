@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, User, Share, MonitorDown } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, User, Share, MonitorDown, Shield, ShieldCheck, ShieldOff } from 'lucide-react';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
 import { useSettingsStore } from '@/store/settings';
@@ -131,6 +131,60 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
     };
   }, []);
 
+  // ── Ad Block Shield state ──
+  const [shieldStatus, setShieldStatus] = useState<{
+    enabled: boolean;
+    siteEnabled: boolean;
+    isGovSite: boolean;
+    isUserWhitelisted: boolean;
+    totalBlocked: number;
+    hostname: string;
+  }>({ enabled: true, siteEnabled: true, isGovSite: false, isUserWhitelisted: false, totalBlocked: 0, hostname: '' });
+
+  const refreshShieldStatus = useCallback(async () => {
+    try {
+      const osBrowser = (window as any).osBrowser;
+      if (!osBrowser?.adblock) return;
+      const [status, countResult] = await Promise.all([
+        osBrowser.adblock.getStatus(),
+        osBrowser.adblock.getBlockedCount(),
+      ]);
+      let hostname = '';
+      let siteInfo = { enabled: true, isGovSite: false, isUserWhitelisted: false };
+      if (currentUrl && !currentUrl.startsWith('os-browser://')) {
+        try {
+          hostname = new URL(currentUrl).hostname;
+          siteInfo = await osBrowser.adblock.isSiteEnabled(hostname);
+        } catch {}
+      }
+      setShieldStatus({
+        enabled: status.enabled,
+        siteEnabled: siteInfo.enabled,
+        isGovSite: siteInfo.isGovSite,
+        isUserWhitelisted: siteInfo.isUserWhitelisted,
+        totalBlocked: countResult.totalBlocked || 0,
+        hostname,
+      });
+    } catch {}
+  }, [currentUrl]);
+
+  useEffect(() => { refreshShieldStatus(); }, [refreshShieldStatus]);
+
+  const handleToggleGlobal = async () => {
+    try {
+      await (window as any).osBrowser?.adblock?.toggleGlobal();
+      await refreshShieldStatus();
+    } catch {}
+  };
+
+  const handleToggleSite = async () => {
+    if (!shieldStatus.hostname) return;
+    try {
+      await (window as any).osBrowser?.adblock?.toggleSite(shieldStatus.hostname);
+      await refreshShieldStatus();
+    } catch {}
+  };
+
   // Profile form state
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
@@ -190,6 +244,123 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
               style={{ background: 'var(--color-accent)', color: '#fff' }}>
               Link copied!
             </div>
+          )}
+        </div>
+
+        {/* Shield — Ad Blocker status */}
+        <div className="relative">
+          <button
+            onClick={() => { refreshShieldStatus(); toggleDropdown('shield'); }}
+            className="w-[32px] h-[32px] flex items-center justify-center rounded-full hover:bg-surface-2 transition-all duration-100 focus:outline-none focus:ring-2 focus:ring-ghana-gold/40 relative"
+            aria-label="Ad Blocker Shield" title="Ad Blocker Shield"
+          >
+            {shieldStatus.enabled && shieldStatus.siteEnabled ? (
+              <ShieldCheck size={16} strokeWidth={1.8} style={{ color: '#FCD116' }} />
+            ) : shieldStatus.enabled ? (
+              <Shield size={16} strokeWidth={1.8} className="text-text-muted" />
+            ) : (
+              <ShieldOff size={16} strokeWidth={1.8} className="text-text-muted opacity-50" />
+            )}
+            {shieldStatus.totalBlocked > 0 && shieldStatus.enabled && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] rounded-full flex items-center justify-center text-[8px] font-bold text-white px-0.5"
+                style={{ background: '#FCD116', color: '#1a1a1a' }}>
+                {shieldStatus.totalBlocked > 999 ? '999+' : shieldStatus.totalBlocked}
+              </span>
+            )}
+          </button>
+
+          {openDropdown === 'shield' && (
+            <>
+              <div className="fixed inset-0 z-[99]" onClick={closeDropdown} />
+              <div
+                className="absolute top-[36px] right-0 w-[300px] rounded-2xl border shadow-2xl z-[100] overflow-hidden"
+                style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}
+              >
+                {/* Header */}
+                <div className="px-5 pt-5 pb-4 text-center" style={{ background: 'var(--color-surface-2)' }}>
+                  <div className="flex justify-center mb-2">
+                    {shieldStatus.enabled ? (
+                      <ShieldCheck size={32} style={{ color: '#FCD116' }} />
+                    ) : (
+                      <ShieldOff size={32} className="text-text-muted" />
+                    )}
+                  </div>
+                  <h3 className="text-[15px] font-bold text-text-primary">
+                    {shieldStatus.enabled ? 'Shields Up' : 'Shields Down'}
+                  </h3>
+                  <p className="text-[12px] text-text-muted mt-0.5">
+                    {shieldStatus.totalBlocked > 0
+                      ? `${shieldStatus.totalBlocked.toLocaleString()} trackers & ads blocked`
+                      : 'Protecting your browsing'}
+                  </p>
+                </div>
+
+                {/* Controls */}
+                <div className="py-3 px-5">
+                  {/* Global toggle */}
+                  <div className="flex items-center justify-between py-2.5">
+                    <span className="text-[13px] text-text-primary font-medium">Global protection</span>
+                    <button
+                      onClick={handleToggleGlobal}
+                      className="w-[44px] h-[24px] rounded-full transition-all duration-200 relative"
+                      style={{
+                        background: shieldStatus.enabled ? '#FCD116' : 'var(--color-surface-3)',
+                      }}
+                    >
+                      <div className="absolute top-[2px] w-[20px] h-[20px] rounded-full bg-white shadow transition-all duration-200"
+                        style={{ left: shieldStatus.enabled ? '22px' : '2px' }} />
+                    </button>
+                  </div>
+
+                  {/* Per-site toggle */}
+                  {shieldStatus.hostname && !shieldStatus.isGovSite && (
+                    <>
+                      <div className="h-px my-1" style={{ background: 'var(--color-border-1)' }} />
+                      <div className="flex items-center justify-between py-2.5">
+                        <div>
+                          <span className="text-[13px] text-text-primary font-medium block">Site shield</span>
+                          <span className="text-[11px] text-text-muted">{shieldStatus.hostname}</span>
+                        </div>
+                        <button
+                          onClick={handleToggleSite}
+                          className="w-[44px] h-[24px] rounded-full transition-all duration-200 relative"
+                          style={{
+                            background: shieldStatus.siteEnabled ? '#FCD116' : 'var(--color-surface-3)',
+                          }}
+                        >
+                          <div className="absolute top-[2px] w-[20px] h-[20px] rounded-full bg-white shadow transition-all duration-200"
+                            style={{ left: shieldStatus.siteEnabled ? '22px' : '2px' }} />
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Gov site badge */}
+                  {shieldStatus.isGovSite && (
+                    <>
+                      <div className="h-px my-1" style={{ background: 'var(--color-border-1)' }} />
+                      <div className="flex items-center gap-2.5 py-2.5">
+                        <div className="w-6 h-6 rounded-md flex items-center justify-center text-[12px]"
+                          style={{ background: 'linear-gradient(135deg, #CE1126 0%, #006B3F 50%, #FCD116 100%)' }}>
+                          <span className="text-white font-bold text-[9px]">GH</span>
+                        </div>
+                        <div>
+                          <span className="text-[12px] text-text-primary font-medium block">Government site</span>
+                          <span className="text-[10px] text-text-muted">Shields relaxed for .gov.gh domains</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="px-5 pb-4">
+                  <p className="text-[10px] text-text-muted text-center">
+                    Powered by Ghostery engine with EasyList filters
+                  </p>
+                </div>
+              </div>
+            </>
           )}
         </div>
 

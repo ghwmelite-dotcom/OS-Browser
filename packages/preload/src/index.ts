@@ -169,4 +169,12 @@ contextBridge.exposeInMainWorld('osBrowser', {
     install: (data: { name: string; startUrl: string; iconUrl: string }) =>
       ipcRenderer.invoke('pwa:install', data),
   },
+
+  adblock: {
+    getStatus: () => ipcRenderer.invoke('adblock:get-status'),
+    toggleGlobal: () => ipcRenderer.invoke('adblock:toggle-global'),
+    toggleSite: (hostname: string) => ipcRenderer.invoke('adblock:toggle-site', hostname),
+    isSiteEnabled: (hostname: string) => ipcRenderer.invoke('adblock:is-site-enabled', hostname),
+    getBlockedCount: () => ipcRenderer.invoke('adblock:get-blocked-count'),
+  },
 });

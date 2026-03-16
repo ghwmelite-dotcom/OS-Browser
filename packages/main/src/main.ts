@@ -6,8 +6,11 @@ import { registerAllHandlers } from './ipc/handlers';
 import { initAutoUpdater } from './services/auto-update';
 import { stopConnectivityMonitor } from './net/connectivity';
 import { stopTabSuspension } from './services/tab-suspension';
+import { AdBlockService, setAdBlockService } from './services/adblock-engine';
 
 let mainWindow: BrowserWindow | null = null;
+const adBlockService = new AdBlockService();
+setAdBlockService(adBlockService);
 
 function getWindowState() {
   const db = getDatabase();
@@ -142,6 +145,7 @@ function createWindow() {
   mainWindow.on('closed', () => {
     stopConnectivityMonitor();
     stopTabSuspension();
+    adBlockService.destroy();
     mainWindow = null;
   });
 }
@@ -151,6 +155,9 @@ app.whenReady().then(async () => {
   runMigrations();
   const db = getDatabase();
   seedDatabase(db);
+
+  // Initialize production-grade ad blocker before creating the window
+  await adBlockService.initialize();
 
   createWindow();
 
