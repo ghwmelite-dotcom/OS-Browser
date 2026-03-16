@@ -169,17 +169,6 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
 
       {/* ── Right: Actions ── */}
       <div className="flex items-center gap-1 ml-3">
-        {/* PWA Install button — shown when current page is an installable PWA */}
-        {pwaInstallable && (
-          <NavButton
-            onClick={() => {
-              window.dispatchEvent(new CustomEvent('pwa:show-install-prompt', { detail: pwaInstallable }));
-            }}
-            icon={<MonitorDown size={16} strokeWidth={1.8} className="text-ghana-gold" />}
-            label={`Install ${pwaInstallable.name}`}
-          />
-        )}
-
         {/* Kente Toolbar — contextual page actions (Screenshot, Save Offline, Translate, Lite Mode) */}
         <KenteToolbar />
 

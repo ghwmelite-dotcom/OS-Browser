@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Lock, Info, Loader2, X, Clock, Globe, Star } from 'lucide-react';
+import { Search, Lock, Info, Loader2, X, Clock, Globe, Star, MonitorDown } from 'lucide-react';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
 import { useSettingsStore } from '@/store/settings';
@@ -183,6 +183,9 @@ export function OmniBar() {
             </button>
           )}
 
+          {/* PWA install button — inside the URL bar */}
+          {!isFocused && displayUrl && <PWAInstallButton />}
+
           {/* Bookmark star — inside the URL bar */}
           {!isFocused && displayUrl && (
             <BookmarkStar url={currentUrl} />
@@ -274,6 +277,61 @@ function BookmarkStar({ url }: { url: string }) {
         fill={isBookmarked ? 'var(--color-accent)' : 'none'}
         style={{ color: isBookmarked ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
       />
+    </button>
+  );
+}
+
+// PWA install button — shown inside the URL bar when page is an installable PWA
+function PWAInstallButton() {
+  const [pwaData, setPwaData] = useState<any>(null);
+  const [pulse, setPulse] = useState(true);
+
+  useEffect(() => {
+    const handleInstallable = (e: Event) => {
+      const data = (e as CustomEvent).detail;
+      if (data && data.tabId === useTabsStore.getState().activeTabId) {
+        setPwaData(data);
+        setPulse(true);
+        // Stop pulsing after 5 seconds
+        setTimeout(() => setPulse(false), 5000);
+      }
+    };
+    const handleCleared = () => setPwaData(null);
+
+    window.addEventListener('pwa:installable', handleInstallable);
+    window.addEventListener('pwa:installable-cleared', handleCleared);
+    return () => {
+      window.removeEventListener('pwa:installable', handleInstallable);
+      window.removeEventListener('pwa:installable-cleared', handleCleared);
+    };
+  }, []);
+
+  if (!pwaData) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        window.dispatchEvent(new CustomEvent('pwa:show-install-prompt', { detail: pwaData }));
+      }}
+      className="w-7 h-7 flex items-center justify-center rounded-full shrink-0 transition-all duration-200 hover:scale-110"
+      title={`Install ${pwaData.name} as an app`}
+      style={{
+        background: pulse ? 'rgba(212, 160, 23, 0.12)' : 'transparent',
+        animation: pulse ? 'pwa-pulse 2s ease-in-out infinite' : 'none',
+      }}
+    >
+      <MonitorDown
+        size={15}
+        strokeWidth={1.8}
+        style={{ color: '#D4A017' }}
+      />
+      <style>{`
+        @keyframes pwa-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(212, 160, 23, 0.3); }
+          50% { box-shadow: 0 0 0 6px rgba(212, 160, 23, 0); }
+        }
+      `}</style>
     </button>
   );
 }

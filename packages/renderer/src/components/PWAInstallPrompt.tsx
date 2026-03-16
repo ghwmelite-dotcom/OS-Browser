@@ -21,9 +21,13 @@ export function PWAInstallPrompt({ data, onClose }: PWAInstallPromptProps) {
   const [installing, setInstalling] = useState(false);
   const [iconError, setIconError] = useState(false);
 
-  // Animate in on mount
+  // Animate in on mount + hide WebContentsViews so modal is visible
   useEffect(() => {
+    (window as any).osBrowser?.hideWebViews?.();
     requestAnimationFrame(() => setVisible(true));
+    return () => {
+      (window as any).osBrowser?.showWebViews?.();
+    };
   }, []);
 
   const handleClose = () => {
