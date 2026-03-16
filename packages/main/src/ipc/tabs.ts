@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, WebContentsView, nativeImage, net } from 'electron';
+import { ipcMain, BrowserWindow, WebContentsView, nativeImage, net, Menu, MenuItem, clipboard, shell } from 'electron';
 import { IPC } from '@os-browser/shared';
 import { getDatabase } from '../db/database';
 import crypto from 'crypto';
@@ -234,6 +234,77 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
   const wc = view.webContents;
   const db = getDatabase();
 
+  // Right-click context menu
+  wc.on('context-menu', (_e, params) => {
+    const menu = new Menu();
+
+    if (params.isEditable) {
+      menu.append(new MenuItem({ label: 'Undo', role: 'undo' }));
+      menu.append(new MenuItem({ label: 'Redo', role: 'redo' }));
+      menu.append(new MenuItem({ type: 'separator' }));
+      menu.append(new MenuItem({ label: 'Cut', role: 'cut' }));
+      menu.append(new MenuItem({ label: 'Copy', role: 'copy' }));
+      menu.append(new MenuItem({ label: 'Paste', role: 'paste' }));
+      menu.append(new MenuItem({ label: 'Select All', role: 'selectAll' }));
+    } else {
+      if (params.selectionText) {
+        menu.append(new MenuItem({ label: 'Copy', role: 'copy' }));
+        menu.append(new MenuItem({
+          label: `Search Google for "${params.selectionText.substring(0, 30)}${params.selectionText.length > 30 ? '...' : ''}"`,
+          click: () => {
+            const q = encodeURIComponent(params.selectionText);
+            mainWindow.webContents.send('tab:navigate-new', `https://www.google.com/search?q=${q}`);
+          },
+        }));
+        menu.append(new MenuItem({ type: 'separator' }));
+      }
+
+      menu.append(new MenuItem({ label: 'Back', accelerator: 'Alt+Left', enabled: wc.canGoBack(), click: () => wc.goBack() }));
+      menu.append(new MenuItem({ label: 'Forward', accelerator: 'Alt+Right', enabled: wc.canGoForward(), click: () => wc.goForward() }));
+      menu.append(new MenuItem({ label: 'Reload', accelerator: 'Ctrl+R', click: () => wc.reload() }));
+      menu.append(new MenuItem({ type: 'separator' }));
+      menu.append(new MenuItem({ label: 'Save Page As...', accelerator: 'Ctrl+S', click: () => wc.downloadURL(wc.getURL()) }));
+      menu.append(new MenuItem({ label: 'Print...', accelerator: 'Ctrl+P', click: () => wc.print() }));
+      menu.append(new MenuItem({ type: 'separator' }));
+
+      if (params.linkURL) {
+        menu.append(new MenuItem({
+          label: 'Open Link in New Tab',
+          click: () => mainWindow.webContents.send('tab:navigate-new', params.linkURL),
+        }));
+        menu.append(new MenuItem({
+          label: 'Copy Link Address',
+          click: () => clipboard.writeText(params.linkURL),
+        }));
+        menu.append(new MenuItem({ type: 'separator' }));
+      }
+
+      if (params.mediaType === 'image' && params.srcURL) {
+        menu.append(new MenuItem({
+          label: 'Copy Image Address',
+          click: () => clipboard.writeText(params.srcURL),
+        }));
+        menu.append(new MenuItem({
+          label: 'Open Image in New Tab',
+          click: () => mainWindow.webContents.send('tab:navigate-new', params.srcURL),
+        }));
+        menu.append(new MenuItem({ type: 'separator' }));
+      }
+
+      menu.append(new MenuItem({
+        label: 'Copy Page URL',
+        click: () => clipboard.writeText(wc.getURL()),
+      }));
+      menu.append(new MenuItem({ type: 'separator' }));
+      menu.append(new MenuItem({ label: 'View Page Source', accelerator: 'Ctrl+U', click: () => {
+        mainWindow.webContents.send('tab:navigate-new', `view-source:${wc.getURL()}`);
+      }}));
+      menu.append(new MenuItem({ label: 'Inspect Element', accelerator: 'Ctrl+Shift+I', click: () => wc.openDevTools() }));
+    }
+
+    menu.popup({ window: mainWindow });
+  });
+
   wc.on('page-title-updated', (_e, title) => {
     db.prepare('UPDATE tabs SET title = ? WHERE id = ?').run(title, tabId);
     mainWindow.webContents.send('tab:title-updated', { id: tabId, title });
@@ -280,8 +351,9 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
 
   // PWA manifest detection — runs after page fully loads
   // Uses a delay + retry because SPAs often inject <link rel="manifest"> after initial render
-  // PWA detection — check for manifest.json after page loads
-  const detectPWA = async () => {
+  // PWA detection — NO executeJavaScript (broken on WebContentsView)
+  // Instead, directly fetch common manifest paths from the main process
+  wc.on('did-finish-load', () => {
     const loadUrl = wc.getURL();
     if (!loadUrl || loadUrl.startsWith('os-browser://') || loadUrl.startsWith('about:') || loadUrl.startsWith('data:')) return;
 
@@ -289,100 +361,58 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     if (pwaDetectedTabs.has(detectionKey)) return;
     pwaDetectedTabs.add(detectionKey);
 
-    console.log(`[PWA] Checking ${loadUrl}...`);
+    // Run after a short delay to not block page rendering
+    setTimeout(async () => {
+      try {
+        const origin = new URL(loadUrl).origin;
+        const paths = ['/manifest.json', '/manifest.webmanifest', '/site.webmanifest'];
+        let manifestJson: any = null;
+        let manifestUrl = '';
 
-    // Approach 1: Try executeJavaScript to find manifest link in DOM
-    let manifestUrl: string | null = null;
-    try {
-      manifestUrl = await wc.executeJavaScript(
-        `(function(){ var l = document.querySelector('link[rel="manifest"]'); return l ? new URL(l.href, location.href).href : null; })()`
-      );
-      console.log(`[PWA] DOM query result: ${manifestUrl}`);
-    } catch (e) {
-      console.log(`[PWA] executeJavaScript failed, trying URL guessing:`, e);
-    }
-
-    // Approach 2: If DOM query failed, try common manifest paths
-    if (!manifestUrl) {
-      const origin = new URL(loadUrl).origin;
-      const guesses = ['/manifest.json', '/manifest.webmanifest', '/site.webmanifest'];
-      for (const guess of guesses) {
-        try {
-          const testUrl = origin + guess;
-          const testRes = await net.fetch(testUrl);
-          if (testRes.ok) {
-            const ct = testRes.headers.get('content-type') || '';
-            if (ct.includes('json') || ct.includes('manifest')) {
-              manifestUrl = testUrl;
-              console.log(`[PWA] Found manifest via URL guessing: ${testUrl}`);
-              break;
+        for (const p of paths) {
+          try {
+            const url = origin + p;
+            const res = await net.fetch(url);
+            if (res.ok) {
+              const text = await res.text();
+              try {
+                const parsed = JSON.parse(text);
+                if (parsed && (parsed.name || parsed.short_name)) {
+                  manifestJson = parsed;
+                  manifestUrl = url;
+                  break;
+                }
+              } catch { /* not valid JSON */ }
             }
-          }
-        } catch {}
-      }
-    }
+          } catch { /* fetch failed for this path */ }
+        }
 
-    if (!manifestUrl) {
-      console.log(`[PWA] No manifest found for ${loadUrl}`);
-      return;
-    }
+        if (!manifestJson) return;
 
-    // Fetch manifest from main process
-    try {
-      const response = await net.fetch(manifestUrl);
-      if (!response.ok) {
-        console.log(`[PWA] Manifest fetch failed: ${response.status}`);
-        return;
-      }
-      const manifestJson = await response.json() as any;
-      if (!manifestJson) return;
+        const display = manifestJson.display || '';
+        if (!['standalone', 'fullscreen', 'minimal-ui'].includes(display)) return;
 
-      console.log(`[PWA] Manifest parsed: display=${manifestJson.display}, name=${manifestJson.name}`);
+        // Resolve icon
+        let iconUrl: string | null = null;
+        if (manifestJson.icons && manifestJson.icons.length > 0) {
+          const icon = manifestJson.icons.find((i: any) => i.sizes === '192x192')
+            || manifestJson.icons.find((i: any) => i.sizes === '512x512')
+            || manifestJson.icons[manifestJson.icons.length - 1];
+          try { iconUrl = new URL(icon.src, manifestUrl).href; } catch {}
+        }
 
-      const display = manifestJson.display || '';
-      if (!['standalone', 'fullscreen', 'minimal-ui'].includes(display)) {
-        console.log(`[PWA] Not installable (display: ${display})`);
-        return;
-      }
-
-      // Resolve icon URL
-      let iconUrl: string | null = null;
-      if (manifestJson.icons && manifestJson.icons.length > 0) {
-        const icon = manifestJson.icons.find((i: any) => i.sizes === '192x192')
-          || manifestJson.icons.find((i: any) => i.sizes === '512x512')
-          || manifestJson.icons[manifestJson.icons.length - 1];
-        try { iconUrl = new URL(icon.src, manifestUrl).href; } catch {}
-      }
-
-      const pwaData = {
-        tabId,
-        name: manifestJson.name || manifestJson.short_name || 'Web App',
-        shortName: manifestJson.short_name || manifestJson.name,
-        description: manifestJson.description || '',
-        iconUrl,
-        startUrl: manifestJson.start_url
-          ? new URL(manifestJson.start_url, loadUrl).href
-          : loadUrl,
-        display,
-        url: loadUrl,
-      };
-
-      console.log(`[PWA] Sending to renderer: ${pwaData.name}`);
-      mainWindow.webContents.send('pwa:installable', pwaData);
-    } catch (err) {
-      console.log(`[PWA] Manifest processing failed:`, err);
-    }
-  };
-
-  wc.on('did-finish-load', () => {
-    // First attempt after 800ms
-    setTimeout(detectPWA, 800);
-    // Second attempt after 3s for SPAs
-    setTimeout(() => {
-      const key = `${tabId}:${wc.getURL()}`;
-      pwaDetectedTabs.delete(key);
-      detectPWA();
-    }, 3000);
+        mainWindow.webContents.send('pwa:installable', {
+          tabId,
+          name: manifestJson.name || manifestJson.short_name || 'Web App',
+          shortName: manifestJson.short_name || manifestJson.name,
+          description: manifestJson.description || '',
+          iconUrl,
+          startUrl: manifestJson.start_url ? new URL(manifestJson.start_url, loadUrl).href : loadUrl,
+          display,
+          url: loadUrl,
+        });
+      } catch { /* ignore */ }
+    }, 500);
   });
 
   wc.on('page-favicon-updated', (_e, favicons) => {
