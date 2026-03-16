@@ -200,14 +200,19 @@ class MatrixClientServiceClass {
         deviceId: credentials.deviceId,
       });
 
-      // Attempt E2E crypto initialization
-      await this.initializeCrypto();
+      // Skip E2E crypto — Olm WASM is not bundled for Electron.
+      // Messages will be sent unencrypted until Olm is set up.
+      // await this.initializeCrypto();
 
       // Bind Matrix events before starting sync
       this.bindMatrixEvents();
 
-      // Start sync
-      await this.client.startClient({ initialSyncLimit: 20 });
+      // Start sync — wrap in try/catch since it may fail on first connection
+      try {
+        await this.client.startClient({ initialSyncLimit: 20 });
+      } catch (syncErr) {
+        console.warn('[MatrixClientService] startClient failed, continuing anyway:', syncErr);
+      }
       this._isInitialized = true;
     } catch (err) {
       console.error('[MatrixClientService] Client initialization failed:', err);

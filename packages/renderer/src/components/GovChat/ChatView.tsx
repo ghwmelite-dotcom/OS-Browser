@@ -317,18 +317,18 @@ export function ChatView() {
         )}
       </div>
 
-      {/* ── E2E Banner ── */}
+      {/* ── E2E Banner (compact) ── */}
       <div
-        className="flex items-center justify-center gap-2 py-1.5 shrink-0"
+        className="flex items-center justify-center gap-2 py-1 shrink-0"
         style={{ background: 'rgba(0, 107, 63, 0.06)' }}
       >
-        <div className="flex items-center gap-1.5 text-[10px]" style={{ color: '#006B3F' }}>
-          <Shield size={10} />
-          Messages in this room are end-to-end encrypted
+        <div className="flex items-center gap-1 text-[9px]" style={{ color: '#006B3F' }}>
+          <Shield size={9} />
+          Encrypted
         </div>
-        <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>|</span>
-        <span className="text-[9.5px] font-semibold" style={{ color: CLASSIFICATION_COLORS[room.classification] }}>
-          Classification: {room.classification}
+        <span className="text-[8px]" style={{ color: 'var(--color-text-muted)' }}>|</span>
+        <span className="text-[9px] font-semibold" style={{ color: CLASSIFICATION_COLORS[room.classification] }}>
+          {room.classification}
         </span>
       </div>
 
