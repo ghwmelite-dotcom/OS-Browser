@@ -4,6 +4,8 @@ import { initDatabase, getDatabase, closeDatabase, runMigrations } from './db/da
 import { seedDatabase } from './db/seed';
 import { registerAllHandlers } from './ipc/handlers';
 import { initAutoUpdater } from './services/auto-update';
+import { stopConnectivityMonitor } from './net/connectivity';
+import { stopTabSuspension } from './services/tab-suspension';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -102,9 +104,14 @@ function createWindow() {
     );
   }
 
-  // Save window state on move/resize
-  mainWindow.on('resize', saveWindowState);
-  mainWindow.on('move', saveWindowState);
+  // Save window state on move/resize (debounced to avoid excessive disk writes)
+  let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  const debouncedSave = () => {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveWindowState, 500);
+  };
+  mainWindow.on('resize', debouncedSave);
+  mainWindow.on('move', debouncedSave);
 
   // Confirm close when multiple tabs are open
   mainWindow.on('close', (e) => {
@@ -133,6 +140,8 @@ function createWindow() {
   });
 
   mainWindow.on('closed', () => {
+    stopConnectivityMonitor();
+    stopTabSuspension();
     mainWindow = null;
   });
 }

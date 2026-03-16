@@ -85,6 +85,10 @@ class MessagingServiceClass {
     return { success: false, userId: '', token: '', message: 'Verification no longer required. Use register() instead.' };
   }
 
+  // SECURITY NOTE (I3/I4): Credentials and messaging token are stored in localStorage which is
+  // unencrypted and accessible to any renderer code. In production, these should be stored via
+  // IPC in the main process using Electron's safeStorage API. The renderer cannot use safeStorage
+  // directly because it is a main-process-only API.
   setCredentials(userId: string, token: string): void {
     this.userId = userId;
     this.token = token;
@@ -195,6 +199,11 @@ class MessagingServiceClass {
 
     this.emit('connecting', { conversationId });
 
+    // SECURITY NOTE: Token is passed in the WebSocket URL query string because the WebSocket
+    // API does not support custom headers. This means the token may appear in server access logs
+    // and intermediary proxy logs. Mitigations: (1) session TTL reduced to 7 days on the worker,
+    // (2) WSS (TLS) prevents network-level sniffing. A future improvement would be a short-lived
+    // ticket exchange: POST to get a one-time ticket, then pass that ticket in the WS URL instead.
     const url = `${WS_URL}/api/v1/messaging/ws/${conversationId}?userId=${encodeURIComponent(this.userId)}&token=${encodeURIComponent(this.token)}`;
 
     let ws: WebSocket;
