@@ -4,8 +4,8 @@
   "private": true,
   "main": "dist/main.js",
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --platform=node --outdir=dist --external:electron",
-    "dev": "esbuild src/main.ts --bundle --platform=node --outdir=dist --external:electron --watch"
+    "build": "esbuild src/main.ts --bundle --platform=node --outdir=dist --external:electron --external:@ghostery/adblocker-electron --external:@ghostery/adblocker-electron-preload --external:@ghostery/adblocker --external:cross-fetch",
+    "dev": "esbuild src/main.ts --bundle --platform=node --outdir=dist --external:electron --external:@ghostery/adblocker-electron --external:@ghostery/adblocker-electron-preload --external:@ghostery/adblocker --external:cross-fetch --watch"
   },
   "dependencies": {
     "@os-browser/shared": "*",
