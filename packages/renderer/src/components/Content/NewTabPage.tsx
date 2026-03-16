@@ -688,6 +688,36 @@ export function NewTabPage() {
           </button>
         </section>
 
+        {/* ── GovChat Card ── */}
+        <section className="mb-14 animate-fade-up stagger-3" aria-label="GovChat Secure Messaging">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('os-browser:messaging'))}
+            className="shimmer-border group w-full flex items-center gap-5 p-5 rounded-[20px] text-left transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-ghana-gold"
+            style={{
+              background: 'linear-gradient(135deg, rgba(212, 160, 23, 0.08), rgba(0, 107, 63, 0.08))',
+              border: '1px solid rgba(212, 160, 23, 0.2)',
+              boxShadow: '0 2px 16px rgba(0,0,0,0.12)',
+            }}
+          >
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+              style={{ background: 'linear-gradient(135deg, rgba(212, 160, 23, 0.2), rgba(0, 107, 63, 0.2))' }}
+            >
+              <Shield size={28} style={{ color: '#D4A017' }} />
+            </div>
+            <div className="text-left flex-1 min-w-0">
+              <h3 className="text-lg font-bold mb-0.5" style={{ color: '#D4A017' }}>GovChat</h3>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                Secure government messaging with Matrix E2E encryption. Reactions, threads, voice notes & more.
+              </p>
+            </div>
+            <div className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+              style={{ background: '#006B3F' }}
+            >
+              Open
+            </div>
+          </button>
+        </section>
+
         {/* ── AI Quick Actions ── */}
         <section className="mb-14 animate-fade-up stagger-4" aria-label="AI Quick Actions">
           <div className="flex items-center gap-3 mb-5">

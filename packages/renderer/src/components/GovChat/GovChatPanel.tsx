@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
-import { Shield, PenSquare, X, LogOut, MessageCircle, Lock } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Shield, PenSquare, X, LogOut, MessageCircle, Lock, Settings } from 'lucide-react';
 import { useGovChatStore } from '@/store/govchat';
 import { LoginView } from './LoginView';
 import { ChatListView } from './ChatListView';
 import { ChatView } from './ChatView';
+import { AdminPanel } from './AdminPanel';
 
 /* ─────────── connection badge ─────────── */
 
@@ -75,6 +76,9 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
   const setIsComposing = useGovChatStore(s => s.setIsComposing);
   const logout = useGovChatStore(s => s.logout);
   const initialize = useGovChatStore(s => s.initialize);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
 
   useEffect(() => {
     initialize();
@@ -115,6 +119,15 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
         <div className="flex items-center gap-1">
           {isAuthenticated && (
             <>
+              {isAdmin && (
+                <button
+                  onClick={() => setShowAdminPanel(true)}
+                  className="p-1.5 rounded-md hover:bg-surface-2 transition-colors"
+                  title="Admin Panel"
+                >
+                  <Settings size={14} style={{ color: '#D4A017' }} />
+                </button>
+              )}
               <button
                 onClick={logout}
                 className="p-1.5 rounded-md hover:bg-surface-2 transition-colors"
@@ -157,6 +170,9 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
           {activeRoomId ? <ChatView /> : <EmptyState />}
         </div>
       )}
+
+      {/* Admin Panel overlay */}
+      {showAdminPanel && <AdminPanel onClose={() => setShowAdminPanel(false)} />}
     </div>
   );
 }
