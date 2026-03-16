@@ -335,7 +335,7 @@ export function ChatView() {
       {/* ── Message List ── */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto py-2"
+        className="flex-1 overflow-y-auto overflow-x-hidden py-2"
         style={{ scrollbarWidth: 'thin' }}
       >
         {renderMessages()}
