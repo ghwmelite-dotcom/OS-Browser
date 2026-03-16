@@ -490,7 +490,227 @@
       .shield-mockup { order: -1; }
     }
 
-    /* ═══════════════ MESSENGER SECTION ═══════════════ */
+    /* ═══════════════ GOVCHAT SECTION ═══════════════ */
+    .govchat-section {
+      background: linear-gradient(180deg, #0a0a0f 0%, #12100a 30%, #0a100d 60%, #0a0a0f 100%);
+      position: relative; overflow: hidden;
+    }
+    .govchat-section::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse 70% 50% at 50% 30%, rgba(212, 160, 23, 0.06) 0%, transparent 60%),
+                  radial-gradient(ellipse 50% 40% at 30% 60%, rgba(0, 107, 63, 0.04) 0%, transparent 50%),
+                  radial-gradient(ellipse 40% 40% at 80% 70%, rgba(212, 160, 23, 0.03) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .govchat-hero {
+      text-align: center; margin-bottom: 64px;
+    }
+    .govchat-shield-icon {
+      width: 80px; height: 80px; margin: 0 auto 24px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 24px;
+      background: rgba(212, 160, 23, 0.08);
+      animation: goldGlow 3s ease-in-out infinite;
+    }
+    @keyframes goldGlow {
+      0%, 100% { box-shadow: 0 0 20px rgba(212, 160, 23, 0.15), 0 0 60px rgba(212, 160, 23, 0.05); }
+      50% { box-shadow: 0 0 40px rgba(212, 160, 23, 0.3), 0 0 100px rgba(212, 160, 23, 0.1); }
+    }
+    .govchat-title {
+      font-family: var(--font-display);
+      font-size: clamp(40px, 6vw, 56px);
+      font-weight: 700; letter-spacing: -0.03em;
+      line-height: 1.1; margin-bottom: 12px;
+      color: var(--gold);
+    }
+    .govchat-subtitle {
+      font-size: clamp(16px, 2vw, 20px);
+      color: rgba(245, 240, 229, 0.55);
+      max-width: 600px; margin: 0 auto 8px;
+      font-weight: 500;
+    }
+    .govchat-tagline {
+      font-size: 14px;
+      color: rgba(245, 240, 229, 0.35);
+      font-style: italic;
+    }
+
+    .govchat-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 20px; max-width: 1100px; margin: 0 auto 64px;
+    }
+    .govchat-feature {
+      background: var(--surface-dark-2);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 16px; padding: 28px;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .govchat-feature:hover {
+      transform: translateY(-6px);
+      border-color: rgba(212, 160, 23, 0.15);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    }
+    .govchat-feature-icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px; font-size: 22px;
+    }
+    .govchat-feature-title {
+      font-family: var(--font-display);
+      font-size: 16px; font-weight: 700;
+      margin-bottom: 8px; letter-spacing: -0.01em;
+      color: var(--text-light);
+    }
+    .govchat-feature-desc {
+      font-size: 14px; line-height: 1.7;
+      color: rgba(245, 240, 229, 0.45);
+    }
+
+    .govchat-content {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 64px; align-items: start;
+      max-width: 1100px; margin: 0 auto;
+    }
+
+    /* GovChat mockup */
+    .govchat-mockup {
+      background: var(--surface-dark-2);
+      border-radius: 20px; border: 1px solid rgba(255,255,255,0.06);
+      padding: 0; max-width: 440px; margin: 0 auto;
+      box-shadow: 0 32px 100px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+    .govchat-mockup-header {
+      padding: 16px 20px;
+      background: rgba(212, 160, 23, 0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .govchat-mockup-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), var(--green));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: #fff;
+    }
+    .govchat-mockup-name { font-size: 14px; font-weight: 700; color: var(--text-light); }
+    .govchat-mockup-ministry { font-size: 11px; color: rgba(245,240,229,0.4); }
+    .govchat-mockup-ministry-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 4px;
+      background: rgba(0, 107, 63, 0.12);
+      font-size: 10px; color: var(--green-light); font-weight: 600;
+    }
+    .govchat-classification {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 6px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      background: rgba(59, 139, 212, 0.1);
+      color: #5DADE2;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .govchat-e2e-banner {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 5px; font-size: 9px; font-weight: 600;
+      color: var(--green-light); background: rgba(0,168,107,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .govchat-messages {
+      padding: 20px; display: flex; flex-direction: column; gap: 12px;
+    }
+    .govchat-bubble {
+      max-width: 85%; padding: 10px 14px;
+      font-size: 13px; line-height: 1.55; position: relative;
+    }
+    .govchat-bubble.sent {
+      align-self: flex-end; border-radius: 14px 14px 4px 14px;
+      background: linear-gradient(135deg, var(--green), #005030);
+      color: #fff;
+    }
+    .govchat-bubble.received {
+      align-self: flex-start; border-radius: 14px 14px 14px 4px;
+      background: rgba(255,255,255,0.06); color: var(--text-light);
+    }
+    .govchat-bubble-sender {
+      font-size: 10px; font-weight: 700; margin-bottom: 4px;
+      color: var(--gold); display: flex; align-items: center; gap: 6px;
+    }
+    .govchat-bubble-sender .ministry-tag {
+      font-weight: 500; color: rgba(245,240,229,0.35);
+    }
+    .govchat-reaction {
+      position: absolute; bottom: -8px; right: 8px;
+      background: var(--surface-dark-2); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 100px; padding: 1px 6px; font-size: 12px;
+    }
+    .govchat-typing {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 14px; font-size: 11px;
+      color: rgba(245,240,229,0.3); font-style: italic;
+    }
+    .govchat-typing-dots {
+      display: flex; gap: 3px;
+    }
+    .govchat-typing-dots span {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: rgba(245,240,229,0.2);
+      animation: typingBounce 1.4s ease-in-out infinite;
+    }
+    .govchat-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .govchat-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+    .govchat-mockup-time {
+      font-size: 10px; color: rgba(245,240,229,0.25);
+      text-align: right; padding: 0 20px;
+    }
+    .govchat-mockup-encrypt {
+      margin-top: 8px; padding: 10px 20px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      font-size: 10px; color: var(--green-light); font-weight: 600;
+    }
+
+    /* GovChat stats ribbon */
+    .govchat-stats {
+      display: flex; justify-content: center; gap: 0;
+      max-width: 800px; margin: 64px auto 0;
+      border: 1px solid rgba(212, 160, 23, 0.1);
+      border-radius: 16px; overflow: hidden;
+      background: rgba(212, 160, 23, 0.02);
+    }
+    .govchat-stat {
+      flex: 1; text-align: center; padding: 20px 16px;
+      border-right: 1px solid rgba(212, 160, 23, 0.08);
+    }
+    .govchat-stat:last-child { border-right: none; }
+    .govchat-stat-value {
+      font-family: var(--font-display);
+      font-size: 16px; font-weight: 700;
+      color: var(--gold); margin-bottom: 4px;
+    }
+    .govchat-stat-label {
+      font-size: 11px; color: rgba(245, 240, 229, 0.3);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+
+    @media (max-width: 900px) {
+      .govchat-grid { grid-template-columns: 1fr 1fr; }
+      .govchat-content { grid-template-columns: 1fr; gap: 40px; }
+      .govchat-stats { flex-wrap: wrap; }
+      .govchat-stat { flex: 1 1 50%; }
+      .govchat-stat:nth-child(2) { border-right: none; }
+    }
+    @media (max-width: 480px) {
+      .govchat-grid { grid-template-columns: 1fr; }
+      .govchat-stats { flex-direction: column; }
+      .govchat-stat { border-right: none; border-bottom: 1px solid rgba(212, 160, 23, 0.08); }
+      .govchat-stat:last-child { border-bottom: none; }
+    }
+
+    /* ═══════════════ MESSENGER SECTION (legacy) ═══════════════ */
     .messenger-section {
       background: linear-gradient(180deg, #0a0a0f 0%, #0f1118 50%, #0a0a0f 100%);
       position: relative; overflow: hidden;
@@ -970,7 +1190,7 @@
     <a href="#features">Features</a>
     <a href="#kente-system">Kente System</a>
     <a href="#adblocker">Ad Blocker</a>
-    <a href="#messenger">Messenger</a>
+    <a href="#messenger">GovChat</a>
     <a href="#download">Download</a>
   </div>
   <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/latest/download/OS.Browser.Setup.1.0.0.exe" class="nav-cta">
@@ -1194,12 +1414,12 @@
           <div class="feature-name">Translation</div>
           <div class="feature-desc">7 languages: English, Twi, Ga, Ewe, Dagbani, Hausa, Fante. 45+ offline phrases per language pair.</div>
         </div>
-        <div class="feature-card" style="--card-color: #3B8BD4;">
-          <div class="feature-icon" style="--card-color: #3B8BD4;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><circle cx="12" cy="10" r="1"/><circle cx="8" cy="10" r="1"/><circle cx="16" cy="10" r="1"/></svg>
+        <div class="feature-card" style="--card-color: #D4A017;">
+          <div class="feature-icon" style="--card-color: #D4A017;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
           </div>
-          <div class="feature-name">Encrypted Messenger</div>
-          <div class="feature-desc">Real-time E2E encrypted chat for .gov.gh email holders. ECDH key exchange, AES-GCM 256-bit. Server never sees plaintext.</div>
+          <div class="feature-name">GovChat</div>
+          <div class="feature-desc">Africa's most secure government messenger. Built on the Matrix protocol with Olm/Megolm E2E encryption. Invite-code auth, classification system, audit trails.</div>
         </div>
       </div>
     </div>
@@ -1298,6 +1518,130 @@
   </div>
 </section>
 
+<!-- ═══════════════ GOVCHAT ═══════════════ -->
+<section id="messenger" class="section govchat-section">
+  <div class="govchat-hero reveal">
+    <div class="govchat-shield-icon">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D4A017" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+    </div>
+    <h2 class="govchat-title">GovChat</h2>
+    <p class="govchat-subtitle">Africa's Most Secure Government Messenger</p>
+    <p class="govchat-tagline">Built on the Matrix protocol. End-to-end encrypted. Government-grade.</p>
+  </div>
+
+  <div class="govchat-grid reveal stagger">
+    <div class="govchat-feature">
+      <div class="govchat-feature-icon" style="background: rgba(212, 160, 23, 0.15); color: #D4A017;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      </div>
+      <div class="govchat-feature-title">E2E Encryption</div>
+      <div class="govchat-feature-desc">Olm/Megolm military-grade encryption. Not even we can read your messages.</div>
+    </div>
+    <div class="govchat-feature">
+      <div class="govchat-feature-icon" style="background: rgba(0, 107, 63, 0.15); color: #00A86B;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+      </div>
+      <div class="govchat-feature-title">Invite-Code Auth</div>
+      <div class="govchat-feature-desc">IT admins generate codes. Civil servants redeem with staff ID. No email, no passwords.</div>
+    </div>
+    <div class="govchat-feature">
+      <div class="govchat-feature-icon" style="background: rgba(59, 139, 212, 0.15); color: #5DADE2;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>
+      </div>
+      <div class="govchat-feature-title">Classification System</div>
+      <div class="govchat-feature-desc">UNCLASSIFIED to SECRET. Color-coded badges. Retention policies per level.</div>
+    </div>
+    <div class="govchat-feature">
+      <div class="govchat-feature-icon" style="background: rgba(0, 168, 168, 0.15); color: #00A8A8;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+      </div>
+      <div class="govchat-feature-title">Voice Notes &amp; Files</div>
+      <div class="govchat-feature-desc">Hold to record. Drag to share. Waveform visualization. Up to 50MB.</div>
+    </div>
+    <div class="govchat-feature">
+      <div class="govchat-feature-icon" style="background: rgba(127, 119, 221, 0.15); color: #7F77DD;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M14 10h.01"/><path d="M10 10h.01"/></svg>
+      </div>
+      <div class="govchat-feature-title">Reactions &amp; Threads</div>
+      <div class="govchat-feature-desc">React with emoji. Reply in threads. Keep conversations organized.</div>
+    </div>
+    <div class="govchat-feature">
+      <div class="govchat-feature-icon" style="background: rgba(212, 160, 23, 0.12); color: #E0A800;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14h6"/><path d="M9 18h6"/><path d="M9 10h.01"/></svg>
+      </div>
+      <div class="govchat-feature-title">Audit Trail</div>
+      <div class="govchat-feature-desc">Metadata-only compliance logging. Full exportable audit trail.</div>
+    </div>
+  </div>
+
+  <div class="govchat-content">
+    <div></div>
+    <div class="reveal" style="animation-delay: 0.2s;">
+      <div class="govchat-mockup">
+        <div class="govchat-classification">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          OFFICIAL
+        </div>
+        <div class="govchat-e2e-banner">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Messages are end-to-end encrypted
+        </div>
+        <div class="govchat-mockup-header">
+          <div class="govchat-mockup-avatar">KM</div>
+          <div>
+            <div class="govchat-mockup-name">Kwame Mensah</div>
+            <div class="govchat-mockup-ministry">
+              <span class="govchat-mockup-ministry-badge">Ministry of Finance</span>
+            </div>
+          </div>
+        </div>
+        <div class="govchat-messages">
+          <div class="govchat-bubble received">
+            <div class="govchat-bubble-sender">Kwame Mensah <span class="ministry-tag">MoF</span></div>
+            Good morning! The Q3 budget allocation has been uploaded to GIFMIS. Please review before the 2pm deadline.
+          </div>
+          <div class="govchat-bubble sent">
+            Reviewed and verified. The figures match our projections. Forwarding to the Deputy Minister now.
+            <span class="govchat-reaction">&#128077;</span>
+          </div>
+          <div class="govchat-bubble received">
+            <div class="govchat-bubble-sender">Ama Darko <span class="ministry-tag">CAGD</span></div>
+            I've routed the sign-off through E-SPAR. All approvers have been notified.
+          </div>
+          <div class="govchat-mockup-time">10:34 AM</div>
+          <div class="govchat-typing">
+            <div class="govchat-typing-dots"><span></span><span></span><span></span></div>
+            Kwame is typing...
+          </div>
+        </div>
+        <div class="govchat-mockup-encrypt">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          End-to-end encrypted &middot; Matrix Protocol
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="govchat-stats reveal">
+    <div class="govchat-stat">
+      <div class="govchat-stat-value">256-bit</div>
+      <div class="govchat-stat-label">Encryption</div>
+    </div>
+    <div class="govchat-stat">
+      <div class="govchat-stat-value">Matrix</div>
+      <div class="govchat-stat-label">Protocol</div>
+    </div>
+    <div class="govchat-stat">
+      <div class="govchat-stat-value">7-Year</div>
+      <div class="govchat-stat-label">Retention</div>
+    </div>
+    <div class="govchat-stat">
+      <div class="govchat-stat-value">Zero-Knowledge</div>
+      <div class="govchat-stat-label">Server Architecture</div>
+    </div>
+  </div>
+</section>
+
 <!-- ═══════════════ AD BLOCKER ═══════════════ -->
 <section id="adblocker" class="section adblocker-section">
   <div class="section-header reveal">
@@ -1392,86 +1736,6 @@
   </div>
 </section>
 
-<!-- ═══════════════ MESSENGER ═══════════════ -->
-<section id="messenger" class="section messenger-section">
-  <div class="section-header reveal">
-    <div class="section-eyebrow">End-to-End Encrypted</div>
-    <h2 class="section-title">Your messages,<br>your keys</h2>
-    <p class="section-desc">
-      Real-time encrypted messaging built for government communication.
-      The server never sees your plaintext &mdash; ever.
-    </p>
-  </div>
-
-  <div class="messenger-grid">
-    <div class="messenger-features reveal stagger">
-      <div class="msg-feature">
-        <div class="msg-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        </div>
-        <div>
-          <div class="msg-title">ECDH P-256 + AES-GCM 256-bit</div>
-          <div class="msg-desc">Industry-standard elliptic curve key exchange with military-grade symmetric encryption.</div>
-        </div>
-      </div>
-      <div class="msg-feature">
-        <div class="msg-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-        </div>
-        <div>
-          <div class="msg-title">.gov.gh email auto-approve</div>
-          <div class="msg-desc">Government domain is your identity. No codes, no passwords &mdash; instant access for civil servants.</div>
-        </div>
-      </div>
-      <div class="msg-feature">
-        <div class="msg-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
-        </div>
-        <div>
-          <div class="msg-title">Zero-plaintext server</div>
-          <div class="msg-desc">Cloudflare Durable Objects relay encrypted payloads. Keys stay on your device.</div>
-        </div>
-      </div>
-      <div class="msg-feature">
-        <div class="msg-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        </div>
-        <div>
-          <div class="msg-title">Real-time WebSocket</div>
-          <div class="msg-desc">Typing indicators, read receipts, online/offline presence &mdash; all in real-time.</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="reveal" style="animation-delay: 0.2s;">
-      <div class="chat-mockup">
-        <div class="chat-header">
-          <div class="chat-avatar">KM</div>
-          <div>
-            <div class="chat-name">Kwame Mensah</div>
-            <div class="chat-dept">Ministry of Finance</div>
-          </div>
-          <div class="chat-badge">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Encrypted
-          </div>
-        </div>
-        <div class="chat-messages">
-          <div class="chat-bubble received">Good morning! Have you reviewed the Q3 budget allocation?</div>
-          <div class="chat-bubble sent">Yes, I've gone through it. The GIFMIS figures match our projections.</div>
-          <div class="chat-bubble received">Excellent. Can you send the summary to the Deputy Minister before noon?</div>
-          <div class="chat-bubble sent">Already on it. I'll route it through E-SPAR for the sign-off.</div>
-          <div class="chat-time">10:34 AM</div>
-        </div>
-        <div class="chat-encrypt">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          End-to-end encrypted
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ═══════════════ DOWNLOAD CTA ═══════════════ -->
 <section id="download" class="cta-section">
   <div class="reveal">
@@ -1503,7 +1767,7 @@
     <div class="footer-links">
       <a href="#features">Features</a>
       <a href="#kente-system">Kente System</a>
-      <a href="#messenger">Messenger</a>
+      <a href="#messenger">GovChat</a>
       <a href="https://github.com/ghwmelite-dotcom/OS-Browser" target="_blank">GitHub</a>
     </div>
   </div>
