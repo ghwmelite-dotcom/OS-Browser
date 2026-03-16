@@ -1,8 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Settings, X, Loader2, Copy, Check, XCircle, ShieldAlert } from 'lucide-react';
+import { Settings, X, Loader2, Copy, Check, XCircle, ShieldAlert, UserCog, Shield, ChevronDown } from 'lucide-react';
 import { useGovChatStore } from '@/store/govchat';
 
 const API_BASE = 'https://os-browser-worker.ghwmelite.workers.dev';
+
+interface UserInfo {
+  userId: string;
+  staffId: string;
+  displayName: string;
+  department: string;
+  ministry: string;
+  role: 'user' | 'admin' | 'superadmin';
+  createdAt: number;
+}
 
 interface InviteCode {
   code: string;
@@ -84,6 +94,14 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
   const [loadingCodes, setLoadingCodes] = useState(false);
   const [codesError, setCodesError] = useState<string | null>(null);
   const [revokingCode, setRevokingCode] = useState<string | null>(null);
+
+  /* ── User management state (superadmin only) ── */
+  const [users, setUsers] = useState<UserInfo[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+  const [changingRole, setChangingRole] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'codes' | 'users'>('codes');
+  const isSuperadmin = currentUser?.role === 'superadmin';
 
   const authHeader = credentials?.accessToken
     ? { Authorization: `Bearer ${credentials.accessToken}` }
@@ -170,6 +188,48 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
     }
   };
 
+  /* ── Fetch users (superadmin only) ── */
+  const fetchUsers = useCallback(async () => {
+    if (!credentials?.accessToken || !isSuperadmin) return;
+    setLoadingUsers(true);
+    setUsersError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/govchat/users`, {
+        headers: { ...authHeader } as HeadersInit,
+      });
+      if (!res.ok) throw new Error(`Failed to fetch users (${res.status})`);
+      const data = await res.json();
+      setUsers(data.users ?? []);
+    } catch (err: any) {
+      setUsersError(err.message ?? 'Failed to load users');
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, [credentials?.accessToken, isSuperadmin]);
+
+  useEffect(() => {
+    if (isSuperadmin && activeTab === 'users') fetchUsers();
+  }, [isSuperadmin, activeTab, fetchUsers]);
+
+  /* ── Change user role ── */
+  const handleRoleChange = async (staffId: string, newRole: 'user' | 'admin' | 'superadmin') => {
+    if (changingRole) return;
+    setChangingRole(staffId);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/govchat/users/${staffId}/role`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeader } as HeadersInit,
+        body: JSON.stringify({ role: newRole }),
+      });
+      if (!res.ok) throw new Error(`Role change failed (${res.status})`);
+      await fetchUsers();
+    } catch {
+      // Silent fail — user can retry
+    } finally {
+      setChangingRole(null);
+    }
+  };
+
   /* ── Access denied ── */
   if (!isAuthorized) {
     return (
@@ -245,9 +305,38 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
+        {/* Tabs (superadmin gets Users tab) */}
+        {isSuperadmin && (
+          <div className="flex shrink-0 border-b" style={{ borderColor: 'var(--color-border-1)' }}>
+            <button
+              onClick={() => setActiveTab('codes')}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[12px] font-semibold transition-colors"
+              style={{
+                color: activeTab === 'codes' ? '#D4A017' : 'var(--color-text-muted)',
+                borderBottom: activeTab === 'codes' ? '2px solid #D4A017' : '2px solid transparent',
+              }}
+            >
+              <Settings size={13} />
+              Invite Codes
+            </button>
+            <button
+              onClick={() => setActiveTab('users')}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[12px] font-semibold transition-colors"
+              style={{
+                color: activeTab === 'users' ? '#D4A017' : 'var(--color-text-muted)',
+                borderBottom: activeTab === 'users' ? '2px solid #D4A017' : '2px solid transparent',
+              }}
+            >
+              <UserCog size={13} />
+              Manage Users
+            </button>
+          </div>
+        )}
+
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
 
+          {activeTab === 'codes' && <>
           {/* ── Generate form ── */}
           <div
             className="rounded-xl border p-4"
@@ -508,6 +597,147 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
               </div>
             )}
           </div>
+          </>}
+
+          {/* ── Users management (superadmin only) ── */}
+          {activeTab === 'users' && isSuperadmin && (
+            <div
+              className="rounded-xl border"
+              style={{
+                background: 'var(--color-surface-1)',
+                borderColor: 'var(--color-border-1)',
+              }}
+            >
+              <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--color-border-1)' }}>
+                <h4 className="text-[12.5px] font-semibold text-text-primary flex items-center gap-1.5">
+                  <UserCog size={14} style={{ color: '#D4A017' }} />
+                  Registered Users
+                  {!loadingUsers && (
+                    <span className="text-text-muted font-normal ml-1">({users.length})</span>
+                  )}
+                </h4>
+                <button
+                  onClick={fetchUsers}
+                  className="text-[10.5px] font-semibold underline underline-offset-2"
+                  style={{ color: '#D4A017' }}
+                >
+                  Refresh
+                </button>
+              </div>
+
+              {loadingUsers ? (
+                <div className="flex items-center justify-center py-8 gap-2 text-text-muted">
+                  <Loader2 size={16} className="animate-spin" />
+                  <span className="text-[12px]">Loading users...</span>
+                </div>
+              ) : usersError ? (
+                <div className="px-4 py-6 text-center">
+                  <p className="text-[12px] text-text-muted">{usersError}</p>
+                  <button
+                    onClick={fetchUsers}
+                    className="mt-2 text-[11px] font-semibold underline underline-offset-2"
+                    style={{ color: '#D4A017' }}
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : users.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <p className="text-[12px] text-text-muted">No users registered yet.</p>
+                </div>
+              ) : (
+                <div className="max-h-[320px] overflow-y-auto">
+                  {users.map(user => {
+                    const isCurrentUser = user.staffId === currentUser?.staffId;
+                    const isChanging = changingRole === user.staffId;
+                    const roleColors: Record<string, { color: string; bg: string }> = {
+                      superadmin: { color: '#D4A017', bg: 'rgba(212, 160, 23, 0.1)' },
+                      admin: { color: '#006B3F', bg: 'rgba(0, 107, 63, 0.1)' },
+                      user: { color: '#9CA3AF', bg: 'rgba(156, 163, 175, 0.1)' },
+                    };
+                    const rc = roleColors[user.role] ?? roleColors.user;
+
+                    return (
+                      <div
+                        key={user.staffId}
+                        className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 hover:bg-[var(--color-surface-2)] transition-colors"
+                        style={{ borderColor: 'var(--color-border-1)' }}
+                      >
+                        {/* Avatar */}
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
+                          style={{ background: user.role === 'superadmin' ? '#D4A017' : user.role === 'admin' ? '#006B3F' : '#9CA3AF' }}
+                        >
+                          {user.displayName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[12px] font-semibold text-text-primary truncate">
+                              {user.displayName}
+                            </span>
+                            {isCurrentUser && (
+                              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(212, 160, 23, 0.15)', color: '#D4A017' }}>
+                                YOU
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-text-muted truncate">
+                            {user.staffId} · {user.department}
+                          </div>
+                        </div>
+
+                        {/* Role badge */}
+                        <span
+                          className="text-[9px] font-bold uppercase tracking-wide px-2 py-1 rounded-full shrink-0"
+                          style={{ background: rc.bg, color: rc.color }}
+                        >
+                          {user.role === 'superadmin' ? 'Super Admin' : user.role === 'admin' ? 'IT Admin' : 'User'}
+                        </span>
+
+                        {/* Role change buttons (not for self) */}
+                        {!isCurrentUser && (
+                          <div className="flex items-center gap-1 shrink-0">
+                            {user.role === 'user' && (
+                              <button
+                                onClick={() => handleRoleChange(user.staffId, 'admin')}
+                                disabled={isChanging}
+                                className="px-2 py-1 rounded-md text-[9.5px] font-semibold transition-opacity"
+                                style={{
+                                  background: 'rgba(0, 107, 63, 0.1)',
+                                  color: '#006B3F',
+                                  opacity: isChanging ? 0.5 : 1,
+                                }}
+                                title="Promote to IT Admin"
+                              >
+                                {isChanging ? <Loader2 size={11} className="animate-spin" /> : 'Make Admin'}
+                              </button>
+                            )}
+                            {user.role === 'admin' && (
+                              <button
+                                onClick={() => handleRoleChange(user.staffId, 'user')}
+                                disabled={isChanging}
+                                className="px-2 py-1 rounded-md text-[9.5px] font-semibold transition-opacity"
+                                style={{
+                                  background: 'rgba(206, 17, 38, 0.1)',
+                                  color: '#CE1126',
+                                  opacity: isChanging ? 0.5 : 1,
+                                }}
+                                title="Demote to regular user"
+                              >
+                                {isChanging ? <Loader2 size={11} className="animate-spin" /> : 'Remove Admin'}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
