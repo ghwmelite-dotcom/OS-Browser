@@ -159,4 +159,14 @@ contextBridge.exposeInMainWorld('osBrowser', {
     getVersion: () => ipcRenderer.invoke(IPC.APP_GET_VERSION),
     checkUpdate: () => ipcRenderer.invoke(IPC.APP_CHECK_UPDATE),
   },
+
+  pwa: {
+    onInstallable: (callback: (data: any) => void) => {
+      const handler = (_event: any, data: any) => callback(data);
+      ipcRenderer.on('pwa:installable', handler);
+      return () => ipcRenderer.removeListener('pwa:installable', handler);
+    },
+    install: (data: { name: string; startUrl: string; iconUrl: string }) =>
+      ipcRenderer.invoke('pwa:install', data),
+  },
 });

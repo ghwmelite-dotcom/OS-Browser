@@ -4,7 +4,7 @@ import {
   Printer, ZoomIn, ZoomOut, Maximize, User, HelpCircle, Info,
   Sparkles, MessageSquare, BarChart3, Globe, Trash2, Key,
   ChevronRight, Search, Languages, FileText, LogIn, BookOpen, Columns, DollarSign,
-  AlignJustify, Camera, Building2, MessageCircle, Brain, Smartphone, WifiOff
+  AlignJustify, Camera, Building2, MessageCircle, Brain, Smartphone, WifiOff, AppWindow
 } from 'lucide-react';
 import { useTabsStore } from '@/store/tabs';
 import { useSettingsStore } from '@/store/settings';
@@ -23,6 +23,7 @@ interface BrowserMenuProps {
 export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, onOpenStats }: BrowserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [zoom, setZoom] = useState(100);
+  const [pwaInstallable, setPwaInstallable] = useState<any>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { createTab, activeTabId } = useTabsStore();
   const { settings, updateSettings } = useSettingsStore();
@@ -30,6 +31,23 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
   const { navigate } = useNavigationStore();
   const { clearAll: clearHistory } = useHistoryStore();
   const { addBookmark } = useBookmarksStore();
+
+  // Track PWA installable state
+  useEffect(() => {
+    const handleInstallable = (e: Event) => {
+      const data = (e as CustomEvent).detail;
+      if (data && data.tabId === activeTabId) {
+        setPwaInstallable(data);
+      }
+    };
+    const handleCleared = () => setPwaInstallable(null);
+    window.addEventListener('pwa:installable', handleInstallable);
+    window.addEventListener('pwa:installable-cleared', handleCleared);
+    return () => {
+      window.removeEventListener('pwa:installable', handleInstallable);
+      window.removeEventListener('pwa:installable-cleared', handleCleared);
+    };
+  }, [activeTabId]);
 
   // Hide WebContentsViews when menu opens, show when it closes
   useEffect(() => {
@@ -165,6 +183,11 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             <MenuItem icon={WifiOff} label="Offline Library" onClick={() => {
               createTab('os-browser://offline' as any);
             }} />
+            {pwaInstallable && (
+              <MenuItem icon={AppWindow} label={`Install ${pwaInstallable.shortName || pwaInstallable.name}...`} onClick={() => {
+                window.dispatchEvent(new CustomEvent('pwa:show-install-prompt', { detail: pwaInstallable }));
+              }} />
+            )}
             <Separator />
 
             {/* AI features */}
