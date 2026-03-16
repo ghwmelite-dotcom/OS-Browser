@@ -490,13 +490,33 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
       try {
         const creds = await MatrixClientService.redeemInviteCode(code, staffId, displayName);
         saveCredentials(creds);
+
+        // Fetch user info (including role) from the worker
+        let userRole: 'user' | 'admin' | 'superadmin' = 'user';
+        let dept = '';
+        let min = '';
+        try {
+          const meRes = await fetch(
+            'https://os-browser-worker.ghwmelite.workers.dev/api/v1/govchat/auth/me',
+            { headers: { Authorization: `Bearer ${creds.accessToken}` } },
+          );
+          if (meRes.ok) {
+            const meData = await meRes.json() as { role?: string; department?: string; ministry?: string };
+            userRole = (meData.role as 'user' | 'admin' | 'superadmin') ?? 'user';
+            dept = meData.department ?? '';
+            min = meData.ministry ?? '';
+          }
+        } catch {
+          // Non-critical — default to 'user' role
+        }
+
         const user: GovUser = {
           userId: creds.userId,
           staffId: creds.staffId,
           displayName,
-          department: '',
-          ministry: '',
-          role: 'user',
+          department: dept,
+          ministry: min,
+          role: userRole,
           isOnline: true,
           lastSeen: null,
         };
@@ -1068,7 +1088,7 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
 
       // Attempt to log in with a timeout — don't hang forever
       const loginTimeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Connection timeout')), 8000),
+        setTimeout(() => reject(new Error('Connection timeout')), 15000),
       );
 
       Promise.race([

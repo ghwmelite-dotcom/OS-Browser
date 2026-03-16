@@ -424,7 +424,7 @@ export function MessageInput() {
 
       {/* ── Classification selector ── */}
       <div
-        className="relative px-3 py-1.5"
+        className="relative px-3 py-1"
         style={{ borderBottom: '1px solid var(--color-border-1)' }}
         ref={classificationDropdownRef}
       >
@@ -720,27 +720,13 @@ export function MessageInput() {
         )}
       </div>
 
-      {/* ── Bottom status line ── */}
-      <div
-        className="flex items-center gap-1.5 px-3 pb-2 pt-0"
-      >
-        <Lock size={10} style={{ color: '#006B3F' }} />
-        <span className="text-[9.5px]" style={{ color: '#006B3F' }}>
-          Encrypted
-        </span>
-        <span className="text-[9.5px]" style={{ color: 'var(--color-text-muted)' }}>
-          &middot;
-        </span>
-        <span
-          className="w-[6px] h-[6px] rounded-full shrink-0"
-          style={{ background: CLASSIFICATION_COLORS[effectiveClassification] }}
-        />
-        <span
-          className="text-[9.5px] font-medium"
-          style={{ color: CLASSIFICATION_COLORS[effectiveClassification] }}
-        >
-          {effectiveClassification}
-        </span>
+      {/* ── Bottom status line (compact) ── */}
+      <div className="flex items-center gap-1.5 px-3 pb-1.5 pt-0">
+        <Lock size={9} style={{ color: '#006B3F' }} />
+        <span className="text-[9px]" style={{ color: '#006B3F' }}>Encrypted</span>
+        <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>&middot;</span>
+        <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: CLASSIFICATION_COLORS[effectiveClassification] }} />
+        <span className="text-[9px] font-medium" style={{ color: CLASSIFICATION_COLORS[effectiveClassification] }}>{effectiveClassification}</span>
       </div>
     </div>
   );
