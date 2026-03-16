@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, User, Share } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, User, Share, MonitorDown } from 'lucide-react';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
 import { useSettingsStore } from '@/store/settings';
@@ -110,6 +110,27 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
     window.osBrowser?.showWebViews?.();
   };
 
+  // PWA installable state
+  const [pwaInstallable, setPwaInstallable] = useState<any>(null);
+
+  useEffect(() => {
+    const handleInstallable = (e: Event) => {
+      const data = (e as CustomEvent).detail;
+      // Only show if the installable tab matches the active tab
+      if (data && data.tabId === useTabsStore.getState().activeTabId) {
+        setPwaInstallable(data);
+      }
+    };
+    const handleCleared = () => setPwaInstallable(null);
+
+    window.addEventListener('pwa:installable', handleInstallable);
+    window.addEventListener('pwa:installable-cleared', handleCleared);
+    return () => {
+      window.removeEventListener('pwa:installable', handleInstallable);
+      window.removeEventListener('pwa:installable-cleared', handleCleared);
+    };
+  }, []);
+
   // Profile form state
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
@@ -148,6 +169,17 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
 
       {/* ── Right: Actions ── */}
       <div className="flex items-center gap-1 ml-3">
+        {/* PWA Install button — shown when current page is an installable PWA */}
+        {pwaInstallable && (
+          <NavButton
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('pwa:show-install-prompt', { detail: pwaInstallable }));
+            }}
+            icon={<MonitorDown size={16} strokeWidth={1.8} className="text-ghana-gold" />}
+            label={`Install ${pwaInstallable.name}`}
+          />
+        )}
+
         {/* Kente Toolbar — contextual page actions (Screenshot, Save Offline, Translate, Lite Mode) */}
         <KenteToolbar />
 

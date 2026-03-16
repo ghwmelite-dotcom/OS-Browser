@@ -1,9 +1,13 @@
-import { ipcMain, BrowserWindow, WebContentsView } from 'electron';
+import { ipcMain, BrowserWindow, WebContentsView, nativeImage, net } from 'electron';
 import { IPC } from '@os-browser/shared';
 import { getDatabase } from '../db/database';
 import crypto from 'crypto';
+import path from 'path';
 import { cachePage } from '../services/page-cache';
 import { isTabSuspended, markTabRestored } from '../services/tab-suspension';
+
+// Track which tabs have already had PWA detection run (once per page load)
+const pwaDetectedTabs = new Set<string>();
 
 const tabViews = new Map<string, WebContentsView>();
 
@@ -161,6 +165,49 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     return filePath;
   });
 
+  // PWA install handler — opens a standalone BrowserWindow for the PWA
+  ipcMain.handle('pwa:install', async (_event, data: { name: string; startUrl: string; iconUrl: string }) => {
+    const pwaWindow = new BrowserWindow({
+      width: 1200,
+      height: 800,
+      title: data.name,
+      autoHideMenuBar: true,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+      },
+    });
+
+    // Set the window icon if available
+    if (data.iconUrl) {
+      try {
+        const response = await net.fetch(data.iconUrl);
+        const buffer = Buffer.from(await response.arrayBuffer());
+        const icon = nativeImage.createFromBuffer(buffer);
+        pwaWindow.setIcon(icon);
+      } catch { /* icon fetch failed — use default */ }
+    }
+
+    pwaWindow.loadURL(data.startUrl);
+
+    // Create a desktop shortcut (Windows)
+    try {
+      const { shell, app } = require('electron');
+      const shortcutPath = path.join(
+        app.getPath('appData'),
+        'Microsoft/Windows/Start Menu/Programs',
+        `${data.name}.lnk`
+      );
+      shell.writeShortcutLink(shortcutPath, {
+        target: process.execPath,
+        args: `--pwa-url="${data.startUrl}" --pwa-name="${data.name}"`,
+        description: data.name,
+      });
+    } catch { /* shortcut creation failed — non-critical */ }
+
+    return { success: true };
+  });
+
   // Resize views when window resizes
   mainWindow.on('resize', () => {
     for (const view of tabViews.values()) {
@@ -193,6 +240,10 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
   });
 
   wc.on('did-navigate', (_e, url) => {
+    // Clear PWA detection for this tab so it re-checks on the new page
+    for (const key of pwaDetectedTabs) {
+      if (key.startsWith(`${tabId}:`)) pwaDetectedTabs.delete(key);
+    }
     db.prepare('UPDATE tabs SET url = ? WHERE id = ?').run(url, tabId);
     mainWindow.webContents.send('tab:url-updated', { id: tabId, url, canGoBack: wc.canGoBack(), canGoForward: wc.canGoForward() });
 
@@ -224,6 +275,49 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
         cachePage(pageUrl, pageHtml, pageTitle);
       }
     } catch { /* ignore errors from navigation */ }
+
+    // PWA manifest detection — run once per page load
+    const loadUrl = wc.getURL();
+    const detectionKey = `${tabId}:${loadUrl}`;
+    if (pwaDetectedTabs.has(detectionKey)) return;
+    pwaDetectedTabs.add(detectionKey);
+
+    try {
+      const manifestUrl = await wc.executeJavaScript(`
+        (function() {
+          var link = document.querySelector('link[rel="manifest"]');
+          if (link) return new URL(link.href, window.location.href).href;
+          return null;
+        })()
+      `);
+
+      if (manifestUrl) {
+        const manifestJson = await wc.executeJavaScript(
+          `fetch(${JSON.stringify(manifestUrl)}).then(function(r){return r.json()}).catch(function(){return null})`
+        );
+
+        if (manifestJson && ['standalone', 'fullscreen', 'minimal-ui'].includes(manifestJson.display)) {
+          // Resolve the best icon URL
+          let iconUrl: string | null = null;
+          if (manifestJson.icons && manifestJson.icons.length > 0) {
+            const icon = manifestJson.icons.find((i: any) => i.sizes === '192x192')
+              || manifestJson.icons[manifestJson.icons.length - 1];
+            iconUrl = new URL(icon.src, manifestUrl).href;
+          }
+
+          mainWindow.webContents.send('pwa:installable', {
+            tabId: tabId,
+            name: manifestJson.name || manifestJson.short_name || 'Web App',
+            shortName: manifestJson.short_name || manifestJson.name,
+            description: manifestJson.description || '',
+            iconUrl: iconUrl,
+            startUrl: manifestJson.start_url ? new URL(manifestJson.start_url, manifestUrl).href : wc.getURL(),
+            display: manifestJson.display,
+            url: wc.getURL(),
+          });
+        }
+      }
+    } catch { /* silently ignore — not all pages have manifests */ }
   });
 
   wc.on('page-favicon-updated', (_e, favicons) => {

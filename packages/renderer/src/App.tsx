@@ -38,6 +38,8 @@ import { initializeFeatures } from './features';
 import { KenteSidebar } from './components/KenteSystem/KenteSidebar';
 import { KenteStatusBar } from './components/KenteSystem/KenteStatusBar';
 import { KenteCommandBar } from './components/KenteSystem/KenteCommandBar';
+import { PWAInstallPrompt } from './components/PWAInstallPrompt';
+import type { PWAInstallData } from './components/PWAInstallPrompt';
 
 export function App() {
   const { loadTabs, createTab } = useTabsStore();
@@ -61,6 +63,8 @@ export function App() {
   const [showLiteracyPanel, setShowLiteracyPanel] = useState(false);
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [showMobileMoney, setShowMobileMoney] = useState(false);
+  const [pwaData, setPwaData] = useState<PWAInstallData | null>(null);
+  const [pwaInstallableData, setPwaInstallableData] = useState<PWAInstallData | null>(null);
 
   // Wrap sidebar panel setters to hide/show WebContentsViews
   const setShowCurrencyTools = (v: boolean | ((prev: boolean) => boolean)) => {
@@ -330,6 +334,50 @@ export function App() {
     return () => window.removeEventListener('os-browser:mobile-money', handler);
   }, [showCurrencyTools, showTwiDictionary, isOpen]);
 
+  // PWA installable detection — listen for events from main process
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    try {
+      cleanup = (window as any).osBrowser.pwa.onInstallable((data: PWAInstallData) => {
+        // Check if the user has already dismissed this app
+        try {
+          const dismissed = JSON.parse(localStorage.getItem('pwa_dismissed') || '[]');
+          if (dismissed.includes(data.startUrl)) return;
+        } catch { /* ignore */ }
+
+        // Store the data so NavigationBar and BrowserMenu can show the install icon/item
+        setPwaInstallableData(data);
+
+        // Broadcast event so NavigationBar and BrowserMenu can pick it up
+        window.dispatchEvent(new CustomEvent('pwa:installable', { detail: data }));
+      });
+    } catch { /* pwa bridge not available */ }
+    return () => cleanup?.();
+  }, []);
+
+  // Clear PWA installable data when active tab changes or URL changes
+  useEffect(() => {
+    let prevActiveTabId = useTabsStore.getState().activeTabId;
+    const unsub = useTabsStore.subscribe((state) => {
+      if (state.activeTabId !== prevActiveTabId) {
+        prevActiveTabId = state.activeTabId;
+        setPwaInstallableData(null);
+        window.dispatchEvent(new CustomEvent('pwa:installable-cleared'));
+      }
+    });
+    return unsub;
+  }, []);
+
+  // Listen for install prompt trigger from NavigationBar / BrowserMenu
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as PWAInstallData;
+      if (detail) setPwaData(detail);
+    };
+    window.addEventListener('pwa:show-install-prompt', handler);
+    return () => window.removeEventListener('pwa:show-install-prompt', handler);
+  }, []);
+
   return (
     <div className="h-screen w-screen flex flex-col bg-bg">
       <TitleBar />
@@ -428,6 +476,9 @@ export function App() {
         // Show web views now that onboarding is done
         window.osBrowser?.showWebViews?.();
       }} />}
+
+      {/* PWA Install Prompt */}
+      {pwaData && <PWAInstallPrompt data={pwaData} onClose={() => setPwaData(null)} />}
     </div>
   );
 }
