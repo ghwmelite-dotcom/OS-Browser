@@ -100,7 +100,7 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="h-full flex flex-col shrink-0 overflow-hidden"
+      className="h-full flex flex-col shrink-0 min-h-0"
       style={{
         width: '100%',
         background: 'var(--color-surface-1)',

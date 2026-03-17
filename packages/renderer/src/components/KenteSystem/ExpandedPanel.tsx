@@ -165,6 +165,7 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
         className="kente-panel-scroll"
         style={{
           flex: 1,
+          minHeight: 0,
           overflowY: 'auto',
           overflowX: 'hidden',
           wordBreak: 'break-word',
