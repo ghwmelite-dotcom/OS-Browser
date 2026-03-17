@@ -842,3 +842,109 @@ govchatRoutes.post('/auth/public-signup', async (c) => {
     deviceId,
   });
 });
+
+// ---------------------------------------------------------------------------
+// WebRTC Call Signaling Endpoints
+// ---------------------------------------------------------------------------
+
+// POST /calls/signal — Send a signaling message to a peer
+govchatRoutes.post('/calls/signal', async (c) => {
+  const session = await getAuthenticatedSession(c.env, c.req.raw);
+  if (!session) return c.json({ error: 'Unauthorized' }, 401);
+
+  const body = await c.req.json<{
+    peerId: string;
+    callId: string;
+    type: string;
+    data: unknown;
+  }>();
+
+  if (!body.peerId || !body.callId || !body.type) {
+    return c.json({ error: 'Missing required fields: peerId, callId, type' }, 400);
+  }
+
+  // Store signal in KV with 60-second TTL (ephemeral signaling data)
+  const key = `call-signal:${body.peerId}:${body.callId}:${Date.now()}`;
+  await c.env.INVITE_CODES.put(
+    key,
+    JSON.stringify({
+      from: session.userId,
+      fromName: session.displayName,
+      type: body.type,
+      data: body.data,
+      timestamp: Date.now(),
+    }),
+    { expirationTtl: 60 },
+  );
+
+  return c.json({ success: true });
+});
+
+// GET /calls/poll — Poll for signaling messages for a specific call
+govchatRoutes.get('/calls/poll', async (c) => {
+  const session = await getAuthenticatedSession(c.env, c.req.raw);
+  if (!session) return c.json({ error: 'Unauthorized' }, 401);
+
+  const callId = c.req.query('callId');
+  if (!callId) return c.json({ error: 'Missing callId query parameter' }, 400);
+
+  const prefix = `call-signal:${session.userId}:${callId}:`;
+  const list = await c.env.INVITE_CODES.list({ prefix });
+
+  const signals: Array<{ type: string; data: unknown }> = [];
+
+  for (const key of list.keys) {
+    const data = await c.env.INVITE_CODES.get(key.name, 'json');
+    if (data) {
+      signals.push(data as { type: string; data: unknown });
+      // Delete after reading — one-time delivery
+      await c.env.INVITE_CODES.delete(key.name);
+    }
+  }
+
+  return c.json({ signals });
+});
+
+// GET /calls/incoming — Check for incoming call offers addressed to this user
+govchatRoutes.get('/calls/incoming', async (c) => {
+  const session = await getAuthenticatedSession(c.env, c.req.raw);
+  if (!session) return c.json({ error: 'Unauthorized' }, 401);
+
+  // Look for offer signals addressed to this user (any callId)
+  const prefix = `call-signal:${session.userId}:`;
+  const list = await c.env.INVITE_CODES.list({ prefix });
+
+  for (const key of list.keys) {
+    const data = (await c.env.INVITE_CODES.get(key.name, 'json')) as {
+      from: string;
+      fromName: string;
+      type: string;
+      data: Record<string, unknown>;
+      timestamp: number;
+    } | null;
+
+    if (data && data.type === 'offer') {
+      // Extract callId from key pattern: call-signal:{userId}:{callId}:{timestamp}
+      const parts = key.name.split(':');
+      const callId = parts[2];
+
+      // Delete after reading so it's not delivered twice
+      await c.env.INVITE_CODES.delete(key.name);
+
+      return c.json({
+        call: {
+          callId,
+          callerId: data.from,
+          callerName: data.fromName,
+          isVideo: (data.data as Record<string, unknown>)?.isVideo ?? false,
+          offer: {
+            sdp: (data.data as Record<string, unknown>)?.sdp,
+            type: (data.data as Record<string, unknown>)?.type,
+          },
+        },
+      });
+    }
+  }
+
+  return c.json({ call: null });
+});
