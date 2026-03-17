@@ -3,6 +3,21 @@
 // and full rules support (castling, en passant, promotion, etc.)
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+
+/** Polyfill for ctx.roundRect — safe for older Chromium versions */
+function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
 import {
   ChessState,
   createInitialState,
@@ -608,8 +623,7 @@ export default function ChessGame({ containerWidth, containerHeight }: Props) {
     const panelX = 4;
     const panelY = boardY;
     const panelH = boardSize;
-    ctx.beginPath();
-    ctx.roundRect(panelX, panelY, panelWidth - 8, panelH, 8);
+    drawRoundRect(ctx, panelX, panelY, panelWidth - 8, panelH, 8);
     ctx.fill(); ctx.stroke();
 
     // Captured by player (black pieces taken)
@@ -678,8 +692,7 @@ export default function ChessGame({ containerWidth, containerHeight }: Props) {
       ctx.fillStyle = PANEL_BG;
       ctx.strokeStyle = ACCENT;
       ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.roundRect(dlgX, dlgY, dlgW, dlgH, 12);
+      drawRoundRect(ctx, dlgX, dlgY, dlgW, dlgH, 12);
       ctx.fill(); ctx.stroke();
 
       ctx.fillStyle = TEXT_COLOR;

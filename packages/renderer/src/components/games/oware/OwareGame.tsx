@@ -90,7 +90,7 @@ function layoutSeeds(
         x: cx + Math.cos(angle) * r,
         y: cy + Math.sin(angle) * r,
         color: SEED_COLORS[i % SEED_COLORS.length],
-        radius: seedR * (0.85 + Math.random() * 0.3),
+        radius: seedR * (0.85 + ((i * 7 + 3) % 10) * 0.03),
       });
     }
   }

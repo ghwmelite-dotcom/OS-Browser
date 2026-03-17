@@ -1,5 +1,20 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { gameSounds } from '../GameSoundEngine';
+
+/** Polyfill for ctx.roundRect — safe for older Chromium versions */
+function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
 import {
   createGame,
   rollDice,
@@ -221,7 +236,7 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
   const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Board sizing: square, centered, DPI-aware
-  const boardSize = Math.min(containerWidth, containerHeight) - 16;
+  const boardSize = Math.max(200, Math.min(containerWidth, containerHeight) - 16);
   const cellSize = boardSize / GRID;
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
 
@@ -459,8 +474,7 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
       ctx.fillStyle = '#FFFFFF';
       ctx.strokeStyle = darkColor;
       ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.roundRect(cx(col) + inset, cy(row) + inset, innerW, innerH, 8);
+      drawRoundRect(ctx, cx(col) + inset, cy(row) + inset, innerW, innerH, 8);
       ctx.fill();
       ctx.stroke();
 
@@ -640,8 +654,7 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
           ctx.strokeStyle = COLOR_MAP[gameState.players[gameState.currentPlayer].color];
           ctx.lineWidth = 2;
           ctx.setLineDash([4, 4]);
-          ctx.beginPath();
-          ctx.roundRect(cx(landing[0]) + 2, cy(landing[1]) + 2, cs - 4, cs - 4, 4);
+          drawRoundRect(ctx, cx(landing[0]) + 2, cy(landing[1]) + 2, cs - 4, cs - 4, 4);
           ctx.fill();
           ctx.stroke();
           ctx.setLineDash([]);
@@ -779,8 +792,7 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
       ctx.shadowColor = 'rgba(0,0,0,0.3)';
       ctx.shadowBlur = 8;
       ctx.shadowOffsetY = 3;
-      ctx.beginPath();
-      ctx.roundRect(-diceSize / 2, -diceSize / 2, diceSize, diceSize, 6);
+      drawRoundRect(ctx, -diceSize / 2, -diceSize / 2, diceSize, diceSize, 6);
       ctx.fill();
       ctx.stroke();
       ctx.shadowBlur = 0;
@@ -798,8 +810,7 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
       // No dice rolled yet - show "Roll" prompt
       if (!gameState.players[gameState.currentPlayer].isAI && !gameState.gameOver) {
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        ctx.beginPath();
-        ctx.roundRect(diceX - cs * 0.2, diceY - cs * 0.2, diceSize + cs * 0.4, diceSize + cs * 0.4, 8);
+        drawRoundRect(ctx, diceX - cs * 0.2, diceY - cs * 0.2, diceSize + cs * 0.4, diceSize + cs * 0.4, 8);
         ctx.fill();
 
         ctx.fillStyle = '#FCD116';
