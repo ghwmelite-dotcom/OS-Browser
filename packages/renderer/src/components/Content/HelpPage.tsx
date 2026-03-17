@@ -1,5 +1,5 @@
 import React from 'react';
-import { HelpCircle, Keyboard, MessageSquare, Shield, Globe, BookOpen, Target, Camera, DollarSign, Columns } from 'lucide-react';
+import { HelpCircle, Keyboard, MessageSquare, Shield, Globe, BookOpen, Target, Camera, DollarSign, Columns, Gamepad2, Phone, Video, Users } from 'lucide-react';
 
 export function HelpPage() {
   const shortcuts = [
@@ -18,6 +18,7 @@ export function HelpPage() {
     { keys: 'F5', action: 'Reload page' },
     { keys: 'F11', action: 'Fullscreen' },
     { keys: 'Escape', action: 'Close panel' },
+    { keys: 'Ctrl+Shift+M', action: 'GovChat Messenger' },
   ];
 
   const features = [
@@ -29,6 +30,10 @@ export function HelpPage() {
     { icon: Target, name: 'Focus Mode', desc: 'Block distracting sites. Track your focus time.' },
     { icon: Columns, name: 'Split Screen', desc: 'View two tabs side by side for comparing documents.' },
     { icon: Camera, name: 'Screenshot', desc: 'Capture visible area or full page. Save as PNG or JPEG.' },
+    { icon: Shield, name: 'GovChat Messenger', desc: 'Matrix-based encrypted messenger for secure government communication with voice notes, file sharing, and video calls.' },
+    { icon: Gamepad2, name: 'GovPlay Game Center', desc: '12 built-in games including Oware, Chess, Ludo, Sudoku, and more. Play offline anytime.' },
+    { icon: Video, name: 'Video & Audio Calls', desc: 'Crystal-clear 1:1 video and audio calls built right into GovChat conversations.' },
+    { icon: Users, name: 'People Directory', desc: 'Find colleagues by name, department, or ministry. Start conversations instantly.' },
   ];
 
   return (
@@ -74,6 +79,129 @@ export function HelpPage() {
                 </kbd>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* GovChat */}
+        <div className="mb-8">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-accent)' }}>GovChat — Secure Government Messenger</h2>
+          <div className="rounded-xl border p-5" style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#D4A017' }}>
+                <Shield size={18} className="text-white" />
+              </div>
+              <p className="text-[13px] text-text-primary font-semibold">Matrix-based encrypted messenger for government communication</p>
+            </div>
+            <div className="space-y-3 text-[12px] text-text-secondary">
+              <div>
+                <p className="font-semibold text-text-primary mb-1">How to access</p>
+                <p>Click the Shield icon in the Kente Sidebar, or press <kbd className="text-[11px] font-mono px-1.5 py-0.5 rounded" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>Ctrl+Shift+M</kbd></p>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Getting started</p>
+                <p>Enter your invite code + staff ID, or request a code from your IT admin, or join as a public user.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Features</p>
+                <ul className="list-disc list-inside space-y-1 text-text-muted">
+                  <li>End-to-end encrypted messages</li>
+                  <li>Voice notes — record and send audio messages</li>
+                  <li>File sharing — documents, images up to 50MB</li>
+                  <li>Reactions and emoji</li>
+                  <li>Message classification (UNCLASSIFIED to SECRET)</li>
+                  <li>People directory — find colleagues by name, ministry, or department</li>
+                  <li>Video & audio calls — click the phone/camera icons in DM conversations</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Admin features</p>
+                <p>Superadmins can generate invite codes, manage users, and approve code requests via the gear icon.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* GovPlay */}
+        <div className="mb-8">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-accent)' }}>GovPlay — Game Center</h2>
+          <div className="rounded-xl border p-5" style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#FF4081' }}>
+                <Gamepad2 size={18} className="text-white" />
+              </div>
+              <p className="text-[13px] text-text-primary font-semibold">12 built-in games for break-time entertainment</p>
+            </div>
+            <div className="space-y-3 text-[12px] text-text-secondary">
+              <div>
+                <p className="font-semibold text-text-primary mb-1">How to access</p>
+                <p>Click the Gamepad icon in the Kente Sidebar, or navigate to <span className="font-mono text-[11px]" style={{ color: 'var(--color-accent)' }}>os-browser://games</span></p>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Games available</p>
+                <p className="text-text-muted">Oware (Ghana's national board game), Chess, Checkers, Ludo, Sudoku, 2048, Minesweeper, Solitaire, Snake, Word Scramble, Ghana Trivia Quiz, Typing Speed Test</p>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Features</p>
+                <ul className="list-disc list-inside space-y-1 text-text-muted">
+                  <li>AI opponents with difficulty levels</li>
+                  <li>High scores</li>
+                  <li>Sound effects</li>
+                  <li>Responsive design</li>
+                </ul>
+              </div>
+              <p className="text-text-muted italic">Tip: Games work completely offline — no internet needed.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Video & Audio Calls */}
+        <div className="mb-8">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-accent)' }}>Video & Audio Calls</h2>
+          <div className="rounded-xl border p-5" style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#1565C0' }}>
+                <Video size={18} className="text-white" />
+              </div>
+              <p className="text-[13px] text-text-primary font-semibold">1:1 video and audio calls built into GovChat</p>
+            </div>
+            <div className="space-y-3 text-[12px] text-text-secondary">
+              <div>
+                <p className="font-semibold text-text-primary mb-1">How to make a call</p>
+                <p>Open a DM conversation in GovChat, click the phone icon (audio) or camera icon (video) in the chat header.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Controls</p>
+                <p className="text-text-muted">Mute/unmute, camera toggle, end call.</p>
+              </div>
+              <p className="text-text-muted italic">Note: Both users must be online in GovChat for calls to connect.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* People Directory */}
+        <div className="mb-8">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-accent)' }}>People Directory</h2>
+          <div className="rounded-xl border p-5" style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--color-surface-2)' }}>
+                <Users size={18} style={{ color: 'var(--color-accent)' }} />
+              </div>
+              <p className="text-[13px] text-text-primary font-semibold">Find colleagues across government</p>
+            </div>
+            <div className="space-y-3 text-[12px] text-text-secondary">
+              <div>
+                <p className="font-semibold text-text-primary mb-1">How to find people</p>
+                <p>In GovChat, click the "People" tab in the chat list.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Features</p>
+                <p className="text-text-muted">Search by name, department, or ministry. Click any user to start a DM conversation.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Online status</p>
+                <p className="text-text-muted">Green dot = online, grey dot = offline.</p>
+              </div>
+            </div>
           </div>
         </div>
 
