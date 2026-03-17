@@ -49,127 +49,98 @@ function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
 }
 
-// Sample data
-const SAMPLE_ACCOUNT_ID = 'acct_mtn_001';
+// ── Persistence ──────────────────────────────────────────────────────
+const STORAGE_KEY = 'os-browser-mobile-money';
 
-const sampleAccounts: MoMoAccount[] = [
-  {
-    id: SAMPLE_ACCOUNT_ID,
-    provider: 'mtn',
-    phoneNumber: '0241234567',
-    accountName: 'Kwame Asante',
-    isDefault: true,
-  },
-];
+interface PersistedData {
+  accounts: MoMoAccount[];
+  receipts: PaymentReceipt[];
+  monthlyBudget: number;
+}
 
-const now = Date.now();
-const DAY = 86400000;
+function loadPersistedData(): PersistedData | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as PersistedData;
+  } catch {
+    return null;
+  }
+}
 
-const sampleReceipts: PaymentReceipt[] = [
-  {
-    id: 'rcpt_001',
-    accountId: SAMPLE_ACCOUNT_ID,
-    provider: 'mtn',
-    amount: 487.50,
-    reference: 'SSNIT-2026-03-001',
-    description: 'SSNIT Contribution',
-    recipient: 'Social Security (SSNIT)',
-    timestamp: now - 2 * DAY,
-    status: 'completed',
-    url: 'https://www.ssnit.org.gh/payments',
-  },
-  {
-    id: 'rcpt_002',
-    accountId: SAMPLE_ACCOUNT_ID,
-    provider: 'mtn',
-    amount: 156.30,
-    reference: 'ECG-PRE-20260312',
-    description: 'ECG Electricity Bill',
-    recipient: 'ECG Prepaid',
-    timestamp: now - 5 * DAY,
-    status: 'completed',
-    url: 'https://www.ecg.com.gh/payments',
-  },
-  {
-    id: 'rcpt_003',
-    accountId: SAMPLE_ACCOUNT_ID,
-    provider: 'mtn',
-    amount: 89.00,
-    reference: 'GWCL-MAR-2026',
-    description: 'GWCL Water Bill',
-    recipient: 'Ghana Water Company',
-    timestamp: now - 8 * DAY,
-    status: 'completed',
-    url: 'https://www.gwcl.com.gh/pay',
-  },
-  {
-    id: 'rcpt_004',
-    accountId: SAMPLE_ACCOUNT_ID,
-    provider: 'mtn',
-    amount: 1250.00,
-    reference: 'GRA-TAX-Q1-2026',
-    description: 'GRA Tax Payment',
-    recipient: 'Ghana Revenue Authority',
-    timestamp: now - 35 * DAY, // February
-    status: 'completed',
-    url: 'https://gra.gov.gh/payments',
-  },
-  {
-    id: 'rcpt_005',
-    accountId: SAMPLE_ACCOUNT_ID,
-    provider: 'mtn',
-    amount: 50.00,
-    reference: 'GGH-SVC-20260208',
-    description: 'Ghana.gov.gh Service Fee',
-    recipient: 'Ghana.gov.gh',
-    timestamp: now - 38 * DAY, // February
-    status: 'pending',
-    url: 'https://ghana.gov.gh/services',
-  },
-];
+function persistData(state: MobileMoneyState): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      accounts: state.accounts,
+      receipts: state.receipts,
+      monthlyBudget: state.monthlyBudget,
+    }));
+  } catch {
+    // Storage full or unavailable
+  }
+}
 
-const currentMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
+// ── Initial data ─────────────────────────────────────────────────────
+const persisted = loadPersistedData();
+const currentMonth = new Date().toISOString().slice(0, 7);
 
 export const useMobileMoneyStore = create<MobileMoneyState>((set, get) => ({
-  accounts: sampleAccounts,
-  receipts: sampleReceipts,
-  monthlyBudget: 2000,
+  accounts: persisted?.accounts ?? [],
+  receipts: persisted?.receipts ?? [],
+  monthlyBudget: persisted?.monthlyBudget ?? 2000,
   selectedMonth: currentMonth,
 
   addAccount: (account) =>
-    set((state) => ({
-      accounts: [
-        ...state.accounts.map((a) =>
-          account.isDefault ? { ...a, isDefault: false } : a
-        ),
-        { ...account, id: generateId() },
-      ],
-    })),
+    set((state) => {
+      const newState = {
+        accounts: [
+          ...state.accounts.map((a) =>
+            account.isDefault ? { ...a, isDefault: false } : a
+          ),
+          { ...account, id: generateId() },
+        ],
+      };
+      persistData({ ...state, ...newState });
+      return newState;
+    }),
 
   removeAccount: (id) =>
-    set((state) => ({
-      accounts: state.accounts.filter((a) => a.id !== id),
-    })),
+    set((state) => {
+      const newState = { accounts: state.accounts.filter((a) => a.id !== id) };
+      persistData({ ...state, ...newState });
+      return newState;
+    }),
 
   setDefaultAccount: (id) =>
-    set((state) => ({
-      accounts: state.accounts.map((a) => ({
-        ...a,
-        isDefault: a.id === id,
-      })),
-    })),
+    set((state) => {
+      const newState = {
+        accounts: state.accounts.map((a) => ({ ...a, isDefault: a.id === id })),
+      };
+      persistData({ ...state, ...newState });
+      return newState;
+    }),
 
   addReceipt: (receipt) =>
-    set((state) => ({
-      receipts: [{ ...receipt, id: generateId() }, ...state.receipts],
-    })),
+    set((state) => {
+      const newState = {
+        receipts: [{ ...receipt, id: generateId() }, ...state.receipts],
+      };
+      persistData({ ...state, ...newState });
+      return newState;
+    }),
 
   removeReceipt: (id) =>
-    set((state) => ({
-      receipts: state.receipts.filter((r) => r.id !== id),
-    })),
+    set((state) => {
+      const newState = { receipts: state.receipts.filter((r) => r.id !== id) };
+      persistData({ ...state, ...newState });
+      return newState;
+    }),
 
-  setMonthlyBudget: (amount) => set({ monthlyBudget: amount }),
+  setMonthlyBudget: (amount) =>
+    set((state) => {
+      persistData({ ...state, monthlyBudget: amount });
+      return { monthlyBudget: amount };
+    }),
 
   setSelectedMonth: (month) => set({ selectedMonth: month }),
 
