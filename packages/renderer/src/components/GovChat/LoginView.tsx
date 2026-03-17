@@ -75,7 +75,7 @@ export function LoginView() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName: reqFullName.trim(),
+          name: reqFullName.trim(),
           email: reqEmail.trim(),
           department: reqDepartment.trim(),
           ministry: reqMinistry.trim(),
