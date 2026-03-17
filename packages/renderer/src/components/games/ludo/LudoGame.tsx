@@ -107,6 +107,7 @@ const SetupScreen: React.FC<SetupProps> = ({ onStart }) => {
     fontFamily: 'Inter, system-ui, sans-serif',
     color: '#FAF6EE',
     height: '100%',
+    overflowY: 'auto',
   };
 
   const card: React.CSSProperties = {
@@ -233,7 +234,12 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
   const [diceAnimating, setDiceAnimating] = useState(false);
   const [diceAnimFrame, setDiceAnimFrame] = useState(0);
   const [hoveredToken, setHoveredToken] = useState<number | null>(null);
+  const [turnStatus, setTurnStatus] = useState<string>('');
+  const [turnStatusColor, setTurnStatusColor] = useState<string>('#FAF6EE');
+  const [aiPhase, setAiPhase] = useState<'idle' | 'thinking' | 'rolled' | 'moving'>('idle');
   const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const aiTimeoutRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const aiTimeoutRef3 = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Board sizing: square, centered, DPI-aware
   const boardSize = Math.max(200, Math.min(containerWidth, containerHeight) - 16);
@@ -249,9 +255,13 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
 
   const handleNewGame = useCallback(() => {
     if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
+    if (aiTimeoutRef2.current) clearTimeout(aiTimeoutRef2.current);
+    if (aiTimeoutRef3.current) clearTimeout(aiTimeoutRef3.current);
     setGameState(null);
     setSelectedToken(null);
     setHoveredToken(null);
+    setTurnStatus('');
+    setAiPhase('idle');
   }, []);
 
   // ── Dice roll ───────────────────────────────────────────────────
@@ -263,6 +273,7 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
     gameSounds.dice();
     setDiceAnimating(true);
     setDiceAnimFrame(0);
+    setTurnStatus('Rolling...');
 
     const value = rollDice();
     let frame = 0;
@@ -272,7 +283,22 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
       if (frame >= 10) {
         clearInterval(interval);
         setDiceAnimating(false);
-        setGameState((prev) => (prev ? applyDiceRoll(prev, value) : prev));
+        setTurnStatus(`You rolled a ${value}!`);
+        setTurnStatusColor(COLOR_MAP[currentPlayer.color]);
+        // Show dice result for 500ms before applying
+        setTimeout(() => {
+          setGameState((prev) => {
+            if (!prev) return prev;
+            const newState = applyDiceRoll(prev, value);
+            const moves = getValidMoves(newState);
+            if (moves.length > 0) {
+              setTurnStatus('Choose a token to move');
+            } else {
+              setTurnStatus(`No valid moves`);
+            }
+            return newState;
+          });
+        }, 500);
       }
     }, 50);
   }, [gameState, diceAnimating]);
@@ -293,10 +319,13 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
 
       if (move.isCapture) {
         gameSounds.capture();
+        setTurnStatus('You captured a token!');
       } else if (move.newPosition === 58) {
         gameSounds.score();
+        setTurnStatus('Token home!');
       } else {
         gameSounds.move();
+        setTurnStatus('Moved');
       }
 
       const newState = makeMove(gameState, tokenIndex);
@@ -305,6 +334,7 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
 
       if (newState.gameOver) {
         gameSounds.win();
+        setTurnStatus('You win!');
       }
 
       setGameState(newState);
@@ -316,14 +346,29 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
   useEffect(() => {
     if (!gameState || gameState.gameOver) return;
     const currentPlayer = gameState.players[gameState.currentPlayer];
-    if (!currentPlayer.isAI) return;
+    if (!currentPlayer.isAI) {
+      // Human turn - show prompt if dice not rolled yet
+      if (!gameState.diceRolled && !diceAnimating) {
+        setTurnStatus('Your turn! Click the dice to roll');
+        setTurnStatusColor(COLOR_MAP[currentPlayer.color]);
+      }
+      setAiPhase('idle');
+      return;
+    }
 
     if (!gameState.diceRolled) {
-      // AI rolls dice
+      // Phase 1: Show "thinking" for 800ms
+      const colorName = currentPlayer.color.charAt(0).toUpperCase() + currentPlayer.color.slice(1);
+      setTurnStatus(`${colorName} is thinking...`);
+      setTurnStatusColor(COLOR_MAP[currentPlayer.color]);
+      setAiPhase('thinking');
+
       aiTimeoutRef.current = setTimeout(() => {
+        // Phase 2: AI rolls dice
         gameSounds.dice();
         setDiceAnimating(true);
         setDiceAnimFrame(0);
+        setTurnStatus(`${colorName} is rolling...`);
 
         const value = rollDice();
         let frame = 0;
@@ -333,35 +378,55 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
           if (frame >= 10) {
             clearInterval(interval);
             setDiceAnimating(false);
-            setGameState((prev) => (prev ? applyDiceRoll(prev, value) : prev));
+            setAiPhase('rolled');
+            setTurnStatus(`${colorName} rolled a ${value}`);
+            // Show dice result for 500ms before applying
+            aiTimeoutRef2.current = setTimeout(() => {
+              setGameState((prev) => (prev ? applyDiceRoll(prev, value) : prev));
+            }, 500);
           }
         }, 50);
-      }, 600);
+      }, 800);
     } else {
-      // AI makes a move
+      // Phase 3: AI makes a move after 400ms delay
+      const colorName = currentPlayer.color.charAt(0).toUpperCase() + currentPlayer.color.slice(1);
+      setAiPhase('moving');
+
       aiTimeoutRef.current = setTimeout(() => {
         const tokenIdx = getAIMove(gameState);
         if (tokenIdx !== null) {
           const moves = getValidMoves(gameState);
           const move = moves.find((m) => m.tokenIndex === tokenIdx);
-          if (move?.isCapture) gameSounds.capture();
-          else if (move?.newPosition === 58) gameSounds.score();
-          else gameSounds.move();
+          if (move?.isCapture) {
+            gameSounds.capture();
+            setTurnStatus(`${colorName} captured a token!`);
+          } else if (move?.newPosition === 58) {
+            gameSounds.score();
+            setTurnStatus(`${colorName} got a token home!`);
+          } else {
+            gameSounds.move();
+            setTurnStatus(`${colorName} moved`);
+          }
 
           const newState = makeMove(gameState, tokenIdx);
           if (newState.gameOver) gameSounds.win();
           setGameState(newState);
         } else {
-          // No valid moves - advance turn (should be handled by applyDiceRoll already)
-          setGameState((prev) => prev);
+          setTurnStatus(`${colorName} has no valid moves`);
+          // No valid moves - advance turn
+          aiTimeoutRef3.current = setTimeout(() => {
+            setGameState((prev) => prev);
+          }, 400);
         }
-      }, 500);
+      }, 400);
     }
 
     return () => {
       if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
+      if (aiTimeoutRef2.current) clearTimeout(aiTimeoutRef2.current);
+      if (aiTimeoutRef3.current) clearTimeout(aiTimeoutRef3.current);
     };
-  }, [gameState]);
+  }, [gameState, diceAnimating]);
 
   // ── Canvas click handler ────────────────────────────────────────
   const handleCanvasClick = useCallback(
@@ -891,17 +956,74 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
               borderRadius: '50%',
               background: COLOR_MAP[currentColor],
               boxShadow: `0 0 8px ${COLOR_MAP[currentColor]}`,
+              animation: !isAI && !gameState.diceRolled && !diceAnimating ? 'ludoPulse 1.2s ease-in-out infinite' : 'none',
             }}
           />
           <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>
             {currentColor}
-            {isAI ? ' (AI)' : ''}
+            {isAI ? ' (AI)' : ' (You)'}
+          </span>
+          <span style={{ color: 'rgba(250,246,238,0.5)', fontSize: 11, marginLeft: 4 }}>
+            {isAI
+              ? (aiPhase === 'thinking' ? 'Thinking...' : aiPhase === 'rolled' ? 'Rolled' : aiPhase === 'moving' ? 'Moving...' : 'Waiting...')
+              : (!gameState.diceRolled && !diceAnimating ? 'Roll dice' : gameState.diceRolled ? 'Choose a token' : 'Rolling...')}
           </span>
         </div>
-        <span style={{ color: 'rgba(250,246,238,0.7)', fontSize: 12 }}>
-          {gameState.message}
+        <span style={{ color: turnStatusColor, fontSize: 12, fontWeight: 600, transition: 'color 0.3s' }}>
+          {turnStatus || gameState.message}
         </span>
       </div>
+
+      {/* Human turn banner - prominent prompt */}
+      {!isAI && !gameState.diceRolled && !diceAnimating && !gameState.gameOver && (
+        <div
+          style={{
+            width: boardSize,
+            padding: '8px 16px',
+            background: `linear-gradient(90deg, ${COLOR_MAP[currentColor]}20, ${COLOR_MAP[currentColor]}40, ${COLOR_MAP[currentColor]}20)`,
+            textAlign: 'center',
+            fontSize: 14,
+            fontWeight: 700,
+            fontFamily: 'Inter, system-ui, sans-serif',
+            color: COLOR_LIGHT[currentColor],
+            letterSpacing: 0.5,
+            boxSizing: 'border-box',
+            animation: 'ludoBannerPulse 2s ease-in-out infinite',
+          }}
+        >
+          Tap the dice to roll!
+        </div>
+      )}
+
+      {/* AI turn banner */}
+      {isAI && !gameState.gameOver && (
+        <div
+          style={{
+            width: boardSize,
+            padding: '8px 16px',
+            background: `linear-gradient(90deg, ${COLOR_MAP[currentColor]}15, ${COLOR_MAP[currentColor]}30, ${COLOR_MAP[currentColor]}15)`,
+            textAlign: 'center',
+            fontSize: 13,
+            fontWeight: 600,
+            fontFamily: 'Inter, system-ui, sans-serif',
+            color: COLOR_LIGHT[currentColor],
+            boxSizing: 'border-box',
+          }}
+        >
+          {turnStatus}
+        </div>
+      )}
+
+      <style>{`
+        @keyframes ludoPulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.4); opacity: 0.7; }
+        }
+        @keyframes ludoBannerPulse {
+          0%, 100% { opacity: 0.8; }
+          50% { opacity: 1; }
+        }
+      `}</style>
 
       <canvas
         ref={canvasRef}
