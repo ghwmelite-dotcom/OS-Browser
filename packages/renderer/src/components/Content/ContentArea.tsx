@@ -12,6 +12,7 @@ import { DocumentsPage } from './DocumentsPage';
 import { GovHubPage } from './GovHubPage';
 import { OfflinePage } from './OfflinePage';
 import { FeatureDirectoryPage } from './FeatureDirectoryPage';
+import { GameCenterPage } from './GameCenterPage';
 
 // Detect if we're in a private window
 const isPrivateWindow = new URLSearchParams(window.location.search).get('private') === 'true';
@@ -96,6 +97,11 @@ export function ContentArea() {
   // Feature Directory
   if (tabUrl === 'os-browser://features') {
     return <FeatureDirectoryPage />;
+  }
+
+  // GovPlay Game Center
+  if (tabUrl === 'os-browser://games' || tabUrl.startsWith('os-browser://games/')) {
+    return <GameCenterPage />;
   }
 
   // Real URLs — WebContentsView renders natively on top
