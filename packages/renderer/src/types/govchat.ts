@@ -154,7 +154,7 @@ export interface GovChatCredentials {
 }
 
 // Filter tabs for chat list
-export type ChatFilter = 'all' | 'unread' | 'groups' | 'direct';
+export type ChatFilter = 'all' | 'unread' | 'groups' | 'direct' | 'people';
 
 // Quick reaction emoji set
 export const QUICK_REACTIONS = ['\u{1F44D}', '\u2764\uFE0F', '\u{1F602}', '\u{1F62E}', '\u{1F622}', '\u{1F64F}'];
