@@ -25,6 +25,7 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
   const [isOpen, setIsOpen] = useState(false);
   const [zoom, setZoom] = useState(100);
   const [pwaInstallable, setPwaInstallable] = useState<any>(null);
+  const [savedFeedback, setSavedFeedback] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { createTab, activeTabId } = useTabsStore();
   const { settings, updateSettings } = useSettingsStore();
@@ -77,20 +78,20 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
 
   const close = () => setIsOpen(false);
 
-  const MenuItem = ({ icon: Icon, label, shortcut, onClick, sub, disabled }: {
-    icon: any; label: string; shortcut?: string; onClick?: () => void; sub?: boolean; disabled?: boolean;
+  const MenuItem = ({ icon: Icon, label, shortcut, onClick, sub, disabled, badge }: {
+    icon: any; label: string; shortcut?: string; onClick?: () => void; sub?: boolean; disabled?: boolean; badge?: string;
   }) => (
     <button
-      onClick={() => { onClick?.(); if (!sub) close(); }}
+      onClick={() => { if (!disabled) { onClick?.(); if (!sub) close(); } }}
       disabled={disabled}
       className={`
         w-full flex items-center gap-3 px-4 py-[8px] text-left transition-colors duration-75
-        hover:bg-surface-2 focus:outline-none focus:bg-surface-2
-        ${disabled ? 'opacity-40 cursor-not-allowed' : ''}
+        ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface-2 focus:outline-none focus:bg-surface-2'}
       `}
     >
       <Icon size={16} className="text-text-muted shrink-0" strokeWidth={1.5} />
       <span className="flex-1 text-[13px] text-text-primary">{label}</span>
+      {badge && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>{badge}</span>}
       {shortcut && <span className="text-[11px] text-text-muted ml-4">{shortcut}</span>}
       {sub && <ChevronRight size={13} className="text-text-muted" />}
     </button>
@@ -163,7 +164,16 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
                   </div>
                   <div className="flex-1 text-left">
                     <div className="text-[13px] font-medium text-text-primary">Guest</div>
-                    <div className="text-[11px] text-text-muted">Account sync coming soon</div>
+                    <button
+                      disabled
+                      className="mt-1 flex items-center gap-2 px-2.5 py-1 rounded-md text-[12px] text-text-muted opacity-50 cursor-not-allowed"
+                      style={{ background: 'var(--color-surface-2)' }}
+                    >
+                      <span>🔄 Sync Data</span>
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: 'var(--color-surface-3, var(--color-border-1))' }}>
+                        Coming Soon
+                      </span>
+                    </button>
                   </div>
                 </div>
               )}
@@ -171,14 +181,14 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             <Separator />
 
             {/* Core browser features */}
-            <MenuItem icon={Key} label="Passwords and autofill" onClick={onOpenSettings} sub />
+            <MenuItem icon={Key} label="Passwords and autofill" disabled badge="Coming Soon" />
             <MenuItem icon={Clock} label="History" shortcut="Ctrl+H" onClick={onOpenHistory} />
             <MenuItem icon={Download} label="Downloads" shortcut="Ctrl+J" onClick={() => {
               createTab('os-browser://downloads' as any);
             }} />
             <MenuItem icon={Star} label="Bookmarks and lists" shortcut="Ctrl+B" onClick={() => createTab('os-browser://bookmarks' as any)} sub />
             <MenuItem icon={FileText} label="Documents" onClick={() => createTab('os-browser://documents' as any)} />
-            <MenuItem icon={Download} label="Save Page Offline" shortcut="Ctrl+Shift+S" onClick={() => {
+            <MenuItem icon={Download} label={savedFeedback ? "\u2713 Saved!" : "Save Page Offline"} shortcut="Ctrl+Shift+S" onClick={() => {
               const navUrl = useNavigationStore.getState().currentUrl;
               if (!navUrl || navUrl.startsWith('os-browser://')) return;
               const allTabs = useTabsStore.getState().tabs;
@@ -194,6 +204,8 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
                 content: `<html><head><title>${pageTitle}</title></head><body><p>Saved from ${navUrl}</p></body></html>`,
                 favicon,
               });
+              setSavedFeedback(true);
+              setTimeout(() => setSavedFeedback(false), 2000);
             }} />
             <MenuItem icon={WifiOff} label="Offline Library" onClick={() => {
               createTab('os-browser://offline' as any);
