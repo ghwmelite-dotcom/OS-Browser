@@ -200,31 +200,22 @@ class MatrixClientServiceClass {
         deviceId: credentials.deviceId,
       });
 
-      // Initialize E2E encryption with Rust crypto backend
-      try {
-        await this.client.initRustCrypto();
-        console.info('[MatrixClientService] Rust E2E encryption initialized.');
-      } catch (cryptoErr) {
-        console.warn('[MatrixClientService] Rust crypto init failed, trying legacy:', cryptoErr);
-        // Fallback to legacy Olm crypto
-        try {
-          await this.client.initCrypto();
-          console.info('[MatrixClientService] Legacy E2E encryption initialized.');
-        } catch (olmErr) {
-          console.warn('[MatrixClientService] All crypto init failed. Messages will be unencrypted:', olmErr);
-        }
-      }
-
       // Bind Matrix events before starting sync
       this.bindMatrixEvents();
-
-      // Start sync
-      try {
-        await this.client.startClient({ initialSyncLimit: 20 });
-      } catch (syncErr) {
-        console.warn('[MatrixClientService] startClient failed, continuing anyway:', syncErr);
-      }
       this._isInitialized = true;
+
+      // Start sync (non-blocking — don't await, let it run in background)
+      this.client.startClient({ initialSyncLimit: 20 }).catch((syncErr: unknown) => {
+        console.warn('[MatrixClientService] startClient failed:', syncErr);
+      });
+
+      // Initialize E2E encryption in background (non-blocking)
+      // Crypto init downloads WASM + creates IndexedDB store, can take 10-30s
+      this.client.initRustCrypto().then(() => {
+        console.info('[MatrixClientService] Rust E2E encryption initialized.');
+      }).catch(() => {
+        console.warn('[MatrixClientService] Rust crypto unavailable. Messages unencrypted.');
+      });
     } catch (err) {
       console.error('[MatrixClientService] Client initialization failed:', err);
       this.emit('error', {
