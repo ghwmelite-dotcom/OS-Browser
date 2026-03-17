@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OS Browser — Ghana's AI-Powered Desktop Browser</title>
-  <meta name="description" content="Download OS Browser — 12 purpose-built features organized by the Kente System. E2E Encrypted Messenger, Gov Services Hub, Dumsor Guard, Mobile Money, and more." />
+  <meta name="description" content="Download OS Browser — 13 purpose-built features organized by the Kente System. E2E Encrypted Messenger, Video Calls, 12 Built-In Games, Gov Services Hub, Dumsor Guard, Mobile Money, and more." />
   <meta name="theme-color" content="#0a0a0f" />
   <link rel="canonical" href="https://www.osbrowser.askozzy.work" />
   <meta property="og:title" content="OS Browser — Ghana's AI-Powered Desktop Browser" />
-  <meta property="og:description" content="12 purpose-built features for Ghana's civil servants. E2E encrypted messaging, 25+ gov portals, 7 languages, offline-first." />
+  <meta property="og:description" content="13 purpose-built features for Ghana's civil servants. E2E encrypted messaging, video calls, 12 built-in games, 25+ gov portals, 7 languages, offline-first." />
   <meta property="og:url" content="https://www.osbrowser.askozzy.work" />
   <meta property="og:type" content="website" />
   <link rel="icon" type="image/svg+xml" href="/icon.svg" />
@@ -537,7 +537,7 @@
     }
 
     .govchat-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr);
+      display: grid; grid-template-columns: repeat(4, 1fr);
       gap: 20px; max-width: 1100px; margin: 0 auto 64px;
     }
     .govchat-feature {
@@ -696,18 +696,159 @@
       text-transform: uppercase; letter-spacing: 0.06em;
     }
 
+    /* GovChat video callout */
+    .govchat-callout {
+      display: flex; align-items: center; gap: 20px;
+      max-width: 800px; margin: 40px auto 0;
+      padding: 20px 28px; border-radius: 16px;
+      background: rgba(255, 64, 129, 0.04);
+      border: 1px solid rgba(255, 64, 129, 0.12);
+    }
+    .govchat-callout-icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      background: rgba(255, 64, 129, 0.1);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .govchat-callout-text {
+      font-size: 15px; line-height: 1.7;
+      color: rgba(245, 240, 229, 0.6);
+    }
+    .govchat-callout-text strong {
+      color: var(--text-light);
+    }
+
     @media (max-width: 900px) {
       .govchat-grid { grid-template-columns: 1fr 1fr; }
       .govchat-content { grid-template-columns: 1fr; gap: 40px; }
       .govchat-stats { flex-wrap: wrap; }
       .govchat-stat { flex: 1 1 50%; }
       .govchat-stat:nth-child(2) { border-right: none; }
+      .govchat-stat:nth-child(4) { border-right: none; }
+      .govchat-callout { flex-direction: column; text-align: center; gap: 12px; }
     }
     @media (max-width: 480px) {
       .govchat-grid { grid-template-columns: 1fr; }
       .govchat-stats { flex-direction: column; }
       .govchat-stat { border-right: none; border-bottom: 1px solid rgba(212, 160, 23, 0.08); }
       .govchat-stat:last-child { border-bottom: none; }
+    }
+
+    /* ═══════════════ GOVPLAY SECTION ═══════════════ */
+    .govplay-section {
+      background: linear-gradient(180deg, #0a0a0f 0%, #150a14 30%, #12080f 60%, #0a0a0f 100%);
+      position: relative; overflow: hidden;
+    }
+    .govplay-section::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse 70% 50% at 50% 30%, rgba(255, 64, 129, 0.06) 0%, transparent 60%),
+                  radial-gradient(ellipse 50% 40% at 30% 60%, rgba(212, 160, 23, 0.03) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .govplay-hero {
+      text-align: center; margin-bottom: 64px;
+    }
+    .govplay-icon-wrapper {
+      width: 80px; height: 80px; margin: 0 auto 24px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 24px;
+      background: rgba(255, 64, 129, 0.08);
+      animation: pinkGlow 3s ease-in-out infinite;
+    }
+    @keyframes pinkGlow {
+      0%, 100% { box-shadow: 0 0 20px rgba(255, 64, 129, 0.15), 0 0 60px rgba(255, 64, 129, 0.05); }
+      50% { box-shadow: 0 0 40px rgba(255, 64, 129, 0.3), 0 0 100px rgba(255, 64, 129, 0.1); }
+    }
+    .govplay-title {
+      font-family: var(--font-display);
+      font-size: clamp(40px, 6vw, 56px);
+      font-weight: 700; letter-spacing: -0.03em;
+      line-height: 1.1; margin-bottom: 12px;
+      color: #FF4081;
+    }
+    .govplay-subtitle {
+      font-size: clamp(16px, 2vw, 20px);
+      color: rgba(245, 240, 229, 0.55);
+      max-width: 600px; margin: 0 auto 8px;
+      font-weight: 500;
+    }
+    .govplay-tagline {
+      font-size: 14px;
+      color: rgba(245, 240, 229, 0.35);
+      font-style: italic;
+    }
+
+    .govplay-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 20px; max-width: 1100px; margin: 0 auto 64px;
+    }
+    .govplay-card {
+      background: var(--surface-dark-2);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 16px; padding: 28px;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      text-align: center;
+    }
+    .govplay-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(255, 64, 129, 0.15);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    }
+    .govplay-card-icon {
+      width: 56px; height: 56px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px; font-size: 28px; font-weight: 700;
+    }
+    .govplay-card-name {
+      font-family: var(--font-display);
+      font-size: 16px; font-weight: 700;
+      margin-bottom: 8px; letter-spacing: -0.01em;
+      color: var(--text-light);
+    }
+    .govplay-card-desc {
+      font-size: 14px; line-height: 1.7;
+      color: rgba(245, 240, 229, 0.45);
+    }
+    .govplay-card-more {
+      border-style: dashed;
+      border-color: rgba(255, 64, 129, 0.15);
+    }
+
+    /* GovPlay stats ribbon */
+    .govplay-stats {
+      display: flex; justify-content: center; gap: 0;
+      max-width: 800px; margin: 0 auto;
+      border: 1px solid rgba(255, 64, 129, 0.1);
+      border-radius: 16px; overflow: hidden;
+      background: rgba(255, 64, 129, 0.02);
+    }
+    .govplay-stat {
+      flex: 1; text-align: center; padding: 20px 16px;
+      border-right: 1px solid rgba(255, 64, 129, 0.08);
+    }
+    .govplay-stat:last-child { border-right: none; }
+    .govplay-stat-value {
+      font-family: var(--font-display);
+      font-size: 16px; font-weight: 700;
+      color: #FF4081; margin-bottom: 4px;
+    }
+    .govplay-stat-label {
+      font-size: 11px; color: rgba(245, 240, 229, 0.3);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+
+    @media (max-width: 900px) {
+      .govplay-grid { grid-template-columns: 1fr 1fr; }
+      .govplay-stats { flex-wrap: wrap; }
+      .govplay-stat { flex: 1 1 50%; }
+      .govplay-stat:nth-child(2) { border-right: none; }
+    }
+    @media (max-width: 480px) {
+      .govplay-grid { grid-template-columns: 1fr; }
+      .govplay-stats { flex-direction: column; }
+      .govplay-stat { border-right: none; border-bottom: 1px solid rgba(255, 64, 129, 0.08); }
+      .govplay-stat:last-child { border-bottom: none; }
     }
 
     /* ═══════════════ MESSENGER SECTION (legacy) ═══════════════ */
@@ -986,6 +1127,10 @@
     .stagger.visible > *:nth-child(2) { opacity: 1; transform: none; transition-delay: 0.08s; }
     .stagger.visible > *:nth-child(3) { opacity: 1; transform: none; transition-delay: 0.16s; }
     .stagger.visible > *:nth-child(4) { opacity: 1; transform: none; transition-delay: 0.24s; }
+    .stagger.visible > *:nth-child(5) { opacity: 1; transform: none; transition-delay: 0.32s; }
+    .stagger.visible > *:nth-child(6) { opacity: 1; transform: none; transition-delay: 0.40s; }
+    .stagger.visible > *:nth-child(7) { opacity: 1; transform: none; transition-delay: 0.48s; }
+    .stagger.visible > *:nth-child(8) { opacity: 1; transform: none; transition-delay: 0.56s; }
 
     /* Gold shimmer text */
     .shimmer-text {
@@ -1191,6 +1336,8 @@
     <a href="#kente-system">Kente System</a>
     <a href="#adblocker">Ad Blocker</a>
     <a href="#messenger">GovChat</a>
+    <a href="#govplay">GovPlay</a>
+    <a href="https://www.askozzy.work" target="_blank">AskOzzy</a>
     <a href="#download">Download</a>
   </div>
   <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/latest/download/OS.Browser.Setup.1.0.0.exe" class="nav-cta">
@@ -1211,9 +1358,9 @@
   </h1>
 
   <p class="hero-sub">
-    12 purpose-built features woven into a single, elegant experience.
-    Encrypted messaging, 25 government portals, 7 local languages,
-    built-in ad blocker, offline resilience &mdash; organized by the Kente System.
+    13 purpose-built features woven into a single, elegant experience.
+    Encrypted messaging, video calls, 25 government portals, 12 built-in games,
+    7 local languages, ad blocker, offline resilience &mdash; organized by the Kente System.
   </p>
 
   <div class="hero-actions">
@@ -1266,7 +1413,7 @@
 
 <!-- ═══════════════ STATS ═══════════════ -->
 <div class="stats-ribbon">
-  <div class="stat-item"><div class="stat-value">12</div><div class="stat-label">Features</div></div>
+  <div class="stat-item"><div class="stat-value">13</div><div class="stat-label">Features</div></div>
   <div class="stat-item"><div class="stat-value">25+</div><div class="stat-label">Gov Services</div></div>
   <div class="stat-item"><div class="stat-value">87K+</div><div class="stat-label">Ad Filters</div></div>
   <div class="stat-item"><div class="stat-value">E2E</div><div class="stat-label">Encrypted</div></div>
@@ -1572,6 +1719,20 @@
       <div class="govchat-feature-title">Audit Trail</div>
       <div class="govchat-feature-desc">Metadata-only compliance logging. Full exportable audit trail.</div>
     </div>
+    <div class="govchat-feature">
+      <div class="govchat-feature-icon" style="background: rgba(206, 17, 38, 0.15); color: #E74C3C;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      </div>
+      <div class="govchat-feature-title">Video &amp; Audio Calls</div>
+      <div class="govchat-feature-desc">1:1 video and audio calls via WebRTC. Crystal clear, peer-to-peer, no third-party servers.</div>
+    </div>
+    <div class="govchat-feature">
+      <div class="govchat-feature-icon" style="background: rgba(46, 134, 193, 0.15); color: #2E86C1;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="govchat-feature-title">People Directory</div>
+      <div class="govchat-feature-desc">Find any government colleague online. Search by name, ministry, or department. Click to chat.</div>
+    </div>
   </div>
 
   <div class="govchat-content">
@@ -1638,6 +1799,83 @@
     <div class="govchat-stat">
       <div class="govchat-stat-value">Zero-Knowledge</div>
       <div class="govchat-stat-label">Server Architecture</div>
+    </div>
+    <div class="govchat-stat">
+      <div class="govchat-stat-value">WebRTC</div>
+      <div class="govchat-stat-label">Video &amp; Audio</div>
+    </div>
+  </div>
+
+  <div class="govchat-callout reveal">
+    <div class="govchat-callout-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF4081" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+    </div>
+    <div class="govchat-callout-text">
+      <strong>Video &amp; Audio Calls</strong> &mdash; Built-in WebRTC calling. No Zoom, no Teams, no third-party apps. Just click the call button in any DM conversation.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ GOVPLAY ═══════════════ -->
+<section id="govplay" class="section govplay-section">
+  <div class="govplay-hero reveal">
+    <div class="govplay-icon-wrapper">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FF4081" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="11" x2="10" y2="11"/><line x1="8" y1="9" x2="8" y2="13"/><line x1="15" y1="12" x2="15.01" y2="12"/><line x1="18" y1="10" x2="18.01" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg>
+    </div>
+    <h2 class="govplay-title">GovPlay</h2>
+    <p class="govplay-subtitle">12 Built-In Games for Break-Time Entertainment</p>
+    <p class="govplay-tagline">Strategy, puzzles, arcade, and educational games. All offline, all free.</p>
+  </div>
+
+  <div class="govplay-grid reveal stagger">
+    <div class="govplay-card">
+      <div class="govplay-card-icon" style="background: rgba(212, 160, 23, 0.15); color: #D4A017;">&#9823;</div>
+      <div class="govplay-card-name">Oware</div>
+      <div class="govplay-card-desc">Ghana's national board game with AI opponent</div>
+    </div>
+    <div class="govplay-card">
+      <div class="govplay-card-icon" style="background: rgba(127, 119, 221, 0.15); color: #7F77DD;">&#9822;</div>
+      <div class="govplay-card-name">Chess</div>
+      <div class="govplay-card-desc">Classic strategy with 3 difficulty levels</div>
+    </div>
+    <div class="govplay-card">
+      <div class="govplay-card-icon" style="background: rgba(0, 168, 107, 0.15); color: #00A86B;">&#9861;</div>
+      <div class="govplay-card-name">Ludo</div>
+      <div class="govplay-card-desc">2-4 players with smart AI opponents</div>
+    </div>
+    <div class="govplay-card">
+      <div class="govplay-card-icon" style="background: rgba(59, 139, 212, 0.15); color: #5DADE2;">&#9638;</div>
+      <div class="govplay-card-name">Sudoku</div>
+      <div class="govplay-card-desc">Puzzle generation with hints and notes</div>
+    </div>
+    <div class="govplay-card">
+      <div class="govplay-card-icon" style="background: rgba(206, 17, 38, 0.15); color: #CE1126;">&#9733;</div>
+      <div class="govplay-card-name">Ghana Trivia</div>
+      <div class="govplay-card-desc">150+ questions about Ghana's history and culture</div>
+    </div>
+    <div class="govplay-card govplay-card-more">
+      <div class="govplay-card-icon" style="background: rgba(255, 64, 129, 0.15); color: #FF4081;">+7</div>
+      <div class="govplay-card-name">+ 7 More</div>
+      <div class="govplay-card-desc">Snake, Checkers, Solitaire, 2048, Minesweeper, Word Scramble, Typing Speed</div>
+    </div>
+  </div>
+
+  <div class="govplay-stats reveal">
+    <div class="govplay-stat">
+      <div class="govplay-stat-value">12 Games</div>
+      <div class="govplay-stat-label">Built-In</div>
+    </div>
+    <div class="govplay-stat">
+      <div class="govplay-stat-value">Zero Downloads</div>
+      <div class="govplay-stat-label">Required</div>
+    </div>
+    <div class="govplay-stat">
+      <div class="govplay-stat-value">100% Offline</div>
+      <div class="govplay-stat-label">No Internet Needed</div>
+    </div>
+    <div class="govplay-stat">
+      <div class="govplay-stat-value">Ghana-Themed</div>
+      <div class="govplay-stat-label">Cultural Content</div>
     </div>
   </div>
 </section>
@@ -1747,7 +1985,7 @@
     </p>
     <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/latest/download/OS.Browser.Setup.1.0.0.exe" class="cta-download">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Download OS Browser
+      Download OS Browser &mdash; Free
     </a>
     <div class="cta-platform">
       <span>Windows 10/11</span>
@@ -1768,6 +2006,8 @@
       <a href="#features">Features</a>
       <a href="#kente-system">Kente System</a>
       <a href="#messenger">GovChat</a>
+      <a href="#govplay">GovPlay</a>
+      <a href="https://www.askozzy.work" target="_blank">AskOzzy</a>
       <a href="https://github.com/ghwmelite-dotcom/OS-Browser" target="_blank">GitHub</a>
     </div>
   </div>
