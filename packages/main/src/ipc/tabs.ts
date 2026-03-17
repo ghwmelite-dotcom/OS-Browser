@@ -19,10 +19,28 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     const tabUrl = url || 'os-browser://newtab';
     const position = (db.prepare('SELECT MAX(position) as max FROM tabs').get() as any)?.max + 1 || 0;
 
+    // Map internal URLs to meaningful tab titles
+    const INTERNAL_TITLES: Record<string, string> = {
+      'os-browser://newtab': 'New Tab',
+      'os-browser://settings': 'Settings',
+      'os-browser://downloads': 'Downloads',
+      'os-browser://stats': 'Statistics',
+      'os-browser://docs': 'Documents',
+      'os-browser://bookmarks': 'Bookmarks',
+      'os-browser://documents': 'Documents',
+      'os-browser://data': 'Data Dashboard',
+      'os-browser://help': 'Help',
+      'os-browser://gov': 'Gov Hub',
+      'os-browser://offline': 'Offline Library',
+      'os-browser://features': 'Feature Directory',
+      'os-browser://games': 'GovPlay',
+    };
+    const title = INTERNAL_TITLES[tabUrl] || (tabUrl.startsWith('os-browser://') ? tabUrl.replace('os-browser://', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'New Tab');
+
     db.prepare('UPDATE tabs SET is_active = 0 WHERE is_active = 1').run();
     db.prepare(
       'INSERT INTO tabs (id, title, url, position, is_active, last_accessed_at) VALUES (?, ?, ?, ?, 1, datetime("now"))'
-    ).run(id, 'New Tab', tabUrl, position);
+    ).run(id, title, tabUrl, position);
 
     // Only create a WebContentsView for real URLs — not internal os-browser:// pages
     // Internal pages (newtab, settings, etc.) are rendered by React in the renderer
@@ -35,7 +53,6 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
       tabViews.set(id, view);
     }
 
-    const title = tabUrl === 'os-browser://settings' ? 'Settings' : 'New Tab';
     return { id, title, url: tabUrl, position, is_pinned: false, is_active: true, is_muted: false, favicon_path: null, last_accessed_at: new Date().toISOString() };
   });
 
