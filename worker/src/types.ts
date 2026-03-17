@@ -72,5 +72,20 @@ export interface GovChatSession {
   homeserverUrl: string;
   deviceId: string;
   createdAt: number;
-  role: 'user' | 'admin' | 'superadmin';
+  role: 'user' | 'admin' | 'superadmin' | 'public';
+}
+
+export interface CodeRequest {
+  id: string;
+  name: string;
+  email: string;
+  department: string;
+  ministry: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: number;
+  reviewedBy?: string;
+  reviewedAt?: number;
+  rejectionReason?: string;
+  generatedCode?: string;
 }

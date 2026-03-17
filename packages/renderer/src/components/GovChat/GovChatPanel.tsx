@@ -77,12 +77,24 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
   const logout = useGovChatStore(s => s.logout);
   const initialize = useGovChatStore(s => s.initialize);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [pendingRequestCount, setPendingRequestCount] = useState(0);
 
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
+  const credentials = useGovChatStore(s => s.credentials);
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  useEffect(() => {
+    if (!isAdmin || !credentials?.accessToken) return;
+    fetch(`https://os-browser-worker.ghwmelite.workers.dev/api/v1/govchat/code-requests/count`, {
+      headers: { Authorization: `Bearer ${credentials.accessToken}` },
+    })
+      .then(r => r.json())
+      .then(d => setPendingRequestCount(d.count ?? 0))
+      .catch(() => {});
+  }, [isAdmin, credentials?.accessToken]);
 
   const isAuthenticated = authStep === 'authenticated';
 
@@ -122,10 +134,18 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
               {isAdmin && (
                 <button
                   onClick={() => setShowAdminPanel(true)}
-                  className="p-1.5 rounded-md hover:bg-surface-2 transition-colors"
+                  className="p-1.5 rounded-md hover:bg-surface-2 transition-colors relative"
                   title="Admin Panel"
                 >
                   <Settings size={14} style={{ color: '#D4A017' }} />
+                  {pendingRequestCount > 0 && (
+                    <span
+                      className="absolute -top-1 -right-1 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-bold text-white"
+                      style={{ background: '#CE1126', lineHeight: 1, padding: '0 3px' }}
+                    >
+                      {pendingRequestCount > 99 ? '99+' : pendingRequestCount}
+                    </span>
+                  )}
                 </button>
               )}
               <button
