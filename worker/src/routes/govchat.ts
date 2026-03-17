@@ -21,15 +21,45 @@ export const govchatRoutes = new Hono<{ Bindings: Env; Variables: Variables }>()
 
 function generateInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // No I,O,0,1 to avoid confusion
-  const bytes = new Uint8Array(8);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => chars[b % chars.length]).join('');
+  const limit = 256 - (256 % chars.length); // Rejection sampling to eliminate modulo bias
+  const result: string[] = [];
+  while (result.length < 8) {
+    const bytes = new Uint8Array(8);
+    crypto.getRandomValues(bytes);
+    for (const b of bytes) {
+      if (b < limit && result.length < 8) {
+        result.push(chars[b % chars.length]);
+      }
+    }
+  }
+  return result.join('');
 }
 
 function generateToken(): string {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * IP-based rate limiting for sensitive auth endpoints.
+ * Uses KV keys with TTL to track attempts per IP within a time window.
+ * Returns true if rate limit is exceeded (request should be rejected).
+ */
+async function checkRateLimit(
+  kv: KVNamespace,
+  action: string,
+  ip: string,
+  maxAttempts: number,
+  windowMinutes: number,
+): Promise<boolean> {
+  const window = Math.floor(Date.now() / (windowMinutes * 60 * 1000));
+  const key = `rate:${action}:${ip}:${window}`;
+  const current = await kv.get(key);
+  const count = current ? parseInt(current, 10) : 0;
+  if (count >= maxAttempts) return true;
+  await kv.put(key, String(count + 1), { expirationTtl: windowMinutes * 60 });
+  return false;
 }
 
 async function getAuthenticatedSession(
@@ -83,6 +113,10 @@ govchatRoutes.post('/invite-codes/generate', async (c) => {
     return c.json({ error: 'department and ministry are required' }, 400);
   }
 
+  // Input length validation
+  if (body.department.length > 200) return c.json({ error: 'department too long (max 200)' }, 400);
+  if (body.ministry.length > 200) return c.json({ error: 'ministry too long (max 200)' }, 400);
+
   const code = generateInviteCode();
   const now = Date.now();
   const expiresInHours = body.expiresInHours ?? 72;
@@ -112,6 +146,12 @@ govchatRoutes.post('/invite-codes/generate', async (c) => {
 // ---------------------------------------------------------------------------
 
 govchatRoutes.post('/auth/redeem-invite', async (c) => {
+  // Rate limit: 3 redemption attempts per IP per 5 minutes
+  const ip = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || 'unknown';
+  if (await checkRateLimit(c.env.INVITE_CODES, 'redeem', ip, 3, 5)) {
+    return c.json({ error: 'Too many attempts. Please try again later.' }, 429);
+  }
+
   const body = await c.req.json<{
     code: string;
     staffId: string;
@@ -121,6 +161,11 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
   if (!body.code || !body.staffId || !body.displayName) {
     return c.json({ error: 'code, staffId, and displayName are required' }, 400);
   }
+
+  // Input length validation
+  if (body.code.length !== 8) return c.json({ error: 'code must be exactly 8 characters' }, 400);
+  if (body.staffId.length > 50) return c.json({ error: 'staffId too long (max 50)' }, 400);
+  if (body.displayName.length > 100) return c.json({ error: 'displayName too long (max 100)' }, 400);
 
   // Validate staffId format
   if (!/^[a-zA-Z0-9._-]+$/.test(body.staffId)) {
@@ -239,26 +284,10 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
         matrixDeviceId = regData.device_id;
       } else {
         const errBody = await regRes.text();
-        // User may already exist — try logging in instead
+        // User already exists — skip Synapse login (we can't use a random password
+        // for an existing account). Continue with our own session token instead.
         if (errBody.includes('User ID already taken')) {
-          const loginRes = await fetch(`${homeserverUrl}/_matrix/client/v3/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: 'm.login.password',
-              identifier: { type: 'm.id.user', user: body.staffId },
-              password,
-            }),
-          });
-          if (loginRes.ok) {
-            const loginData = await loginRes.json() as {
-              user_id: string;
-              access_token: string;
-              device_id: string;
-            };
-            matrixAccessToken = loginData.access_token;
-            matrixDeviceId = loginData.device_id;
-          }
+          console.info(`Synapse user ${body.staffId} already exists — using worker session token only`);
         }
       }
     }
@@ -267,8 +296,10 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
     console.error('Synapse registration error:', err);
   }
 
-  // Create session — use Matrix credentials if available, fallback to local
-  const token = matrixAccessToken || generateToken();
+  // Always generate our own session token — never reuse the Matrix access token
+  // as the worker session identifier. The Matrix token is only passed to the client
+  // if needed for direct SDK operations.
+  const sessionToken = generateToken();
   const deviceId = matrixDeviceId || `GOVCHAT_${generateToken().slice(0, 12).toUpperCase()}`;
   const userId = matrixAccessToken ? matrixUserId : `@${body.staffId}:gov.gh`;
 
@@ -289,7 +320,7 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
     displayName: body.displayName,
     department: freshInvite.department,
     ministry: freshInvite.ministry,
-    token,
+    token: sessionToken,
     homeserverUrl,
     deviceId,
     createdAt: Date.now(),
@@ -297,17 +328,18 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
   };
 
   // Store session with 7-day TTL
-  await c.env.SESSIONS.put(`govchat-session:${token}`, JSON.stringify(session), {
+  await c.env.SESSIONS.put(`govchat-session:${sessionToken}`, JSON.stringify(session), {
     expirationTtl: 7 * 24 * 60 * 60, // 7 days in seconds
   });
 
   return c.json({
     success: true,
     userId,
-    accessToken: token,
+    accessToken: sessionToken, // Our own token, not the Matrix access token
     homeserverUrl,
     staffId: body.staffId,
     deviceId,
+    matrixToken: matrixAccessToken || undefined, // Only if client needs it for SDK
   });
 });
 
@@ -517,6 +549,12 @@ govchatRoutes.get('/users/directory', async (c) => {
 // ---------------------------------------------------------------------------
 
 govchatRoutes.post('/code-requests', async (c) => {
+  // Rate limit: 5 code requests per IP per 10 minutes
+  const ip = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || 'unknown';
+  if (await checkRateLimit(c.env.INVITE_CODES, 'code-request', ip, 5, 10)) {
+    return c.json({ error: 'Too many requests. Please try again later.' }, 429);
+  }
+
   const body = await c.req.json<{
     name: string;
     email: string;
@@ -528,6 +566,13 @@ govchatRoutes.post('/code-requests', async (c) => {
   if (!body.name || !body.email || !body.department || !body.ministry || !body.reason) {
     return c.json({ error: 'name, email, department, ministry, and reason are all required' }, 400);
   }
+
+  // Input length validation
+  if (body.name.length > 100) return c.json({ error: 'name too long (max 100)' }, 400);
+  if (body.email.length > 254) return c.json({ error: 'email too long (max 254)' }, 400);
+  if (body.department.length > 200) return c.json({ error: 'department too long (max 200)' }, 400);
+  if (body.ministry.length > 200) return c.json({ error: 'ministry too long (max 200)' }, 400);
+  if (body.reason.length > 1000) return c.json({ error: 'reason too long (max 1000)' }, 400);
 
   // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -702,11 +747,21 @@ govchatRoutes.put('/code-requests/:id/reject', async (c) => {
 // ---------------------------------------------------------------------------
 
 govchatRoutes.post('/auth/public-signup', async (c) => {
+  // Rate limit: 3 public signups per IP per 10 minutes
+  const ip = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || 'unknown';
+  if (await checkRateLimit(c.env.INVITE_CODES, 'public-signup', ip, 3, 10)) {
+    return c.json({ error: 'Too many signup attempts. Please try again later.' }, 429);
+  }
+
   const body = await c.req.json<{ name: string; email: string }>();
 
   if (!body.name || !body.email) {
     return c.json({ error: 'name and email are required' }, 400);
   }
+
+  // Input length validation
+  if (body.name.length > 100) return c.json({ error: 'name too long (max 100)' }, 400);
+  if (body.email.length > 254) return c.json({ error: 'email too long (max 254)' }, 400);
 
   // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -783,26 +838,10 @@ govchatRoutes.post('/auth/public-signup', async (c) => {
         matrixDeviceId = regData.device_id;
       } else {
         const errBody = await regRes.text();
-        // User may already exist — try logging in instead
+        // User already exists — skip Synapse login (we can't use a random password
+        // for an existing account). Continue with our own session token instead.
         if (errBody.includes('User ID already taken')) {
-          const loginRes = await fetch(`${homeserverUrl}/_matrix/client/v3/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: 'm.login.password',
-              identifier: { type: 'm.id.user', user: username },
-              password,
-            }),
-          });
-          if (loginRes.ok) {
-            const loginData = (await loginRes.json()) as {
-              user_id: string;
-              access_token: string;
-              device_id: string;
-            };
-            matrixAccessToken = loginData.access_token;
-            matrixDeviceId = loginData.device_id;
-          }
+          console.info(`Synapse user ${username} already exists — using worker session token only`);
         }
       }
     }
@@ -810,8 +849,8 @@ govchatRoutes.post('/auth/public-signup', async (c) => {
     console.error('Synapse registration error:', err);
   }
 
-  // Create session with role 'public'
-  const token = matrixAccessToken || generateToken();
+  // Always generate our own session token — never reuse the Matrix access token
+  const sessionToken = generateToken();
   const deviceId = matrixDeviceId || `GOVCHAT_${generateToken().slice(0, 12).toUpperCase()}`;
   const userId = matrixAccessToken ? matrixUserId : `@${username}:gov.gh`;
 
@@ -821,7 +860,7 @@ govchatRoutes.post('/auth/public-signup', async (c) => {
     displayName: body.name,
     department: 'Public',
     ministry: 'Public',
-    token,
+    token: sessionToken,
     homeserverUrl,
     deviceId,
     createdAt: Date.now(),
@@ -829,22 +868,28 @@ govchatRoutes.post('/auth/public-signup', async (c) => {
   };
 
   // Store session with 30-day TTL
-  await c.env.SESSIONS.put(`govchat-session:${token}`, JSON.stringify(session), {
+  await c.env.SESSIONS.put(`govchat-session:${sessionToken}`, JSON.stringify(session), {
     expirationTtl: 30 * 24 * 60 * 60, // 30 days in seconds
   });
 
   return c.json({
     success: true,
     userId,
-    accessToken: token,
+    accessToken: sessionToken, // Our own token, not the Matrix access token
     homeserverUrl,
     staffId: body.email,
     deviceId,
+    matrixToken: matrixAccessToken || undefined, // Only if client needs it for SDK
   });
 });
 
 // ---------------------------------------------------------------------------
 // WebRTC Call Signaling Endpoints
+//
+// NOTE: Call signaling data is stored in the INVITE_CODES KV namespace to avoid
+// creating a separate KV binding. This is safe because call signal keys use the
+// "call-signal:" prefix (distinct from "invite:" and "code-request:" prefixes)
+// and have a 60-second TTL, so they never collide with or pollute invite data.
 // ---------------------------------------------------------------------------
 
 // POST /calls/signal — Send a signaling message to a peer

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu } from 'electron';
+import { app, BrowserWindow, Menu, MenuItem, clipboard, screen, dialog } from 'electron';
 import path from 'path';
 import { initDatabase, getDatabase, closeDatabase, runMigrations } from './db/database';
 import { seedDatabase } from './db/seed';
@@ -36,7 +36,6 @@ function saveWindowState() {
 
 function createWindow() {
   const state = getWindowState();
-  const { screen } = require('electron');
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width: screenW, height: screenH } = primaryDisplay.workAreaSize;
 
@@ -78,7 +77,6 @@ function createWindow() {
   mainWindow.on('maximize', () => {
     setTimeout(() => {
       if (!mainWindow || !mainWindow.isMaximized()) return;
-      const { screen } = require('electron');
       const display = screen.getDisplayMatching(mainWindow.getBounds());
       const { x, y, width, height } = display.workArea;
       mainWindow.setBounds({ x, y, width, height });
@@ -91,33 +89,35 @@ function createWindow() {
 
     if (params.isEditable) {
       if (params.selectionText) {
-        menu.append(new (require('electron').MenuItem)({ role: 'cut' }));
-        menu.append(new (require('electron').MenuItem)({ role: 'copy' }));
+        menu.append(new MenuItem({ role: 'cut' }));
+        menu.append(new MenuItem({ role: 'copy' }));
       }
-      menu.append(new (require('electron').MenuItem)({ role: 'paste' }));
-      menu.append(new (require('electron').MenuItem)({ role: 'selectAll' }));
+      menu.append(new MenuItem({ role: 'paste' }));
+      menu.append(new MenuItem({ role: 'selectAll' }));
     } else if (params.selectionText) {
-      menu.append(new (require('electron').MenuItem)({ role: 'copy' }));
+      menu.append(new MenuItem({ role: 'copy' }));
     }
 
     if (params.linkURL) {
-      menu.append(new (require('electron').MenuItem)({ type: 'separator' }));
-      menu.append(new (require('electron').MenuItem)({
+      menu.append(new MenuItem({ type: 'separator' }));
+      menu.append(new MenuItem({
         label: 'Copy Link',
         click: () => {
-          require('electron').clipboard.writeText(params.linkURL);
+          clipboard.writeText(params.linkURL);
         },
       }));
     }
 
-    // Dev tools (always available for now)
-    menu.append(new (require('electron').MenuItem)({ type: 'separator' }));
-    menu.append(new (require('electron').MenuItem)({
-      label: 'Inspect Element',
-      click: () => {
-        mainWindow?.webContents.inspectElement(params.x, params.y);
-      },
-    }));
+    // Dev tools — only in development or explicit debug mode
+    if (!app.isPackaged || process.env.OS_BROWSER_DEBUG === '1') {
+      menu.append(new MenuItem({ type: 'separator' }));
+      menu.append(new MenuItem({
+        label: 'Inspect Element',
+        click: () => {
+          mainWindow?.webContents.inspectElement(params.x, params.y);
+        },
+      }));
+    }
 
     if (menu.items.length > 0) {
       menu.popup();
@@ -163,7 +163,6 @@ function createWindow() {
     const tabCount = (db.prepare('SELECT COUNT(*) as count FROM tabs').get() as any)?.count || 0;
 
     if (tabCount > 1) {
-      const { dialog } = require('electron');
       const choice = dialog.showMessageBoxSync(mainWindow!, {
         type: 'question',
         buttons: ['Close All Tabs', 'Cancel'],

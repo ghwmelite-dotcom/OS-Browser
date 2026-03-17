@@ -21,7 +21,18 @@
       "Bash(taskkill:*)",
       "Read(//c/Program Files/7-Zip/**)",
       "Read(//c/Program Files \\(x86\\)/7-Zip/**)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(rm -rf /tmp/asar-audit)",
+      "Read(//tmp/**)",
+      "Bash(du -sh /tmp/asar-audit/node_modules/*)",
+      "Read(//tmp/asar-audit/node_modules/**)",
+      "Bash(nslookup:*)",
+      "Bash(ssh:*)",
+      "Bash(sshpass:*)",
+      "Bash(npx wrangler:*)",
+      "Bash(where:*)",
+      "Bash(reg query:*)",
+      "Bash(powershell -Command \"Get-ChildItem -Path 'C:\\\\Users\\\\USER' -Recurse -Filter 'OS Browser.exe' -ErrorAction SilentlyContinue | Select-Object -First 5 FullName, LastWriteTime, Length\" 2>&1)"
     ]
   }
 }

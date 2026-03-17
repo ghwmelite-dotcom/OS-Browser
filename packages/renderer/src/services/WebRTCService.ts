@@ -6,6 +6,7 @@
  * Matrix sync is not yet reliable due to CSP constraints.
  */
 import type { GovChatCredentials } from '@/types/govchat';
+import { API_BASE_URL } from '@/lib/api-config';
 
 type CallEventCallback = (data: unknown) => void;
 
@@ -14,7 +15,7 @@ const ICE_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun1.l.google.com:19302' },
 ];
 
-const WORKER_URL = 'https://os-browser-worker.ghwmelite.workers.dev';
+const WORKER_URL = API_BASE_URL;
 
 export type CallState = 'idle' | 'calling' | 'ringing' | 'connected' | 'ended';
 
@@ -407,6 +408,7 @@ class WebRTCServiceClass {
 
   private cleanup(): void {
     this.stopPolling();
+    this.stopIncomingCallPolling();
     if (this.localStream) {
       for (const track of this.localStream.getTracks()) {
         track.stop();

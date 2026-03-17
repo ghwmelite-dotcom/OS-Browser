@@ -23,7 +23,13 @@ healthRoutes.get('/models', (c) => {
 });
 
 healthRoutes.post('/register-device', async (c) => {
-  const body = await c.req.json<{ app_version?: string }>().catch(() => ({}));
+  const body = await c.req.json<{ app_version?: string; secret?: string }>().catch(() => ({}));
+
+  // Validate device registration secret to prevent unauthorized registrations
+  if (!('secret' in body) || !body.secret || body.secret !== c.env.DEVICE_REGISTRATION_SECRET) {
+    return c.json({ error: 'Invalid registration secret' }, 403);
+  }
+
   const token = crypto.randomUUID() + '-' + crypto.randomUUID();
   const deviceId = crypto.randomUUID();
 

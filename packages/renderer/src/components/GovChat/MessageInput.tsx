@@ -254,6 +254,10 @@ export function MessageInput() {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
+        if (file.size > 50 * 1024 * 1024) {
+          alert('File too large. Maximum size is 50 MB.');
+          return;
+        }
         setSelectedFile(file);
       }
       // Reset input so same file can be re-selected
@@ -350,7 +354,15 @@ export function MessageInput() {
               waveform.push(raw[idx] ?? 0);
             }
           }
-          sendVoiceNote(activeRoomId, blob, duration, waveform);
+
+          // Convert blob to data URL for reliable playback in Electron
+          // Blob URLs fail in sandboxed Electron renderers
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const dataUrl = reader.result as string;
+            sendVoiceNote(activeRoomId, blob, duration, waveform, dataUrl);
+          };
+          reader.readAsDataURL(blob);
         }
 
         // Clean up stream tracks
@@ -544,6 +556,7 @@ export function MessageInput() {
             <input
               ref={fileInputRef}
               type="file"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.mp3,.mp4,.wav,.ogg,.webm,.txt,.csv,.zip"
               className="hidden"
               onChange={handleFileSelect}
               tabIndex={-1}
