@@ -160,12 +160,13 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
         </button>
       </div>
 
-      {/* Panel Content */}
+      {/* Panel Content — scrollable container */}
       <div
         className="kente-panel-scroll"
         style={{
-          flex: 1,
+          flex: '1 1 0%',
           minHeight: 0,
+          height: 0,
           overflowY: 'auto',
           overflowX: 'hidden',
           wordBreak: 'break-word',
