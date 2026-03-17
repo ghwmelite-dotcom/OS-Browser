@@ -49,10 +49,13 @@ function GameLoader({ gameId }: { gameId: string }) {
   }, []);
 
   return (
-    <div ref={containerRef} style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+    <div ref={containerRef} style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
       <React.Suspense fallback={
         <div style={{ color: 'var(--color-text-muted)', fontSize: 14 }}>Loading game...</div>
       }>
+        {dims.width < 50 || dims.height < 50 ? (
+          <div style={{ color: 'var(--color-text-muted)', fontSize: 14 }}>Preparing game...</div>
+        ) : <>
         {gameId === 'oware' && <OwareGame containerWidth={dims.width} containerHeight={dims.height} />}
         {gameId === 'chess' && <ChessGame containerWidth={dims.width} containerHeight={dims.height} />}
         {gameId === 'checkers' && <CheckersGame containerWidth={dims.width} containerHeight={dims.height} />}
@@ -65,6 +68,7 @@ function GameLoader({ gameId }: { gameId: string }) {
         {gameId === 'word-scramble' && <WordScrambleGame />}
         {gameId === 'trivia' && <TriviaGame />}
         {gameId === 'typing' && <TypingSpeedGame />}
+        </>}
       </React.Suspense>
     </div>
   );
