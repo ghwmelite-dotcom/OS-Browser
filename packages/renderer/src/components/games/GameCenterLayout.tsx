@@ -39,6 +39,9 @@ export const GameCenterLayout: React.FC<GameCenterLayoutProps> = ({ onSelectGame
   const [category, setCategory] = useState<string>('All');
   const stats = useGameStore((s) => s.stats);
 
+  // Preview mode: games locked for public users unless dev unlock is set
+  const isUnlocked = typeof localStorage !== 'undefined' && localStorage.getItem('govplay_dev_unlock') === 'true';
+
   const filtered = useMemo(() => {
     let list = GAMES;
     if (category !== 'All') {
@@ -162,7 +165,8 @@ export const GameCenterLayout: React.FC<GameCenterLayoutProps> = ({ onSelectGame
             category={game.category}
             icon={game.icon}
             bestScore={stats[game.id]?.bestScore}
-            onPlay={() => onSelectGame(game.id)}
+            locked={!isUnlocked}
+            onPlay={() => isUnlocked && onSelectGame(game.id)}
           />
         ))}
         {filtered.length === 0 && (
