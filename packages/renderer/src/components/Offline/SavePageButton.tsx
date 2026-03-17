@@ -41,8 +41,8 @@ export function SavePageButton() {
   // Listen for save-page events from menu or keyboard shortcut
   useEffect(() => {
     const handler = () => handleSave();
-    window.addEventListener('os-browser:save-page-offline', handler);
-    return () => window.removeEventListener('os-browser:save-page-offline', handler);
+    window.addEventListener('os-browser:save-page-offline', handler as EventListener);
+    return () => window.removeEventListener('os-browser:save-page-offline', handler as EventListener);
   }, [currentUrl, title, isInternalPage, saved]);
 
   // Keyboard shortcut: Ctrl+Shift+S

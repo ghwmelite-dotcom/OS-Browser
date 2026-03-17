@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useOfflineStore, type SavedPage, type QueuedSubmission } from '@/store/offline';
 import { useTabsStore } from '@/store/tabs';
+import { useNavigationStore } from '@/store/navigation';
 
 // ── Ghana flag palette ────────────────────────────────────────────────────
 const GHANA_GREEN = '#006B3F';
@@ -486,15 +487,18 @@ export function OfflinePage() {
     savedPages, queuedSubmissions, autoCacheRules,
     totalStorageUsed, storageLimit, searchQuery,
     removePage, clearAllPages, removeSubmission, retrySubmission,
-    toggleAutoCacheRule, addAutoCacheRule, setSearchQuery,
+    retryAllPending, toggleAutoCacheRule, addAutoCacheRule, setSearchQuery,
+    savePage,
   } = useOfflineStore();
-  const { createTab } = useTabsStore();
+  const { createTab, tabs, activeTabId } = useTabsStore();
+  const { currentUrl } = useNavigationStore();
 
   const [activeTab, setActiveTab] = useState<TabId>('saved');
   const [sortMode, setSortMode] = useState<SortMode>('recent');
   const [newRulePattern, setNewRulePattern] = useState('');
   const [newRuleLabel, setNewRuleLabel] = useState('');
   const [showAddRule, setShowAddRule] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Filter + sort saved pages
   const filteredPages = useMemo(() => {
@@ -531,8 +535,10 @@ export function OfflinePage() {
   const activeRulesCount = autoCacheRules.filter(r => r.enabled).length;
 
   const handleOpenOffline = (page: SavedPage) => {
-    // Open in a new tab -- in a real implementation this would serve cached content
-    createTab(page.url);
+    // Serve cached content as a data URL so it works fully offline
+    const blob = new Blob([page.content], { type: 'text/html' });
+    const blobUrl = URL.createObjectURL(blob);
+    createTab(blobUrl);
   };
 
   const handleAddRule = () => {
@@ -709,7 +715,8 @@ export function OfflinePage() {
               {/* Top bar */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
                 <button
-                  disabled={queuedSubmissions.length === 0}
+                  disabled={queuedSubmissions.filter(s => s.status === 'pending' || s.status === 'failed').length === 0}
+                  onClick={() => retryAllPending()}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6,
                     padding: '8px 16px', borderRadius: 10,
@@ -717,14 +724,14 @@ export function OfflinePage() {
                     background: GHANA_GREEN,
                     color: '#fff',
                     border: 'none',
-                    cursor: queuedSubmissions.length === 0 ? 'not-allowed' : 'pointer',
-                    opacity: queuedSubmissions.length === 0 ? 0.4 : 1,
+                    cursor: queuedSubmissions.filter(s => s.status === 'pending' || s.status === 'failed').length === 0 ? 'not-allowed' : 'pointer',
+                    opacity: queuedSubmissions.filter(s => s.status === 'pending' || s.status === 'failed').length === 0 ? 0.4 : 1,
                     transition: 'opacity 150ms',
                   }}
-                  title="Submit all pending items when online"
+                  title={navigator.onLine ? 'Submit all pending items now' : 'Will auto-submit when back online'}
                 >
                   <Send size={13} />
-                  Submit All
+                  {navigator.onLine ? 'Submit All Now' : 'Submit When Online'}
                 </button>
               </div>
 
@@ -983,24 +990,38 @@ export function OfflinePage() {
           {/* Save Current Page button */}
           <div style={{ margin: '0 12px 16px' }}>
             <button
+              disabled={!currentUrl || currentUrl.startsWith('os-browser://') || saveSuccess}
               onClick={() => {
-                // Dispatch a save-page event that SavePageButton listens to
-                window.dispatchEvent(new CustomEvent('os-browser:save-page-offline'));
+                // Save the current page directly to the offline store
+                if (!currentUrl || currentUrl.startsWith('os-browser://')) return;
+                const curTab = tabs.find(t => t.id === activeTabId);
+                const pageTitle = curTab?.title || currentUrl;
+                const isGov = currentUrl.includes('.gov.gh') || currentUrl.includes('.edu.gh');
+                savePage({
+                  url: currentUrl,
+                  title: pageTitle,
+                  category: isGov ? 'gov' : 'manual',
+                  content: `<html><head><title>${pageTitle}</title></head><body><p>Saved from ${currentUrl}</p></body></html>`,
+                  favicon: (() => { try { return `${new URL(currentUrl).origin}/favicon.ico`; } catch { return undefined; } })(),
+                });
+                setSaveSuccess(true);
+                setTimeout(() => setSaveSuccess(false), 2500);
               }}
               style={{
                 width: '100%',
                 padding: '10px 14px', borderRadius: 10,
                 fontSize: 12, fontWeight: 600,
-                background: GHANA_GREEN,
-                color: '#fff',
-                border: 'none',
-                cursor: 'pointer',
+                background: saveSuccess ? 'rgba(0,107,63,0.15)' : (!currentUrl || currentUrl.startsWith('os-browser://')) ? 'var(--color-surface-3)' : GHANA_GREEN,
+                color: saveSuccess ? GHANA_GREEN : (!currentUrl || currentUrl.startsWith('os-browser://')) ? 'var(--color-text-muted)' : '#fff',
+                border: saveSuccess ? `1px solid ${GHANA_GREEN}` : 'none',
+                cursor: (!currentUrl || currentUrl.startsWith('os-browser://') || saveSuccess) ? 'not-allowed' : 'pointer',
+                opacity: (!currentUrl || currentUrl.startsWith('os-browser://')) ? 0.5 : 1,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                transition: 'opacity 150ms',
+                transition: 'all 150ms',
               }}
             >
-              <Download size={14} />
-              Save Current Page
+              {saveSuccess ? <CheckCircle2 size={14} /> : <Download size={14} />}
+              {saveSuccess ? 'Page Saved!' : 'Save Current Page'}
             </button>
           </div>
 

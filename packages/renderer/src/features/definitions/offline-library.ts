@@ -14,14 +14,15 @@ const savePageOffline = () => {
   const activeTab = tabs.find(t => t.id === useTabsStore.getState().activeTabId);
   const title = activeTab?.title || url;
   const isGov = url.includes('.gov.gh') || url.includes('.edu.gh');
+  let favicon: string | undefined;
+  try { favicon = `${new URL(url).origin}/favicon.ico`; } catch { /* ignore */ }
   useOfflineStore.getState().savePage({
     url,
     title,
     category: isGov ? 'gov' : 'manual',
     content: `<html><head><title>${title}</title></head><body><p>Saved from ${url}</p></body></html>`,
+    favicon,
   });
-  // Also dispatch event for any other listeners
-  window.dispatchEvent(new CustomEvent('os-browser:save-page-offline'));
 };
 
 const OFFLINE_ACTIONS = [
