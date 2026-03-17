@@ -297,7 +297,7 @@ interface GovChatState {
   // Message actions
   sendMessage: (roomId: string, body: string, classification?: ClassificationLevel) => void;
   sendFileMessage: (roomId: string, file: File, classification?: ClassificationLevel) => Promise<void>;
-  sendVoiceNote: (roomId: string, blob: Blob, duration: number, waveform: number[]) => Promise<void>;
+  sendVoiceNote: (roomId: string, blob: Blob, duration: number, waveform: number[], dataUrl?: string) => Promise<void>;
   addReaction: (roomId: string, eventId: string, emoji: string) => void;
   removeReaction: (roomId: string, eventId: string, emoji: string) => void;
   setReplyingTo: (reply: ReplyTo | null) => void;
@@ -916,7 +916,7 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
       // Keep blob URL alive for preview/download — will be cleaned up on page reload
     },
 
-    sendVoiceNote: async (roomId: string, blob: Blob, duration: number, waveform: number[]) => {
+    sendVoiceNote: async (roomId: string, blob: Blob, duration: number, waveform: number[], dataUrl?: string) => {
       const { currentUser: user, messages, rooms } = get();
       const senderId = user?.userId ?? CURRENT_USER_ID;
       const senderName = user?.displayName ?? 'You';
@@ -941,7 +941,7 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
         voiceNote: {
           duration,
           waveform,
-          url: URL.createObjectURL(blob),
+          url: dataUrl || URL.createObjectURL(blob),
           mimeType: blob.type || 'audio/webm',
         },
       };

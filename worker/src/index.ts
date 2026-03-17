@@ -13,9 +13,13 @@ type Variables = { deviceId: string };
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
-// CORS — desktop app, no origin restriction
+// CORS — restrict to known origins (desktop app, local dev, deployed sites)
 app.use('*', cors({
-  origin: '*',
+  origin: (origin) => {
+    const allowed = ['https://govchat.askozzy.work', 'https://osbrowser.askozzy.work', 'file://', 'http://localhost:5173', 'http://localhost:4173'];
+    if (!origin || allowed.includes(origin)) return origin || '*';
+    return null;
+  },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowHeaders: ['Content-Type', 'Authorization'],
 }));

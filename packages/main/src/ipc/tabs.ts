@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, WebContentsView, nativeImage, net, Menu, MenuItem, clipboard, shell } from 'electron';
+import { app, ipcMain, BrowserWindow, WebContentsView, nativeImage, net, Menu, MenuItem, clipboard, shell, dialog } from 'electron';
 import { IPC } from '@os-browser/shared';
 import { getDatabase } from '../db/database';
 import crypto from 'crypto';
@@ -147,9 +147,17 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle(IPC.TAB_UPDATE, (_event, id: string, data: any) => {
     const db = getDatabase();
-    const allowed = ['title', 'url', 'favicon_path', 'is_pinned', 'is_muted', 'position'];
+    // Only allow known safe fields
+    const allowed = ['title', 'url', 'favicon_path', 'is_pinned', 'is_muted'];
     const fields = Object.keys(data).filter(k => allowed.includes(k));
     if (fields.length === 0) return;
+
+    // Validate field values — reject oversized strings
+    for (const field of fields) {
+      const value = data[field];
+      if (typeof value === 'string' && value.length > 2048) return;
+    }
+
     const sets = fields.map(f => `\`${f}\` = ?`).join(', ');
     const values = fields.map(f => data[f]);
     db.prepare(`UPDATE tabs SET ${sets} WHERE id = ?`).run(...values, id);
@@ -168,7 +176,6 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     const view = tabViews.get(id);
     if (!view) return null;
 
-    const { dialog } = require('electron');
     const { filePath } = await dialog.showSaveDialog(mainWindow, {
       title: 'Save as PDF',
       defaultPath: 'page.pdf',
@@ -185,10 +192,23 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
 
   // PWA install handler — opens a standalone BrowserWindow for the PWA
   ipcMain.handle('pwa:install', async (_event, data: { name: string; startUrl: string; iconUrl: string }) => {
+    // Strict input validation
+    const safeName = data.name.replace(/[^a-zA-Z0-9\s\-_.]/g, '').slice(0, 50);
+    let safeUrl: string;
+    try {
+      const parsed = new URL(data.startUrl);
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+        return { success: false, error: 'Invalid URL protocol' };
+      }
+      safeUrl = parsed.href;
+    } catch {
+      return { success: false, error: 'Invalid URL' };
+    }
+
     const pwaWindow = new BrowserWindow({
       width: 1200,
       height: 800,
-      title: data.name,
+      title: safeName,
       autoHideMenuBar: true,
       webPreferences: {
         nodeIntegration: false,
@@ -206,14 +226,10 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
       } catch { /* icon fetch failed — use default */ }
     }
 
-    pwaWindow.loadURL(data.startUrl);
+    pwaWindow.loadURL(safeUrl);
 
     // Create a desktop shortcut (Windows)
     try {
-      const { shell, app } = require('electron');
-      // Sanitize inputs to prevent command injection via shortcut args
-      const safeName = data.name.replace(/["\\/]/g, '');
-      const safeUrl = data.startUrl.replace(/"/g, '');
       const shortcutPath = path.join(
         app.getPath('appData'),
         'Microsoft/Windows/Start Menu/Programs',
@@ -258,6 +274,23 @@ function resizeViewToContent(view: WebContentsView, win: BrowserWindow): void {
 function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: BrowserWindow): void {
   const wc = view.webContents;
   const db = getDatabase();
+
+  // ── Navigation Guards (security) ──────────────────────────────────
+  // Prevent navigation to non-HTTP protocols (blocks javascript:, file:, data: etc.)
+  wc.on('will-navigate', (event, url) => {
+    if (!url.startsWith('https://') && !url.startsWith('http://')) {
+      event.preventDefault();
+    }
+  });
+
+  // Prevent window.open to non-HTTP protocols and handle in-app
+  wc.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https://') || url.startsWith('http://')) {
+      // Open in a new tab instead of a new window
+      mainWindow.webContents.send('tab:open-url', url);
+    }
+    return { action: 'deny' }; // Always deny popup windows
+  });
 
   // Right-click context menu
   wc.on('context-menu', (_e, params) => {
@@ -324,7 +357,9 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
       menu.append(new MenuItem({ label: 'View Page Source', accelerator: 'Ctrl+U', click: () => {
         mainWindow.webContents.send('tab:navigate-new', `view-source:${wc.getURL()}`);
       }}));
-      menu.append(new MenuItem({ label: 'Inspect Element', accelerator: 'Ctrl+Shift+I', click: () => wc.openDevTools() }));
+      if (!app.isPackaged || process.env.OS_BROWSER_DEBUG === '1') {
+        menu.append(new MenuItem({ label: 'Inspect Element', accelerator: 'Ctrl+Shift+I', click: () => wc.openDevTools() }));
+      }
     }
 
     menu.popup({ window: mainWindow });

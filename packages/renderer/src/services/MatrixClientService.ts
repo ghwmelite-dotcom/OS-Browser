@@ -21,14 +21,15 @@ import type {
   MessageStatus,
 } from '@/types/govchat';
 import { DEFAULT_RETENTION_DAYS } from '@/types/govchat';
+import { API_BASE_URL, MATRIX_HOMESERVER_URL } from '@/lib/api-config';
 
 type EventCallback = (data: unknown) => void;
 
-const WORKER_URL = 'https://os-browser-worker.ghwmelite.workers.dev';
+const WORKER_URL = API_BASE_URL;
 const STORAGE_KEY = 'govchat_credentials';
 
 // Default homeserver for government deployment
-const DEFAULT_HOMESERVER = 'https://govchat.askozzy.work';
+const DEFAULT_HOMESERVER = MATRIX_HOMESERVER_URL;
 
 // Lazy-loaded SDK reference
 let matrixSdk: typeof import('matrix-js-sdk') | null = null;
@@ -222,23 +223,6 @@ class MatrixClientServiceClass {
         message: 'Failed to connect to Matrix homeserver.',
       });
       this._isInitialized = false;
-    }
-  }
-
-  /**
-   * Initialize Olm/Megolm crypto. If Olm WASM is not available we continue
-   * without E2E — messages will be sent unencrypted.
-   */
-  private async initializeCrypto(): Promise<void> {
-    if (!this.client) return;
-    try {
-      await this.client.initCrypto();
-      console.info('[MatrixClientService] E2E encryption initialized.');
-    } catch (err) {
-      console.warn(
-        '[MatrixClientService] Crypto init failed (Olm may not be loaded). Continuing without E2E.',
-        err,
-      );
     }
   }
 

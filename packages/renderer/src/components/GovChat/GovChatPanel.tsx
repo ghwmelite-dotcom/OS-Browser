@@ -8,6 +8,40 @@ import { AdminPanel } from './AdminPanel';
 import { CallView } from './CallView';
 import { WebRTCService } from '@/services/WebRTCService';
 
+/* ─────────── error boundary ─────────── */
+
+class GovChatErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: string }
+> {
+  state = { hasError: false, error: '' };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: error.message };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return React.createElement('div', {
+        style: {
+          display: 'flex', flexDirection: 'column' as const, alignItems: 'center',
+          justifyContent: 'center', height: '100%', padding: 24,
+          background: 'var(--color-bg)', color: 'var(--color-text-muted)',
+          textAlign: 'center' as const, fontSize: 13,
+        },
+      },
+        React.createElement('p', { style: { fontWeight: 600, marginBottom: 8 } }, 'GovChat encountered an error'),
+        React.createElement('p', { style: { fontSize: 11 } }, this.state.error),
+        React.createElement('button', {
+          onClick: () => this.setState({ hasError: false, error: '' }),
+          style: { marginTop: 12, padding: '6px 16px', borderRadius: 6, border: 'none', background: '#D4A017', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 },
+        }, 'Try Again'),
+      );
+    }
+    return this.props.children;
+  }
+}
+
 /* ─────────── connection badge ─────────── */
 
 function ConnectionBadge() {
@@ -136,6 +170,7 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
   const isAuthenticated = authStep === 'authenticated';
 
   return (
+    <GovChatErrorBoundary>
     <div
       style={{
         minHeight: '100%',
@@ -252,5 +287,6 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
       {/* Admin Panel overlay */}
       {showAdminPanel && <AdminPanel onClose={() => setShowAdminPanel(false)} />}
     </div>
+    </GovChatErrorBoundary>
   );
 }
