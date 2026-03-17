@@ -395,6 +395,15 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
             // Show dice result for 500ms before applying
             aiTimeoutRef2.current = setTimeout(() => {
               if (cancelled) return;
+              // Reset aiPhase BEFORE applying dice roll. applyDiceRoll may
+              // return diceRolled=false (no valid moves, triple-6, or 6 with
+              // no moves). If that happens, the useEffect guard
+              // `!diceRolled && aiPhase !== 'idle'` would permanently block
+              // unless aiPhase is 'idle'. Setting 'idle' here is safe: when
+              // applyDiceRoll returns diceRolled=true (moves available), the
+              // useEffect will re-enter the else branch and set aiPhase to
+              // 'moving' before acting.
+              setAiPhase('idle');
               setGameState((prev) => (prev ? applyDiceRoll(prev, value) : prev));
             }, 500);
           }
