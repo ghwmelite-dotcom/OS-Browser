@@ -473,14 +473,25 @@ govchatRoutes.get('/users/directory', async (c) => {
   const list = await c.env.SESSIONS.list({ prefix: 'govchat-session:' });
   const users: DirectoryUser[] = [];
 
+  // Track seen staffIds to avoid duplicates (multiple sessions per user)
+  const seen = new Set<string>();
+
   for (const key of list.keys) {
     const data = await c.env.SESSIONS.get(key.name, 'json') as GovChatSession | null;
     if (!data) continue;
     // Skip the requesting user
     if (data.staffId === session.staffId) continue;
+    // Skip duplicates (user may have multiple sessions)
+    if (seen.has(data.staffId)) continue;
+    seen.add(data.staffId);
     // Public users can only see other public users
     if (session.role === 'public' && data.role !== 'public') continue;
-    // Government users can see everyone
+    // Skip test/placeholder names
+    if (!data.displayName || data.displayName === 'Test User' || data.displayName === 'Test User Two' || data.displayName === 'Verify Test' || data.displayName === 'Public Test') continue;
+    // Session exists in KV = user is registered and active
+    // Expiration on the key means session is still valid
+    const hasExpiration = !!(key as any).expiration;
+    const isOnline = hasExpiration ? (key as any).expiration * 1000 > Date.now() : true; // No expiration = permanent (superadmin)
     users.push({
       userId: data.userId,
       staffId: data.staffId,
@@ -488,7 +499,7 @@ govchatRoutes.get('/users/directory', async (c) => {
       department: data.department,
       ministry: data.ministry,
       role: data.role,
-      isOnline: (Date.now() - data.createdAt) < 7 * 24 * 60 * 60 * 1000,
+      isOnline,
     });
   }
 

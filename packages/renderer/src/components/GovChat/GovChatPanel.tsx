@@ -78,6 +78,30 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
   const initialize = useGovChatStore(s => s.initialize);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
+  const [chatListWidth, setChatListWidth] = useState(180);
+
+  const handleChatListResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = chatListWidth;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const delta = moveEvent.clientX - startX;
+      setChatListWidth(Math.max(140, Math.min(startWidth + delta, 350)));
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
 
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
   const credentials = useGovChatStore(s => s.credentials);
@@ -184,10 +208,23 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
           {/* Chat list (left) */}
           <div
             className="flex flex-col border-r shrink-0"
-            style={{ width: 180, borderColor: 'var(--color-border-1)' }}
+            style={{ width: chatListWidth, borderColor: 'var(--color-border-1)' }}
           >
             <ChatListView />
           </div>
+
+          {/* Resize handle */}
+          <div
+            onMouseDown={handleChatListResize}
+            style={{
+              width: 4,
+              cursor: 'col-resize',
+              background: 'transparent',
+              flexShrink: 0,
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--color-border-1)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          />
 
           {/* Chat area (right) */}
           <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
