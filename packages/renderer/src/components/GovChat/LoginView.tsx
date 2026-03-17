@@ -436,17 +436,21 @@ export function LoginView() {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto', minHeight: 0, padding: '16px', background: 'var(--color-bg)' }}>
       <div
-        className="w-full max-w-[300px] rounded-2xl border overflow-hidden"
+        className="w-full max-w-[300px] rounded-2xl border"
         style={{
           background: 'var(--color-surface-1)',
           borderColor: 'var(--color-border-1)',
           boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: 'calc(100vh - 280px)',
+          overflow: 'hidden',
         }}
       >
         {/* Gold accent strip */}
-        <div style={{ height: 4, background: '#D4A017' }} />
+        <div style={{ height: 4, background: '#D4A017', flexShrink: 0 }} />
 
-        <div className="p-4">
+        <div style={{ padding: 16, overflowY: 'auto', flex: 1, minHeight: 0 }}>
           {/* Header */}
           <div className="text-center mb-3">
             <div
