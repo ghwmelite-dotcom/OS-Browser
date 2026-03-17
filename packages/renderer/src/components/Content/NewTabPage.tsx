@@ -663,8 +663,12 @@ export function NewTabPage() {
         {/* ── AskOzzy Card ── */}
         <section className="mb-14 animate-fade-up stagger-3" aria-label="AskOzzy AI Assistant">
           <button
-            onClick={() => openPanel('askozzy')}
-            aria-label="Open AskOzzy AI assistant"
+            onClick={() => {
+              import('@/store/tabs').then(({ useTabsStore }) => {
+                useTabsStore.getState().createTab('https://www.askozzy.work');
+              });
+            }}
+            aria-label="Open AskOzzy AI platform"
             className="shimmer-border group w-full flex items-center gap-5 p-5 rounded-[20px] bg-surface-1 transition-all duration-300 hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ghana-gold"
             style={{
               boxShadow: '0 2px 16px rgba(0,0,0,0.12)',
