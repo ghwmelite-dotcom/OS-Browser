@@ -12,6 +12,7 @@ import './definitions/ai-assistant';
 import './definitions/mobile-money';
 import './definitions/screenshot';
 import './definitions/network-manager';
+import './definitions/govplay';
 
 // ── Re-exports ──────────────────────────────────────────────────────
 import { FeatureRegistry as _Registry } from './registry';
