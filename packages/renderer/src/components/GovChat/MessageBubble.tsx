@@ -335,106 +335,26 @@ function FileAttachmentView({ file, isOwn }: { file: NonNullable<GovChatMessage[
 /* ─────────── voice note ─────────── */
 
 function VoiceNoteView({ voiceNote, isOwn }: { voiceNote: NonNullable<GovChatMessage['voiceNote']>; isOwn: boolean }) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const togglePlay = async () => {
-    // If already playing, pause
-    if (isPlaying && audioRef.current) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-      return;
-    }
-
-    // If audio element exists and paused, resume
-    if (audioRef.current && audioRef.current.paused) {
-      try {
-        await audioRef.current.play();
-        setIsPlaying(true);
-      } catch {
-        setIsPlaying(false);
-      }
-      return;
-    }
-
-    // Create new audio element and play immediately
-    const src = resolveMediaUrl(voiceNote.url);
-    if (!src) return;
-
-    // Clean up old audio if any
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-
-    const audio = new Audio(src);
-    audioRef.current = audio;
-
-    audio.ontimeupdate = () => {
-      if (audio.duration && isFinite(audio.duration)) {
-        setProgress(audio.currentTime / audio.duration);
-      }
-    };
-    audio.onended = () => {
-      setIsPlaying(false);
-      setProgress(0);
-      audioRef.current = null;
-    };
-    audio.onerror = () => {
-      console.warn('[VoiceNote] Playback error for src:', src);
-      setIsPlaying(false);
-      audioRef.current = null;
-    };
-
-    try {
-      await audio.play();
-      setIsPlaying(true);
-    } catch (err) {
-      console.warn('[VoiceNote] play() failed:', err);
-      setIsPlaying(false);
-      audioRef.current = null;
-    }
-  };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      audioRef.current?.pause();
-      audioRef.current = null;
-    };
-  }, []);
+  const src = resolveMediaUrl(voiceNote.url);
 
   return (
-    <div className="flex items-center gap-2.5 mb-1 min-w-[200px]">
-      <button
-        onClick={togglePlay}
-        className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors"
+    <div style={{ marginBottom: 4, minWidth: 200 }}>
+      {/* Native audio element — browser handles all playback */}
+      <audio
+        controls
+        preload="auto"
+        src={src}
         style={{
-          background: isOwn ? 'rgba(255,255,255,0.2)' : 'rgba(0, 107, 63, 0.12)',
+          width: '100%',
+          height: 32,
+          borderRadius: 8,
+          outline: 'none',
+          filter: isOwn ? 'invert(1) brightness(2)' : 'none',
+          opacity: 0.9,
         }}
-      >
-        {isPlaying ? (
-          <Pause size={14} style={{ color: isOwn ? '#fff' : '#006B3F' }} />
-        ) : (
-          <Play size={14} style={{ color: isOwn ? '#fff' : '#006B3F', marginLeft: 1 }} />
-        )}
-      </button>
-      <div className="flex-1 flex flex-col gap-1">
-        <div className="relative">
-          <VoiceWaveform waveform={voiceNote.waveform} isOwn={isOwn} />
-          {/* Playback progress overlay */}
-          {progress > 0 && (
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: isOwn ? 'rgba(255,255,255,0.15)' : 'rgba(0,107,63,0.1)',
-                width: `${progress * 100}%`,
-                borderRadius: 4,
-              }}
-            />
-          )}
-        </div>
+      />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+        <VoiceWaveform waveform={voiceNote.waveform} isOwn={isOwn} />
         <span
           className="text-[9.5px] font-medium"
           style={{ color: isOwn ? 'rgba(255,255,255,0.5)' : 'var(--color-text-muted)' }}
