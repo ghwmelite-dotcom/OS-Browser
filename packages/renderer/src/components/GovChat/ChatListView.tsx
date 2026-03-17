@@ -12,7 +12,7 @@ const FILTER_OPTIONS: { key: ChatFilter; label: string }[] = [
   { key: 'unread', label: 'Unread' },
   { key: 'groups', label: 'Groups' },
   { key: 'direct', label: 'DMs' },
-  { key: 'people', label: 'People' },
+  { key: 'people', label: 'Online' },
 ];
 
 /* ─────────── main component ─────────── */
@@ -72,10 +72,13 @@ export function ChatListView() {
     markRoomAsRead(roomId);
   };
 
-  const handleStartChat = useCallback(async (userId: string, _displayName: string) => {
-    await useGovChatStore.getState().createDirectRoom(userId);
-    setChatFilter('direct');
-  }, [setChatFilter]);
+  const handleStartChat = useCallback(async (userId: string, displayName: string) => {
+    const roomId = await useGovChatStore.getState().createDirectRoom(userId, displayName);
+    if (roomId) {
+      selectRoom(roomId);
+    }
+    setChatFilter('all');
+  }, [setChatFilter, selectRoom]);
 
   return (
     <>
