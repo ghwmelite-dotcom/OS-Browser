@@ -18,14 +18,47 @@ interface ExpandedPanelProps {
 export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
+  const [currentWidth, setCurrentWidth] = useState(width);
+  const [isResizing, setIsResizing] = useState(false);
 
   // Trigger slide-in animation on mount
   useEffect(() => {
-    // Force a reflow before enabling the transition
     requestAnimationFrame(() => {
       setVisible(true);
     });
   }, []);
+
+  // Update width when feature changes
+  useEffect(() => {
+    setCurrentWidth(width);
+  }, [width]);
+
+  // Drag-to-resize handler
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    const startX = e.clientX;
+    const startWidth = currentWidth;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const delta = moveEvent.clientX - startX;
+      const newWidth = Math.max(320, Math.min(startWidth + delta, window.innerWidth - 100));
+      setCurrentWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
 
   const PanelContent = feature.surfaces.sidebar?.panelComponent;
 
@@ -33,9 +66,9 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
     <div
       ref={panelRef}
       style={{
-        width,
-        minWidth: 280,
-        maxWidth: 'min(600px, calc(100vw - 48px))',
+        width: currentWidth,
+        minWidth: 320,
+        maxWidth: 'min(900px, calc(100vw - 48px))',
         display: 'flex',
         flexDirection: 'column',
         background: 'var(--color-surface-1)',
@@ -43,6 +76,7 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
         height: '100%',
         flexShrink: 0,
         overflow: 'hidden',
+        position: 'relative',
         // Slide-in animation
         transform: visible ? 'translateX(0)' : 'translateX(-100%)',
         opacity: visible ? 1 : 0,
@@ -138,7 +172,7 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
       >
         {PanelContent ? (
           <PanelContent
-            width={width}
+            width={currentWidth}
             stripColor={feature.stripColor}
             onClose={onClose}
           />
@@ -155,6 +189,24 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
           </div>
         )}
       </div>
+
+      {/* Resize handle — right edge */}
+      <div
+        onMouseDown={handleResizeStart}
+        style={{
+          position: 'absolute',
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: 4,
+          cursor: 'col-resize',
+          background: isResizing ? 'var(--color-border-1)' : 'transparent',
+          transition: 'background 150ms ease',
+          zIndex: 10,
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-border-1)'; }}
+        onMouseLeave={(e) => { if (!isResizing) e.currentTarget.style.background = 'transparent'; }}
+      />
 
       <style>{`
         .kente-panel-scroll::-webkit-scrollbar {

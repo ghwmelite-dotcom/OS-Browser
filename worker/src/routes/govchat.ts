@@ -262,6 +262,17 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
   const deviceId = matrixDeviceId || `GOVCHAT_${generateToken().slice(0, 12).toUpperCase()}`;
   const userId = matrixAccessToken ? matrixUserId : `@${body.staffId}:gov.gh`;
 
+  // Check if user already has an existing session with elevated role
+  let existingRole: GovChatSession['role'] = 'user';
+  const existingSessions = await c.env.SESSIONS.list({ prefix: 'govchat-session:' });
+  for (const key of existingSessions.keys) {
+    const existing = await c.env.SESSIONS.get(key.name, 'json') as GovChatSession | null;
+    if (existing && existing.staffId === body.staffId && (existing.role === 'admin' || existing.role === 'superadmin')) {
+      existingRole = existing.role;
+      break;
+    }
+  }
+
   const session: GovChatSession = {
     userId,
     staffId: body.staffId,
@@ -272,7 +283,7 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
     homeserverUrl,
     deviceId,
     createdAt: Date.now(),
-    role: 'user',
+    role: existingRole,
   };
 
   // Store session with 7-day TTL
