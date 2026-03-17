@@ -256,13 +256,19 @@ function FileAttachmentView({ file, isOwn }: { file: NonNullable<GovChatMessage[
 
   const handleDownload = () => {
     if (!resolvedUrl) return;
-    const a = document.createElement('a');
-    a.href = resolvedUrl;
-    a.download = file.name;
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    if (resolvedUrl.startsWith('blob:')) {
+      // Blob URLs: open in new window (Electron handles this)
+      window.open(resolvedUrl, '_blank');
+    } else {
+      // HTTPS URLs: trigger download
+      const a = document.createElement('a');
+      a.href = resolvedUrl;
+      a.download = file.name;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
   };
 
   if (isImage) {
@@ -273,7 +279,7 @@ function FileAttachmentView({ file, isOwn }: { file: NonNullable<GovChatMessage[
           alt={file.name}
           className="w-full h-auto rounded-lg cursor-pointer"
           style={{ maxHeight: 180, objectFit: 'cover' }}
-          onClick={handleDownload}
+          onClick={() => window.open(resolvedUrl, '_blank')}
         />
         <p
           className="text-[10px] mt-1 truncate"
@@ -333,7 +339,7 @@ function VoiceNoteView({ voiceNote, isOwn }: { voiceNote: NonNullable<GovChatMes
   const [progress, setProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     // If already playing, pause
     if (isPlaying && audioRef.current) {
       audioRef.current.pause();
@@ -341,39 +347,54 @@ function VoiceNoteView({ voiceNote, isOwn }: { voiceNote: NonNullable<GovChatMes
       return;
     }
 
-    // If audio element exists, resume
-    if (audioRef.current) {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    // If audio element exists and paused, resume
+    if (audioRef.current && audioRef.current.paused) {
+      try {
+        await audioRef.current.play();
+        setIsPlaying(true);
+      } catch {
+        setIsPlaying(false);
+      }
       return;
     }
 
-    // Create new audio element
+    // Create new audio element and play immediately
     const src = resolveMediaUrl(voiceNote.url);
     if (!src) return;
 
-    const audio = new Audio();
+    // Clean up old audio if any
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    const audio = new Audio(src);
     audioRef.current = audio;
 
-    audio.addEventListener('timeupdate', () => {
-      if (audio.duration) setProgress(audio.currentTime / audio.duration);
-    });
-    audio.addEventListener('ended', () => {
+    audio.ontimeupdate = () => {
+      if (audio.duration && isFinite(audio.duration)) {
+        setProgress(audio.currentTime / audio.duration);
+      }
+    };
+    audio.onended = () => {
       setIsPlaying(false);
       setProgress(0);
       audioRef.current = null;
-    });
-    audio.addEventListener('error', (e) => {
-      console.warn('[VoiceNote] Playback error:', e);
+    };
+    audio.onerror = () => {
+      console.warn('[VoiceNote] Playback error for src:', src);
       setIsPlaying(false);
       audioRef.current = null;
-    });
-    audio.addEventListener('canplaythrough', () => {
-      audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
-    }, { once: true });
+    };
 
-    // Set source and start loading
-    audio.src = src;
-    audio.load();
+    try {
+      await audio.play();
+      setIsPlaying(true);
+    } catch (err) {
+      console.warn('[VoiceNote] play() failed:', err);
+      setIsPlaying(false);
+      audioRef.current = null;
+    }
   };
 
   // Cleanup on unmount
