@@ -237,6 +237,8 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
   const [turnStatus, setTurnStatus] = useState<string>('');
   const [turnStatusColor, setTurnStatusColor] = useState<string>('#FAF6EE');
   const [aiPhase, setAiPhase] = useState<'idle' | 'thinking' | 'rolled' | 'moving'>('idle');
+  const aiPhaseRef = useRef(aiPhase);
+  aiPhaseRef.current = aiPhase;
   const aiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const aiTimeoutRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
   const aiTimeoutRef3 = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -361,8 +363,8 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
 
     // Guard: don't re-enter if AI is already in the middle of an action
     // (aiPhase transitions: idle -> thinking -> rolled -> moving -> idle)
-    if (!gameState.diceRolled && aiPhase !== 'idle') return;
-    if (gameState.diceRolled && aiPhase === 'thinking') return;
+    if (!gameState.diceRolled && aiPhaseRef.current !== 'idle') return;
+    if (gameState.diceRolled && aiPhaseRef.current === 'thinking') return;
 
     let cancelled = false;
 
@@ -470,7 +472,7 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
       if (aiTimeoutRef2.current) clearTimeout(aiTimeoutRef2.current);
       if (aiTimeoutRef3.current) clearTimeout(aiTimeoutRef3.current);
     };
-  }, [gameState, diceAnimating, aiPhase]);
+  }, [gameState, diceAnimating]);
 
   // ── Canvas click handler ────────────────────────────────────────
   const handleCanvasClick = useCallback(
