@@ -47,10 +47,12 @@ interface OfflineState {
   removeSubmission: (id: string) => void;
   updateSubmissionStatus: (id: string, status: QueuedSubmission['status']) => void;
   retrySubmission: (id: string) => void;
+  retryAllPending: () => void;
   toggleAutoCacheRule: (id: string) => void;
   addAutoCacheRule: (pattern: string, label: string) => void;
   setSearchQuery: (q: string) => void;
   recalcStorage: () => void;
+  urlMatchesAutoCacheRules: (url: string) => boolean;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -63,6 +65,80 @@ function estimateSize(content: string): number {
   return new Blob([content]).size;
 }
 
+// ── localStorage persistence ──────────────────────────────────────────────
+
+const STORAGE_KEY = 'offline_library_data';
+
+interface PersistedData {
+  savedPages: SavedPage[];
+  queuedSubmissions: QueuedSubmission[];
+  autoCacheRules: AutoCacheRule[];
+}
+
+function loadFromStorage(): PersistedData | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PersistedData;
+    // Validate structure
+    if (Array.isArray(parsed.savedPages) && Array.isArray(parsed.queuedSubmissions) && Array.isArray(parsed.autoCacheRules)) {
+      return parsed;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function saveToStorage(data: PersistedData): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // Storage full or unavailable - silently fail
+  }
+}
+
+function getRealStorageUsed(): number {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return 0;
+    return new Blob([raw]).size;
+  } catch {
+    return 0;
+  }
+}
+
+// ── URL pattern matching ──────────────────────────────────────────────────
+
+function urlMatchesPattern(url: string, pattern: string): boolean {
+  try {
+    // Normalize: remove protocol for matching
+    const urlHost = new URL(url).hostname;
+    const urlPath = new URL(url).pathname;
+    const urlFull = urlHost + urlPath;
+
+    // Convert glob pattern to regex:
+    // *.gov.gh -> matches any subdomain of gov.gh
+    // gra.gov.gh/* -> matches any path on gra.gov.gh
+    // ssnit.org.gh/* -> matches any path on ssnit.org.gh
+    const escaped = pattern
+      .replace(/[.+?^${}()|[\]\\]/g, '\\$&') // escape regex specials except *
+      .replace(/\\\*/g, '.*'); // convert * back to .*
+
+    // If pattern has no slash, match against hostname only
+    if (!pattern.includes('/')) {
+      const re = new RegExp(`^${escaped}$`, 'i');
+      return re.test(urlHost);
+    }
+
+    // Otherwise match against host+path
+    const re = new RegExp(`^${escaped}`, 'i');
+    return re.test(urlFull);
+  } catch {
+    return false;
+  }
+}
+
 // ── Default auto-cache rules ──────────────────────────────────────────────
 
 const DEFAULT_AUTO_CACHE_RULES: AutoCacheRule[] = [
@@ -73,66 +149,52 @@ const DEFAULT_AUTO_CACHE_RULES: AutoCacheRule[] = [
   { id: 'rule-nhis',     pattern: 'nhis.gov.gh/*',   enabled: true,  label: 'Health Insurance' },
 ];
 
-// ── Sample saved pages ───────────────────────────────────────────────────
-
-const SAMPLE_SAVED_PAGES: SavedPage[] = [
-  {
-    id: 'sample-ghana-gov',
-    url: 'https://ghana.gov.gh',
-    title: 'Ghana.gov — Official Government Portal',
-    savedAt: Date.now() - 86_400_000 * 2, // 2 days ago
-    size: 245_760, // ~240KB
-    category: 'gov',
-    content: '<html><head><title>Ghana.gov</title></head><body><h1>Welcome to Ghana.gov</h1><p>The official portal of the Government of Ghana for digital services, payments, and information.</p></body></html>',
-    favicon: 'https://ghana.gov.gh/favicon.ico',
-  },
-  {
-    id: 'sample-gra',
-    url: 'https://gra.gov.gh',
-    title: 'Ghana Revenue Authority — Tax Services',
-    savedAt: Date.now() - 86_400_000, // 1 day ago
-    size: 189_440, // ~185KB
-    category: 'gov',
-    content: '<html><head><title>GRA</title></head><body><h1>Ghana Revenue Authority</h1><p>Tax filing, TIN registration, and revenue collection services for individuals and businesses.</p></body></html>',
-    favicon: 'https://gra.gov.gh/favicon.ico',
-  },
-  {
-    id: 'sample-ssnit',
-    url: 'https://ssnit.org.gh',
-    title: 'SSNIT — Social Security & National Insurance Trust',
-    savedAt: Date.now() - 3_600_000 * 8, // 8 hours ago
-    size: 156_672, // ~153KB
-    category: 'gov',
-    content: '<html><head><title>SSNIT</title></head><body><h1>SSNIT</h1><p>Manage your pension contributions, check benefits, and access social security services online.</p></body></html>',
-    favicon: 'https://ssnit.org.gh/favicon.ico',
-  },
-  {
-    id: 'sample-nhis',
-    url: 'https://nhis.gov.gh',
-    title: 'NHIS — National Health Insurance Scheme',
-    savedAt: Date.now() - 3_600_000 * 36, // 36 hours ago
-    size: 132_096, // ~129KB
-    category: 'auto-cached',
-    content: '<html><head><title>NHIS</title></head><body><h1>National Health Insurance Scheme</h1><p>Register, renew, and check the status of your national health insurance membership.</p></body></html>',
-    favicon: 'https://nhis.gov.gh/favicon.ico',
-  },
-];
-
 // ── Store ──────────────────────────────────────────────────────────────────
 
 export const useOfflineStore = create<OfflineState>((set, get) => {
-  const initialPages = SAMPLE_SAVED_PAGES;
+  // Load persisted data or start clean
+  const persisted = loadFromStorage();
+  const initialPages = persisted?.savedPages ?? [];
+  const initialSubmissions = persisted?.queuedSubmissions ?? [];
+  const initialRules = persisted?.autoCacheRules ?? DEFAULT_AUTO_CACHE_RULES;
   const initialStorage = initialPages.reduce((sum, p) => sum + p.size, 0);
+
+  // Helper to persist after each mutation
+  const persistState = () => {
+    const state = get();
+    saveToStorage({
+      savedPages: state.savedPages,
+      queuedSubmissions: state.queuedSubmissions,
+      autoCacheRules: state.autoCacheRules,
+    });
+  };
 
   return {
     savedPages: initialPages,
-    queuedSubmissions: [],
-    autoCacheRules: DEFAULT_AUTO_CACHE_RULES,
+    queuedSubmissions: initialSubmissions,
+    autoCacheRules: initialRules,
     totalStorageUsed: initialStorage,
     storageLimit: 500 * 1024 * 1024, // 500MB
     searchQuery: '',
 
     savePage: (page) => {
+      // Prevent duplicate saves of the same URL
+      const existing = get().savedPages.find(p => p.url === page.url);
+      if (existing) {
+        // Update existing page instead of adding duplicate
+        const size = estimateSize(page.content);
+        set(state => ({
+          savedPages: state.savedPages.map(p =>
+            p.url === page.url
+              ? { ...p, ...page, savedAt: Date.now(), size }
+              : p
+          ),
+          totalStorageUsed: state.totalStorageUsed - (existing.size) + size,
+        }));
+        persistState();
+        return;
+      }
+
       const size = estimateSize(page.content);
       const newPage: SavedPage = {
         ...page,
@@ -144,6 +206,7 @@ export const useOfflineStore = create<OfflineState>((set, get) => {
         savedPages: [newPage, ...state.savedPages],
         totalStorageUsed: state.totalStorageUsed + size,
       }));
+      persistState();
     },
 
     removePage: (id) => {
@@ -154,10 +217,12 @@ export const useOfflineStore = create<OfflineState>((set, get) => {
           totalStorageUsed: state.totalStorageUsed - (page?.size ?? 0),
         };
       });
+      persistState();
     },
 
     clearAllPages: () => {
       set({ savedPages: [], totalStorageUsed: 0 });
+      persistState();
     },
 
     queueSubmission: (sub) => {
@@ -171,12 +236,14 @@ export const useOfflineStore = create<OfflineState>((set, get) => {
       set(state => ({
         queuedSubmissions: [newSub, ...state.queuedSubmissions],
       }));
+      persistState();
     },
 
     removeSubmission: (id) => {
       set(state => ({
         queuedSubmissions: state.queuedSubmissions.filter(s => s.id !== id),
       }));
+      persistState();
     },
 
     updateSubmissionStatus: (id, status) => {
@@ -185,14 +252,55 @@ export const useOfflineStore = create<OfflineState>((set, get) => {
           s.id === id ? { ...s, status } : s
         ),
       }));
+      persistState();
     },
 
     retrySubmission: (id) => {
+      const sub = get().queuedSubmissions.find(s => s.id === id);
+      if (!sub || sub.status === 'submitting') return;
+
+      // Mark as submitting
       set(state => ({
         queuedSubmissions: state.queuedSubmissions.map(s =>
-          s.id === id ? { ...s, status: 'pending' as const, retryCount: s.retryCount + 1 } : s
+          s.id === id ? { ...s, status: 'submitting' as const, retryCount: s.retryCount + 1 } : s
         ),
       }));
+
+      // Attempt to send the request
+      if (navigator.onLine) {
+        fetch(sub.url, {
+          method: sub.method,
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams(sub.formData).toString(),
+        })
+          .then(res => {
+            if (res.ok) {
+              get().updateSubmissionStatus(id, 'submitted');
+            } else {
+              get().updateSubmissionStatus(id, 'failed');
+            }
+          })
+          .catch(() => {
+            get().updateSubmissionStatus(id, 'failed');
+          });
+      } else {
+        // Not online - revert to pending
+        set(state => ({
+          queuedSubmissions: state.queuedSubmissions.map(s =>
+            s.id === id ? { ...s, status: 'pending' as const } : s
+          ),
+        }));
+      }
+      persistState();
+    },
+
+    retryAllPending: () => {
+      const pending = get().queuedSubmissions.filter(
+        s => s.status === 'pending' || s.status === 'failed'
+      );
+      for (const sub of pending) {
+        get().retrySubmission(sub.id);
+      }
     },
 
     toggleAutoCacheRule: (id) => {
@@ -201,6 +309,7 @@ export const useOfflineStore = create<OfflineState>((set, get) => {
           r.id === id ? { ...r, enabled: !r.enabled } : r
         ),
       }));
+      persistState();
     },
 
     addAutoCacheRule: (pattern, label) => {
@@ -213,6 +322,7 @@ export const useOfflineStore = create<OfflineState>((set, get) => {
       set(state => ({
         autoCacheRules: [...state.autoCacheRules, rule],
       }));
+      persistState();
     },
 
     setSearchQuery: (q) => set({ searchQuery: q }),
@@ -222,5 +332,24 @@ export const useOfflineStore = create<OfflineState>((set, get) => {
         totalStorageUsed: state.savedPages.reduce((sum, p) => sum + p.size, 0),
       }));
     },
+
+    urlMatchesAutoCacheRules: (url: string) => {
+      const rules = get().autoCacheRules;
+      return rules.some(r => r.enabled && urlMatchesPattern(url, r.pattern));
+    },
   };
 });
+
+// ── Online event listener: auto-retry pending submissions ─────────────────
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    const store = useOfflineStore.getState();
+    const pending = store.queuedSubmissions.filter(
+      s => s.status === 'pending' || s.status === 'failed'
+    );
+    if (pending.length > 0) {
+      store.retryAllPending();
+    }
+  });
+}

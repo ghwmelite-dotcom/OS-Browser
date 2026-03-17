@@ -12,6 +12,7 @@ import { useSidebarStore } from '@/store/sidebar';
 import { useNavigationStore } from '@/store/navigation';
 import { useHistoryStore } from '@/store/history';
 import { useBookmarksStore } from '@/store/bookmarks';
+import { useOfflineStore } from '@/store/offline';
 
 interface BrowserMenuProps {
   onOpenHistory: () => void;
@@ -178,7 +179,21 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             <MenuItem icon={Star} label="Bookmarks and lists" shortcut="Ctrl+B" onClick={() => createTab('os-browser://bookmarks' as any)} sub />
             <MenuItem icon={FileText} label="Documents" onClick={() => createTab('os-browser://documents' as any)} />
             <MenuItem icon={Download} label="Save Page Offline" shortcut="Ctrl+Shift+S" onClick={() => {
-              window.dispatchEvent(new CustomEvent('os-browser:save-page-offline'));
+              const navUrl = useNavigationStore.getState().currentUrl;
+              if (!navUrl || navUrl.startsWith('os-browser://')) return;
+              const allTabs = useTabsStore.getState().tabs;
+              const curTab = allTabs.find(t => t.id === useTabsStore.getState().activeTabId);
+              const pageTitle = curTab?.title || navUrl;
+              const isGov = navUrl.includes('.gov.gh') || navUrl.includes('.edu.gh');
+              let favicon: string | undefined;
+              try { favicon = `${new URL(navUrl).origin}/favicon.ico`; } catch { /* ignore */ }
+              useOfflineStore.getState().savePage({
+                url: navUrl,
+                title: pageTitle,
+                category: isGov ? 'gov' : 'manual',
+                content: `<html><head><title>${pageTitle}</title></head><body><p>Saved from ${navUrl}</p></body></html>`,
+                favicon,
+              });
             }} />
             <MenuItem icon={WifiOff} label="Offline Library" onClick={() => {
               createTab('os-browser://offline' as any);
