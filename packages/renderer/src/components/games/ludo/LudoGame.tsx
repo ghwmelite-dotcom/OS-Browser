@@ -356,6 +356,16 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
       return;
     }
 
+    // Guard: don't start a new AI action while dice is still animating
+    if (diceAnimating) return;
+
+    // Guard: don't re-enter if AI is already in the middle of an action
+    // (aiPhase transitions: idle -> thinking -> rolled -> moving -> idle)
+    if (!gameState.diceRolled && aiPhase !== 'idle') return;
+    if (gameState.diceRolled && aiPhase === 'thinking') return;
+
+    let cancelled = false;
+
     if (!gameState.diceRolled) {
       // Phase 1: Show "thinking" for 800ms
       const colorName = currentPlayer.color.charAt(0).toUpperCase() + currentPlayer.color.slice(1);
@@ -364,6 +374,7 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
       setAiPhase('thinking');
 
       aiTimeoutRef.current = setTimeout(() => {
+        if (cancelled) return;
         // Phase 2: AI rolls dice
         gameSounds.dice();
         setDiceAnimating(true);
@@ -373,6 +384,7 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
         const value = rollDice();
         let frame = 0;
         const interval = setInterval(() => {
+          if (cancelled) { clearInterval(interval); return; }
           frame++;
           setDiceAnimFrame(frame);
           if (frame >= 10) {
@@ -382,6 +394,7 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
             setTurnStatus(`${colorName} rolled a ${value}`);
             // Show dice result for 500ms before applying
             aiTimeoutRef2.current = setTimeout(() => {
+              if (cancelled) return;
               setGameState((prev) => (prev ? applyDiceRoll(prev, value) : prev));
             }, 500);
           }
@@ -393,6 +406,7 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
       setAiPhase('moving');
 
       aiTimeoutRef.current = setTimeout(() => {
+        if (cancelled) return;
         const tokenIdx = getAIMove(gameState);
         if (tokenIdx !== null) {
           const moves = getValidMoves(gameState);
@@ -410,23 +424,44 @@ export const LudoGame: React.FC<Props> = ({ containerWidth, containerHeight }) =
 
           const newState = makeMove(gameState, tokenIdx);
           if (newState.gameOver) gameSounds.win();
+          setAiPhase('idle');
           setGameState(newState);
         } else {
           setTurnStatus(`${colorName} has no valid moves`);
-          // No valid moves - advance turn
+          // No valid moves - actually advance the turn to the next player
           aiTimeoutRef3.current = setTimeout(() => {
-            setGameState((prev) => prev);
+            if (cancelled) return;
+            setAiPhase('idle');
+            setGameState((prev) => {
+              if (!prev) return prev;
+              const next = {
+                ...prev,
+                players: prev.players.map((p) => ({
+                  ...p,
+                  tokens: [...p.tokens],
+                })),
+                currentPlayer: (prev.currentPlayer + 1) % prev.players.length,
+                diceRolled: false,
+                diceValue: null,
+                mustRollAgain: false,
+                consecutiveSixes: 0,
+              };
+              const nextColor = next.players[next.currentPlayer].color;
+              next.message = `${nextColor.toUpperCase()}'s turn - roll the dice!`;
+              return next;
+            });
           }, 400);
         }
       }, 400);
     }
 
     return () => {
+      cancelled = true;
       if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
       if (aiTimeoutRef2.current) clearTimeout(aiTimeoutRef2.current);
       if (aiTimeoutRef3.current) clearTimeout(aiTimeoutRef3.current);
     };
-  }, [gameState, diceAnimating]);
+  }, [gameState, diceAnimating, aiPhase]);
 
   // ── Canvas click handler ────────────────────────────────────────
   const handleCanvasClick = useCallback(
