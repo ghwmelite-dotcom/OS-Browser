@@ -12,7 +12,7 @@ const FILTER_OPTIONS: { key: ChatFilter; label: string }[] = [
   { key: 'unread', label: 'Unread' },
   { key: 'groups', label: 'Groups' },
   { key: 'direct', label: 'DMs' },
-  { key: 'people', label: 'Online' },
+  { key: 'people', label: 'Users Online' },
 ];
 
 /* ─────────── main component ─────────── */
