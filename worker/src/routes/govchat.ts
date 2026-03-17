@@ -520,10 +520,8 @@ govchatRoutes.get('/users/directory', async (c) => {
     if (session.role === 'public' && data.role !== 'public') continue;
     // Skip test/placeholder names
     if (!data.displayName || data.displayName === 'Test User' || data.displayName === 'Test User Two' || data.displayName === 'Verify Test' || data.displayName === 'Public Test') continue;
-    // Session exists in KV = user is registered and active
-    // Expiration on the key means session is still valid
-    const hasExpiration = !!(key as any).expiration;
-    const isOnline = hasExpiration ? (key as any).expiration * 1000 > Date.now() : true; // No expiration = permanent (superadmin)
+    // User has a valid session in KV = they are a registered active user
+    // Show as online (true presence tracking requires Matrix sync which runs client-side)
     users.push({
       userId: data.userId,
       staffId: data.staffId,
@@ -531,7 +529,7 @@ govchatRoutes.get('/users/directory', async (c) => {
       department: data.department,
       ministry: data.ministry,
       role: data.role,
-      isOnline,
+      isOnline: true,
     });
   }
 

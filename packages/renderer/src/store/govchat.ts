@@ -60,184 +60,9 @@ const currentUser: GovUser = {
   lastSeen: null,
 };
 
-const sampleContacts: GovUser[] = [
-  {
-    userId: '@kwame.mensah:govchat.gov.gh',
-    staffId: 'GHS-10042',
-    displayName: 'Kwame Mensah',
-    department: 'Budget Division',
-    ministry: 'Ministry of Finance',
-    role: 'user',
-    isOnline: true,
-    lastSeen: null,
-  },
-  {
-    userId: '@akua.boateng:govchat.gov.gh',
-    staffId: 'GHS-20187',
-    displayName: 'Akua Boateng',
-    department: 'Human Resource Policy',
-    ministry: 'OHCS',
-    role: 'admin',
-    isOnline: false,
-    lastSeen: now - 2 * 60 * 60 * 1000,
-  },
-  {
-    userId: '@yaw.asante:govchat.gov.gh',
-    staffId: 'GHS-30099',
-    displayName: 'Yaw Asante',
-    department: 'Revenue Assurance',
-    ministry: 'GRA',
-    role: 'user',
-    isOnline: true,
-    lastSeen: null,
-  },
-];
+// No sample contacts — real users come from the Matrix homeserver and People directory
 
-const kwameRoomId = 'room-kwame-dm';
-const groupRoomId = 'room-budget-committee';
-
-const sampleMessages: GovChatMessage[] = [
-  {
-    eventId: 'evt-1',
-    roomId: kwameRoomId,
-    senderId: '@kwame.mensah:govchat.gov.gh',
-    senderName: 'Kwame Mensah',
-    type: 'text',
-    body: 'Good morning. Have you had a chance to review the Q4 budget allocation document?',
-    timestamp: now - 3 * 60 * 60 * 1000,
-    status: 'read',
-    isEncrypted: true,
-    classification: 'OFFICIAL',
-    reactions: [],
-    mentions: [],
-  },
-  {
-    eventId: 'evt-2',
-    roomId: kwameRoomId,
-    senderId: CURRENT_USER_ID,
-    senderName: 'You',
-    type: 'text',
-    body: 'Yes, I went through the line items yesterday. The infrastructure allocation looks solid, but I have concerns about the education sector figures.',
-    timestamp: now - 2.5 * 60 * 60 * 1000,
-    status: 'read',
-    isEncrypted: true,
-    classification: 'OFFICIAL',
-    reactions: [{ key: '\u{1F44D}', senders: ['@kwame.mensah:govchat.gov.gh'] }],
-    mentions: [],
-  },
-  {
-    eventId: 'evt-3',
-    roomId: kwameRoomId,
-    senderId: '@kwame.mensah:govchat.gov.gh',
-    senderName: 'Kwame Mensah',
-    type: 'text',
-    body: 'I agree. Let us schedule a review meeting with the Education Ministry liaison before Friday. I will prepare the revised projections.',
-    timestamp: now - 2 * 60 * 60 * 1000,
-    status: 'read',
-    isEncrypted: true,
-    classification: 'OFFICIAL',
-    reactions: [],
-    mentions: [],
-  },
-  {
-    eventId: 'evt-4',
-    roomId: kwameRoomId,
-    senderId: CURRENT_USER_ID,
-    senderName: 'You',
-    type: 'text',
-    body: 'Sounds good. I will send a calendar invite for Thursday at 10 AM. Please bring the comparative analysis from last fiscal year as well.',
-    timestamp: now - 1.5 * 60 * 60 * 1000,
-    status: 'delivered',
-    isEncrypted: true,
-    classification: 'OFFICIAL',
-    reactions: [],
-    mentions: [],
-  },
-];
-
-const groupMessages: GovChatMessage[] = [
-  {
-    eventId: 'evt-g1',
-    roomId: groupRoomId,
-    senderId: '@akua.boateng:govchat.gov.gh',
-    senderName: 'Akua Boateng',
-    type: 'text',
-    body: 'Team, I have uploaded the revised compensation framework. Please review before our Thursday session.',
-    timestamp: now - 5 * 60 * 60 * 1000,
-    status: 'read',
-    isEncrypted: true,
-    classification: 'SENSITIVE',
-    reactions: [{ key: '\u{1F44D}', senders: ['@yaw.asante:govchat.gov.gh', CURRENT_USER_ID] }],
-    mentions: [],
-  },
-  {
-    eventId: 'evt-g2',
-    roomId: groupRoomId,
-    senderId: '@yaw.asante:govchat.gov.gh',
-    senderName: 'Yaw Asante',
-    type: 'text',
-    body: 'Noted. I will cross-reference with the revenue projections from GRA and flag any gaps.',
-    timestamp: now - 4.5 * 60 * 60 * 1000,
-    status: 'read',
-    isEncrypted: true,
-    classification: 'SENSITIVE',
-    reactions: [],
-    mentions: [],
-  },
-  {
-    eventId: 'evt-g3',
-    roomId: groupRoomId,
-    senderId: '@kwame.mensah:govchat.gov.gh',
-    senderName: 'Kwame Mensah',
-    type: 'text',
-    body: 'Good. Let us aim to finalize the budget committee report by end of week. I have flagged a few line items for discussion.',
-    timestamp: now - 4 * 60 * 60 * 1000,
-    status: 'read',
-    isEncrypted: true,
-    classification: 'SENSITIVE',
-    reactions: [],
-    mentions: [],
-  },
-];
-
-const mofMinistry = {
-  id: 'mof',
-  name: 'Ministry of Finance',
-  abbreviation: 'MoF',
-  color: '#1D4ED8',
-};
-
-const sampleRooms: ChatRoom[] = [
-  {
-    roomId: kwameRoomId,
-    name: 'Kwame Mensah',
-    isDirect: true,
-    isEncrypted: true,
-    classification: 'OFFICIAL',
-    members: [currentUser, sampleContacts[0]],
-    lastMessage: sampleMessages[sampleMessages.length - 1],
-    unreadCount: 0,
-    isPinned: true,
-    ministry: mofMinistry,
-    retentionDays: DEFAULT_RETENTION_DAYS.OFFICIAL,
-    createdAt: now - 30 * 24 * 60 * 60 * 1000,
-  },
-  {
-    roomId: groupRoomId,
-    name: 'Budget Review Committee',
-    topic: 'Q4 FY2025/26 budget review and reconciliation',
-    isDirect: false,
-    isEncrypted: true,
-    classification: 'SENSITIVE',
-    members: [currentUser, ...sampleContacts],
-    lastMessage: groupMessages[groupMessages.length - 1],
-    unreadCount: 2,
-    isPinned: false,
-    ministry: mofMinistry,
-    retentionDays: DEFAULT_RETENTION_DAYS.SENSITIVE,
-    createdAt: now - 14 * 24 * 60 * 60 * 1000,
-  },
-];
+// No sample rooms or messages — real data comes from the Matrix homeserver
 
 /* ──────────────── Counter for local message IDs ──────────────── */
 
@@ -285,7 +110,7 @@ interface GovChatState {
 
   // Room actions
   selectRoom: (roomId: string | null) => void;
-  createDirectRoom: (userId: string) => Promise<string | null>;
+  createDirectRoom: (userId: string, displayName?: string) => Promise<string | null>;
   createGroupRoom: (name: string, userIds: string[], classification: ClassificationLevel) => Promise<string | null>;
   deleteRoom: (roomId: string) => void;
   togglePinRoom: (roomId: string) => void;
@@ -461,15 +286,13 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
     currentUser: isRestored ? currentUser : null,
 
     // Rooms
-    rooms: sampleRooms,
+    rooms: [],
     activeRoomId: null,
     chatFilter: 'all',
     searchQuery: '',
 
     // Messages
     messages: {
-      [kwameRoomId]: sampleMessages,
-      [groupRoomId]: groupMessages,
     },
 
     // Typing
@@ -612,11 +435,8 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
         authStep: 'authenticated',
         currentUser: currentUser,
         connectionStatus: 'disconnected',
-        rooms: sampleRooms,
-        messages: {
-          [kwameRoomId]: sampleMessages,
-          [groupRoomId]: groupMessages,
-        },
+        rooms: [],
+        messages: {},
       });
     },
 
@@ -645,11 +465,8 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
         chatFilter: 'all',
         searchQuery: '',
         // Reset to sample data
-        rooms: sampleRooms,
-        messages: {
-          [kwameRoomId]: sampleMessages,
-          [groupRoomId]: groupMessages,
-        },
+        rooms: [],
+        messages: {},
       });
     },
 
@@ -662,7 +479,7 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
       }
     },
 
-    createDirectRoom: async (userId: string) => {
+    createDirectRoom: async (userId: string, displayName?: string) => {
       // Check if a DM with this user already exists
       const { rooms, messages } = get();
       const existing = rooms.find(
@@ -676,25 +493,61 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
       try {
         const roomId = await MatrixClientService.createDirectRoom(userId);
         if (roomId) {
-          set({ activeRoomId: roomId });
+          // Create the room locally so it appears immediately
+          const peerUser: GovUser = {
+            userId,
+            staffId: userId.replace('@', '').split(':')[0],
+            displayName: displayName || userId,
+            department: '',
+            ministry: '',
+            role: 'user',
+            isOnline: true,
+            lastSeen: null,
+          };
+          const newRoom: ChatRoom = {
+            roomId,
+            name: displayName || userId,
+            isDirect: true,
+            isEncrypted: true,
+            classification: 'OFFICIAL',
+            members: [get().currentUser || currentUser, peerUser],
+            lastMessage: null,
+            unreadCount: 0,
+            isPinned: false,
+            retentionDays: DEFAULT_RETENTION_DAYS.OFFICIAL,
+            createdAt: Date.now(),
+          };
+          set({
+            rooms: [...get().rooms, newRoom],
+            messages: { ...get().messages, [roomId]: [] },
+            activeRoomId: roomId,
+          });
           return roomId;
         }
       } catch (err) {
-        console.warn('[GovChatStore] createDirectRoom failed, using local fallback:', err);
+        console.warn('[GovChatStore] createDirectRoom via Matrix failed, using local fallback:', err);
       }
 
-      // Local mode fallback
-      const contact = sampleContacts.find(c => c.userId === userId);
-      if (!contact) return null;
-
+      // Local mode fallback — create room with the display name
+      const peerName = displayName || userId;
+      const peerUser: GovUser = {
+        userId,
+        staffId: userId.replace('@', '').split(':')[0],
+        displayName: peerName,
+        department: '',
+        ministry: '',
+        role: 'user',
+        isOnline: true,
+        lastSeen: null,
+      };
       const roomId = `room-dm-${Date.now()}`;
       const newRoom: ChatRoom = {
         roomId,
-        name: contact.displayName,
+        name: peerName,
         isDirect: true,
         isEncrypted: true,
         classification: 'OFFICIAL',
-        members: [currentUser, contact],
+        members: [get().currentUser || currentUser, peerUser],
         lastMessage: null,
         unreadCount: 0,
         isPinned: false,
@@ -729,7 +582,7 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
       const { rooms, messages } = get();
       const members = [
         currentUser,
-        ...sampleContacts.filter(c => userIds.includes(c.userId)),
+        // Members will be populated from Matrix room data
       ];
       const roomId = `room-group-${Date.now()}`;
       const newRoom: ChatRoom = {
