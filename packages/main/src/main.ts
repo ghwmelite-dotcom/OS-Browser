@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Menu } from 'electron';
 import path from 'path';
 import { initDatabase, getDatabase, closeDatabase, runMigrations } from './db/database';
 import { seedDatabase } from './db/seed';
@@ -83,6 +83,45 @@ function createWindow() {
       const { x, y, width, height } = display.workArea;
       mainWindow.setBounds({ x, y, width, height });
     }, 50);
+  });
+
+  // Right-click context menu for the browser chrome (UI layer)
+  mainWindow.webContents.on('context-menu', (_e, params) => {
+    const menu = new Menu();
+
+    if (params.isEditable) {
+      if (params.selectionText) {
+        menu.append(new (require('electron').MenuItem)({ role: 'cut' }));
+        menu.append(new (require('electron').MenuItem)({ role: 'copy' }));
+      }
+      menu.append(new (require('electron').MenuItem)({ role: 'paste' }));
+      menu.append(new (require('electron').MenuItem)({ role: 'selectAll' }));
+    } else if (params.selectionText) {
+      menu.append(new (require('electron').MenuItem)({ role: 'copy' }));
+    }
+
+    if (params.linkURL) {
+      menu.append(new (require('electron').MenuItem)({ type: 'separator' }));
+      menu.append(new (require('electron').MenuItem)({
+        label: 'Copy Link',
+        click: () => {
+          require('electron').clipboard.writeText(params.linkURL);
+        },
+      }));
+    }
+
+    // Dev tools (always available for now)
+    menu.append(new (require('electron').MenuItem)({ type: 'separator' }));
+    menu.append(new (require('electron').MenuItem)({
+      label: 'Inspect Element',
+      click: () => {
+        mainWindow?.webContents.inspectElement(params.x, params.y);
+      },
+    }));
+
+    if (menu.items.length > 0) {
+      menu.popup();
+    }
   });
 
   // Register IPC handlers
