@@ -553,57 +553,45 @@ export function LoginView() {
               {isRedeeming ? 'Joining...' : 'Join GovChat'}
             </button>
 
-            <p className="text-[9.5px] text-text-muted text-center mt-1 leading-snug">
-              Your invite code is issued by your ministry's IT administrator.
-              All communications are encrypted and retained per government policy.
-            </p>
           </form>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-4">
-            <div className="flex-1 h-px" style={{ background: 'var(--color-border-1)' }} />
-            <span className="text-[10px] text-text-muted font-medium">or</span>
-            <div className="flex-1 h-px" style={{ background: 'var(--color-border-1)' }} />
-          </div>
-
-          {/* Alternative options */}
-          <div className="flex flex-col gap-2">
-            <button
-              onClick={() => setView('request')}
-              className="w-full py-2 rounded-lg text-[12px] font-semibold transition-opacity flex items-center justify-center gap-2"
-              style={{
-                background: 'transparent',
-                border: '1.5px solid #D4A017',
-                color: '#D4A017',
-              }}
-            >
-              <Send size={13} />
-              Request an Invite Code
-            </button>
-
-            <button
-              onClick={() => setView('public')}
-              className="w-full py-2 rounded-lg text-[12px] font-semibold transition-opacity flex items-center justify-center gap-2"
-              style={{
-                background: 'transparent',
-                border: '1.5px solid var(--color-border-1)',
-                color: 'var(--color-text-secondary)',
-              }}
-            >
-              <Globe size={13} />
-              Join as Public User
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Local mode link */}
-      <button
-        onClick={continueLocalMode}
-        className="shrink-0 mt-4 text-[10.5px] text-text-muted underline underline-offset-2 hover:text-text-secondary transition-colors"
-      >
-        Continue in local mode (offline)
-      </button>
+      {/* Options below the card — always visible */}
+      <div className="w-full max-w-[300px] flex flex-col gap-2 mt-3">
+        <button
+          onClick={() => setView('request')}
+          className="w-full py-2 rounded-lg text-[11.5px] font-semibold flex items-center justify-center gap-2"
+          style={{
+            background: 'transparent',
+            border: '1.5px solid #D4A017',
+            color: '#D4A017',
+          }}
+        >
+          <Send size={12} />
+          Request an Invite Code
+        </button>
+
+        <button
+          onClick={() => setView('public')}
+          className="w-full py-2 rounded-lg text-[11.5px] font-semibold flex items-center justify-center gap-2"
+          style={{
+            background: 'transparent',
+            border: '1.5px solid var(--color-border-1)',
+            color: 'var(--color-text-secondary)',
+          }}
+        >
+          <Globe size={12} />
+          Join as Public User
+        </button>
+
+        <button
+          onClick={continueLocalMode}
+          className="text-[10px] text-text-muted underline underline-offset-2 hover:text-text-secondary transition-colors mt-1"
+        >
+          Continue in local mode (offline)
+        </button>
+      </div>
     </div>
   );
 }
