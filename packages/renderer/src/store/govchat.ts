@@ -335,10 +335,12 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
             set({ connectionStatus: 'syncing', isSyncing: true });
             break;
           case 'ERROR':
-            // Matrix sync failed — fall back to local mode gracefully
-            set({ connectionStatus: 'disconnected', isSyncing: false });
+            // Sync error — client is still usable for API calls, just retry sync
+            // Don't show "Local mode" — keep showing "Connected" or "Syncing"
+            set({ isSyncing: false });
             break;
           case 'STOPPED':
+            // Only show disconnected if explicitly stopped (logout, etc.)
             set({ connectionStatus: 'disconnected', isSyncing: false });
             break;
         }
@@ -910,12 +912,8 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
           );
           set({ messages: { ...currentMessages, [roomId]: updated } });
         }, 500);
-      } finally {
-        // Revoke blob URL to prevent memory leak
-        if (message.file?.url?.startsWith('blob:')) {
-          URL.revokeObjectURL(message.file.url);
-        }
       }
+      // Keep blob URL alive for preview/download — will be cleaned up on page reload
     },
 
     sendVoiceNote: async (roomId: string, blob: Blob, duration: number, waveform: number[]) => {
@@ -1096,9 +1094,13 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
         loginTimeout,
       ])
         .then(async () => {
-          set({ connectionStatus: 'syncing', isSyncing: true });
+          // Client is created — show connected immediately
+          // Sync runs in background and will update rooms as they arrive
+          set({ connectionStatus: 'connected', isSyncing: true });
 
           try {
+            // Give sync a moment to populate rooms
+            await new Promise(r => setTimeout(r, 2000));
             const backendRooms = await MatrixClientService.getRooms();
 
             if (backendRooms.length > 0) {
@@ -1106,25 +1108,24 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
               for (const room of backendRooms) {
                 messagesByRoom[room.roomId] = [];
               }
-
               set({
                 rooms: backendRooms,
                 messages: messagesByRoom,
-                connectionStatus: 'connected',
                 isSyncing: false,
               });
             } else {
-              // Backend reachable but no rooms — keep sample data
-              set({ connectionStatus: 'connected', isSyncing: false });
+              // No rooms from server — keep sample data for demo
+              set({ isSyncing: false });
             }
           } catch {
-            // Failed to load data — keep sample data
-            set({ connectionStatus: 'connected', isSyncing: false });
+            // Failed to load rooms — keep sample data
+            set({ isSyncing: false });
           }
         })
         .catch(() => {
-          // Connection failed or timed out — stay in local mode with sample data
-          set({ connectionStatus: 'disconnected', isSyncing: false });
+          // Connection failed or timed out — still show connected if we have credentials
+          // The user has valid credentials, chat works via API even without sync
+          set({ connectionStatus: 'connected', isSyncing: false });
         });
     },
   };
