@@ -12,6 +12,12 @@ export function HistoryPanel({ onClose }: { onClose: () => void }) {
 
   useEffect(() => { loadHistory(); }, []);
 
+  // Hide WebContentsViews so the panel renders above tab content
+  useEffect(() => {
+    window.osBrowser?.hideWebViews?.();
+    return () => { window.osBrowser?.showWebViews?.(); };
+  }, []);
+
   const handleSearch = (q: string) => {
     setSearchQuery(q);
     if (q.trim()) searchHistory(q); else loadHistory();
@@ -32,7 +38,7 @@ export function HistoryPanel({ onClose }: { onClose: () => void }) {
   const groups = groupByDate(entries);
 
   return (
-    <div className="fixed inset-0 z-50 flex">
+    <div className="fixed inset-0 z-[100] flex">
       <div className="w-[420px] bg-surface-1 border-r border-border-1 flex flex-col h-full animate-slide-in-right">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-1">
           <div className="flex items-center gap-2"><Clock size={16} className="text-ghana-gold" /><span className="text-md font-medium">History</span></div>

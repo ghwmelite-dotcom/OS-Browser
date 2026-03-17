@@ -1,7 +1,30 @@
-import React from 'react';
-import { HelpCircle, Keyboard, MessageSquare, Shield, Globe, BookOpen, Target, Camera, DollarSign, Columns, Gamepad2, Phone, Video, Users } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { HelpCircle, Keyboard, MessageSquare, Shield, Globe, BookOpen, Target, Camera, DollarSign, Columns, Gamepad2, Phone, Video, Users, Send, Loader2 } from 'lucide-react';
+import { useAIStore } from '@/store/ai';
 
 export function HelpPage() {
+  const messages = useAIStore(s => s.messages);
+  const isStreaming = useAIStore(s => s.isStreaming);
+  const [chatInput, setChatInput] = useState('');
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const suggestionChips = [
+    'How do I use GovChat?',
+    'How to save pages offline?',
+    'How to play games?',
+  ];
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isStreaming]);
+
+  const handleSend = (text?: string) => {
+    const msg = text || chatInput.trim();
+    if (!msg) return;
+    useAIStore.getState().sendMessage(msg);
+    setChatInput('');
+  };
+
   const shortcuts = [
     { keys: 'Ctrl+T', action: 'New tab' },
     { keys: 'Ctrl+W', action: 'Close tab' },
@@ -201,6 +224,104 @@ export function HelpPage() {
                 <p className="font-semibold text-text-primary mb-1">Online status</p>
                 <p className="text-text-muted">Green dot = online, grey dot = offline.</p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* AI Chat Assistant */}
+        <div className="mb-8">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-accent)' }}>Need Help?</h2>
+          <div className="rounded-xl border overflow-hidden" style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}>
+            {/* Header */}
+            <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid var(--color-border-1)' }}>
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #D4A017, #006B3F)' }}>
+                <MessageSquare size={18} className="text-white" />
+              </div>
+              <div>
+                <p className="text-[14px] font-semibold text-text-primary">Ask the AI Assistant</p>
+                <p className="text-[11px] text-text-muted">Get instant help with any OS Browser feature</p>
+              </div>
+            </div>
+
+            {/* Messages area */}
+            <div
+              className="px-4 py-3 space-y-3 overflow-y-auto"
+              style={{ maxHeight: '300px', minHeight: '120px', scrollbarWidth: 'thin' }}
+            >
+              {messages.length === 0 && !isStreaming && (
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                  <HelpCircle size={28} className="text-text-muted mb-2 opacity-40" />
+                  <p className="text-[12px] text-text-muted">Ask a question or pick a suggestion below</p>
+                </div>
+              )}
+              {messages.map(msg => (
+                <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    className="max-w-[85%] px-3.5 py-2.5 rounded-xl text-[13px] leading-relaxed"
+                    style={
+                      msg.role === 'user'
+                        ? { background: 'linear-gradient(135deg, #D4A017, #006B3F)', color: '#fff' }
+                        : { background: 'var(--color-surface-2)', color: 'var(--color-text-primary)' }
+                    }
+                  >
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+              {isStreaming && (
+                <div className="flex justify-start">
+                  <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-[13px]" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Thinking...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Suggestion chips */}
+            {messages.length === 0 && (
+              <div className="px-4 pb-3 flex flex-wrap gap-2">
+                {suggestionChips.map(chip => (
+                  <button
+                    key={chip}
+                    onClick={() => handleSend(chip)}
+                    className="text-[11px] font-medium px-3 py-1.5 rounded-full transition-all duration-150 hover:opacity-80"
+                    style={{ background: 'var(--color-surface-2)', color: 'var(--color-accent)', border: '1px solid var(--color-border-1)' }}
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Input */}
+            <div className="px-4 py-3 flex items-center gap-2" style={{ borderTop: '1px solid var(--color-border-1)' }}>
+              <input
+                type="text"
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                placeholder="Type your question..."
+                disabled={isStreaming}
+                className="flex-1 text-[13px] px-3.5 py-2.5 rounded-lg border outline-none transition-colors duration-150 focus:ring-2 disabled:opacity-50"
+                style={{
+                  background: 'var(--color-surface-2)',
+                  borderColor: 'var(--color-border-1)',
+                  color: 'var(--color-text-primary)',
+                  // @ts-ignore
+                  '--tw-ring-color': 'var(--color-accent)',
+                }}
+              />
+              <button
+                onClick={() => handleSend()}
+                disabled={isStreaming || !chatInput.trim()}
+                className="w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-150 shrink-0 disabled:opacity-30"
+                style={{ background: 'var(--color-accent)', color: '#fff' }}
+                aria-label="Send message"
+              >
+                <Send size={16} />
+              </button>
             </div>
           </div>
         </div>
