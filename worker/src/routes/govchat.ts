@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import type { Env, InviteCode, GovChatSession } from '../types';
+import type { Env, InviteCode, GovChatSession, CodeRequest } from '../types';
 
 type Variables = { deviceId: string };
 
@@ -409,10 +409,10 @@ govchatRoutes.put('/users/:staffId/role', async (c) => {
   }
 
   const targetStaffId = c.req.param('staffId');
-  const body = await c.req.json<{ role: 'user' | 'admin' | 'superadmin' }>();
+  const body = await c.req.json<{ role: 'user' | 'admin' | 'superadmin' | 'public' }>();
 
-  if (!body.role || !['user', 'admin', 'superadmin'].includes(body.role)) {
-    return c.json({ error: 'Invalid role. Must be: user, admin, or superadmin' }, 400);
+  if (!body.role || !['user', 'admin', 'superadmin', 'public'].includes(body.role)) {
+    return c.json({ error: 'Invalid role. Must be: user, admin, superadmin, or public' }, 400);
   }
 
   // Find the user's session key
@@ -437,4 +437,335 @@ govchatRoutes.put('/users/:staffId/role', async (c) => {
   }
 
   return c.json({ success: true, staffId: targetStaffId, role: body.role });
+});
+
+// ---------------------------------------------------------------------------
+// POST /code-requests — Submit a code request (public, no auth)
+// ---------------------------------------------------------------------------
+
+govchatRoutes.post('/code-requests', async (c) => {
+  const body = await c.req.json<{
+    name: string;
+    email: string;
+    department: string;
+    ministry: string;
+    reason: string;
+  }>();
+
+  if (!body.name || !body.email || !body.department || !body.ministry || !body.reason) {
+    return c.json({ error: 'name, email, department, ministry, and reason are all required' }, 400);
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(body.email)) {
+    return c.json({ error: 'Invalid email format' }, 400);
+  }
+
+  const now = Date.now();
+  const randomChars = Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) =>
+    'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36],
+  ).join('');
+  const id = `req_${now}_${randomChars}`;
+
+  const request: CodeRequest = {
+    id,
+    name: body.name,
+    email: body.email,
+    department: body.department,
+    ministry: body.ministry,
+    reason: body.reason,
+    status: 'pending',
+    createdAt: now,
+  };
+
+  await c.env.INVITE_CODES.put(`code-request:${id}`, JSON.stringify(request));
+
+  return c.json({
+    success: true,
+    requestId: id,
+    message: 'Your request has been submitted. You will receive your invite code once approved.',
+  });
+});
+
+// ---------------------------------------------------------------------------
+// GET /code-requests — Admin lists all code requests
+// ---------------------------------------------------------------------------
+
+govchatRoutes.get('/code-requests', async (c) => {
+  const adminResult = await requireAdmin(c.env, c.req.raw);
+  if (adminResult instanceof Response) return adminResult;
+
+  const list = await c.env.INVITE_CODES.list({ prefix: 'code-request:' });
+  const requests: CodeRequest[] = [];
+
+  for (const key of list.keys) {
+    const data = await c.env.INVITE_CODES.get(key.name, 'json');
+    if (data) {
+      requests.push(data as CodeRequest);
+    }
+  }
+
+  // Sort by createdAt descending (newest first)
+  requests.sort((a, b) => b.createdAt - a.createdAt);
+
+  return c.json({ requests });
+});
+
+// ---------------------------------------------------------------------------
+// GET /code-requests/count — Get pending request count
+// ---------------------------------------------------------------------------
+
+govchatRoutes.get('/code-requests/count', async (c) => {
+  const adminResult = await requireAdmin(c.env, c.req.raw);
+  if (adminResult instanceof Response) return adminResult;
+
+  const list = await c.env.INVITE_CODES.list({ prefix: 'code-request:' });
+  let count = 0;
+
+  for (const key of list.keys) {
+    const data = await c.env.INVITE_CODES.get(key.name, 'json');
+    if (data) {
+      const req = data as CodeRequest;
+      if (req.status === 'pending') {
+        count++;
+      }
+    }
+  }
+
+  return c.json({ count });
+});
+
+// ---------------------------------------------------------------------------
+// PUT /code-requests/:id/approve — Admin approves a request
+// ---------------------------------------------------------------------------
+
+govchatRoutes.put('/code-requests/:id/approve', async (c) => {
+  const adminResult = await requireAdmin(c.env, c.req.raw);
+  if (adminResult instanceof Response) return adminResult;
+  const admin = adminResult;
+
+  const id = c.req.param('id');
+  const stored = await c.env.INVITE_CODES.get(`code-request:${id}`, 'json');
+
+  if (!stored) {
+    return c.json({ error: 'Code request not found' }, 404);
+  }
+
+  const request = stored as CodeRequest;
+
+  if (request.status !== 'pending') {
+    return c.json({ error: `Request has already been ${request.status}` }, 400);
+  }
+
+  // Generate an invite code for the requester
+  const code = generateInviteCode();
+  const now = Date.now();
+  const expiresAt = now + 168 * 60 * 60 * 1000; // 7 days
+
+  const inviteCode: InviteCode = {
+    code,
+    createdBy: admin.userId,
+    createdAt: now,
+    expiresAt,
+    maxUses: 1,
+    usedCount: 0,
+    department: request.department,
+    ministry: request.ministry,
+    isRevoked: false,
+  };
+
+  await c.env.INVITE_CODES.put(`invite:${code}`, JSON.stringify(inviteCode), {
+    expirationTtl: Math.max(Math.ceil((expiresAt - now) / 1000), 60),
+  });
+
+  // Update the request
+  request.status = 'approved';
+  request.reviewedBy = admin.userId;
+  request.reviewedAt = now;
+  request.generatedCode = code;
+
+  await c.env.INVITE_CODES.put(`code-request:${id}`, JSON.stringify(request));
+
+  return c.json({ success: true, code });
+});
+
+// ---------------------------------------------------------------------------
+// PUT /code-requests/:id/reject — Admin rejects a request
+// ---------------------------------------------------------------------------
+
+govchatRoutes.put('/code-requests/:id/reject', async (c) => {
+  const adminResult = await requireAdmin(c.env, c.req.raw);
+  if (adminResult instanceof Response) return adminResult;
+  const admin = adminResult;
+
+  const id = c.req.param('id');
+  const stored = await c.env.INVITE_CODES.get(`code-request:${id}`, 'json');
+
+  if (!stored) {
+    return c.json({ error: 'Code request not found' }, 404);
+  }
+
+  const request = stored as CodeRequest;
+
+  if (request.status !== 'pending') {
+    return c.json({ error: `Request has already been ${request.status}` }, 400);
+  }
+
+  const body = await c.req.json<{ reason?: string }>().catch(() => ({ reason: undefined }));
+
+  request.status = 'rejected';
+  request.reviewedBy = admin.userId;
+  request.reviewedAt = Date.now();
+  request.rejectionReason = body.reason;
+
+  await c.env.INVITE_CODES.put(`code-request:${id}`, JSON.stringify(request));
+
+  return c.json({ success: true });
+});
+
+// ---------------------------------------------------------------------------
+// POST /auth/public-signup — Public user registration (no invite code)
+// ---------------------------------------------------------------------------
+
+govchatRoutes.post('/auth/public-signup', async (c) => {
+  const body = await c.req.json<{ name: string; email: string }>();
+
+  if (!body.name || !body.email) {
+    return c.json({ error: 'name and email are required' }, 400);
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(body.email)) {
+    return c.json({ error: 'Invalid email format' }, 400);
+  }
+
+  // Block .gov.gh emails — those should use invite codes
+  if (body.email.toLowerCase().endsWith('.gov.gh')) {
+    return c.json(
+      { error: 'Government email addresses (.gov.gh) must register using an invite code' },
+      400,
+    );
+  }
+
+  // Derive a username from the email (sanitize for Matrix user ID)
+  const username = body.email.replace(/[^a-zA-Z0-9._-]/g, '_').toLowerCase();
+
+  // Register on Synapse homeserver via shared-secret registration
+  const homeserverUrl = c.env.MATRIX_HOMESERVER_URL || 'https://govchat.askozzy.work';
+  const serverName = new URL(homeserverUrl).hostname;
+  const matrixUserId = `@${username}:${serverName}`;
+  let matrixAccessToken = '';
+  let matrixDeviceId = '';
+
+  try {
+    const registrationSecret = c.env.SYNAPSE_REGISTRATION_SECRET;
+    if (registrationSecret) {
+      // Step 1: Get a nonce from the server
+      const nonceRes = await fetch(`${homeserverUrl}/_synapse/admin/v1/register`, {
+        method: 'GET',
+      });
+      const nonceData = (await nonceRes.json()) as { nonce: string };
+      const nonce = nonceData.nonce;
+
+      // Step 2: Compute HMAC
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(registrationSecret),
+        { name: 'HMAC', hash: 'SHA-1' },
+        false,
+        ['sign'],
+      );
+
+      const password = `GovChat_${generateToken().slice(0, 16)}`;
+      const hmacMessage = `${nonce}\x00${username}\x00${password}\x00notadmin`;
+      const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(hmacMessage));
+      const mac = Array.from(new Uint8Array(signature))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      // Step 3: Register the user
+      const regRes = await fetch(`${homeserverUrl}/_synapse/admin/v1/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nonce,
+          username,
+          displayname: body.name,
+          password,
+          admin: false,
+          mac,
+        }),
+      });
+
+      if (regRes.ok) {
+        const regData = (await regRes.json()) as {
+          user_id: string;
+          access_token: string;
+          device_id: string;
+        };
+        matrixAccessToken = regData.access_token;
+        matrixDeviceId = regData.device_id;
+      } else {
+        const errBody = await regRes.text();
+        // User may already exist — try logging in instead
+        if (errBody.includes('User ID already taken')) {
+          const loginRes = await fetch(`${homeserverUrl}/_matrix/client/v3/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'm.login.password',
+              identifier: { type: 'm.id.user', user: username },
+              password,
+            }),
+          });
+          if (loginRes.ok) {
+            const loginData = (await loginRes.json()) as {
+              user_id: string;
+              access_token: string;
+              device_id: string;
+            };
+            matrixAccessToken = loginData.access_token;
+            matrixDeviceId = loginData.device_id;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Synapse registration error:', err);
+  }
+
+  // Create session with role 'public'
+  const token = matrixAccessToken || generateToken();
+  const deviceId = matrixDeviceId || `GOVCHAT_${generateToken().slice(0, 12).toUpperCase()}`;
+  const userId = matrixAccessToken ? matrixUserId : `@${username}:gov.gh`;
+
+  const session: GovChatSession = {
+    userId,
+    staffId: body.email,
+    displayName: body.name,
+    department: 'Public',
+    ministry: 'Public',
+    token,
+    homeserverUrl,
+    deviceId,
+    createdAt: Date.now(),
+    role: 'public',
+  };
+
+  // Store session with 30-day TTL
+  await c.env.SESSIONS.put(`govchat-session:${token}`, JSON.stringify(session), {
+    expirationTtl: 30 * 24 * 60 * 60, // 30 days in seconds
+  });
+
+  return c.json({
+    success: true,
+    userId,
+    accessToken: token,
+    homeserverUrl,
+    staffId: body.email,
+    deviceId,
+  });
 });

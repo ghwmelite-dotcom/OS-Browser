@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Settings, X, Loader2, Copy, Check, XCircle, ShieldAlert, UserCog, Shield, ChevronDown } from 'lucide-react';
+import { Settings, X, Loader2, Copy, Check, XCircle, ShieldAlert, UserCog, Shield, ChevronDown, Inbox, RefreshCw, CheckCircle } from 'lucide-react';
 import { useGovChatStore } from '@/store/govchat';
 
 const API_BASE = 'https://os-browser-worker.ghwmelite.workers.dev';
@@ -24,6 +24,20 @@ interface InviteCode {
   department: string;
   ministry: string;
   isRevoked: boolean;
+}
+
+interface CodeRequest {
+  id: string;
+  name: string;
+  email: string;
+  department: string;
+  ministry: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: number;
+  reviewedAt?: number;
+  rejectionReason?: string;
+  generatedCode?: string;
 }
 
 type CodeStatus = 'active' | 'expired' | 'maxed' | 'revoked';
@@ -100,8 +114,16 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
   const [changingRole, setChangingRole] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'codes' | 'users'>('codes');
+  const [activeTab, setActiveTab] = useState<'codes' | 'users' | 'requests'>('codes');
   const isSuperadmin = currentUser?.role === 'superadmin';
+
+  /* ── Requests state ── */
+  const [requests, setRequests] = useState<CodeRequest[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [requestsError, setRequestsError] = useState<string | null>(null);
+  const [approvingRequest, setApprovingRequest] = useState<string | null>(null);
+  const [rejectingRequest, setRejectingRequest] = useState<string | null>(null);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const authHeader = credentials?.accessToken
     ? { Authorization: `Bearer ${credentials.accessToken}` }
@@ -230,6 +252,107 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
     }
   };
 
+  /* ── Fetch requests ── */
+  const fetchRequests = useCallback(async () => {
+    if (!credentials?.accessToken) return;
+    setLoadingRequests(true);
+    setRequestsError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/govchat/code-requests`, {
+        headers: { ...authHeader } as HeadersInit,
+      });
+      if (!res.ok) throw new Error(`Failed to fetch requests (${res.status})`);
+      const data = await res.json();
+      setRequests(data.requests ?? []);
+    } catch (err: any) {
+      setRequestsError(err.message ?? 'Failed to load requests');
+    } finally {
+      setLoadingRequests(false);
+    }
+  }, [credentials?.accessToken]);
+
+  /* ── Fetch pending count ── */
+  const fetchPendingCount = useCallback(async () => {
+    if (!credentials?.accessToken) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/govchat/code-requests/count`, {
+        headers: { ...authHeader } as HeadersInit,
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setPendingCount(data.count ?? 0);
+    } catch {
+      // silent
+    }
+  }, [credentials?.accessToken]);
+
+  useEffect(() => {
+    if (isAuthorized) fetchPendingCount();
+  }, [isAuthorized, fetchPendingCount]);
+
+  useEffect(() => {
+    if (isAuthorized && activeTab === 'requests') fetchRequests();
+  }, [isAuthorized, activeTab, fetchRequests]);
+
+  /* ── Approve request ── */
+  const handleApprove = async (requestId: string) => {
+    if (approvingRequest) return;
+    setApprovingRequest(requestId);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/govchat/code-requests/${requestId}/approve`, {
+        method: 'PUT',
+        headers: { ...authHeader } as HeadersInit,
+      });
+      if (!res.ok) throw new Error(`Approve failed (${res.status})`);
+      const data = await res.json();
+      if (data.code) {
+        setRequests(prev =>
+          prev.map(r => r.id === requestId ? { ...r, status: 'approved' as const, generatedCode: data.code, reviewedAt: Date.now() } : r)
+        );
+      }
+      await fetchRequests();
+      await fetchPendingCount();
+    } catch {
+      // user can retry
+    } finally {
+      setApprovingRequest(null);
+    }
+  };
+
+  /* ── Reject request ── */
+  const handleReject = async (requestId: string) => {
+    if (rejectingRequest) return;
+    const reason = window.prompt('Rejection reason (optional):');
+    setRejectingRequest(requestId);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/govchat/code-requests/${requestId}/reject`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeader } as HeadersInit,
+        body: JSON.stringify({ reason: reason ?? '' }),
+      });
+      if (!res.ok) throw new Error(`Reject failed (${res.status})`);
+      await fetchRequests();
+      await fetchPendingCount();
+    } catch {
+      // user can retry
+    } finally {
+      setRejectingRequest(null);
+    }
+  };
+
+  /* ── Relative time helper ── */
+  function timeAgo(timestamp: number): string {
+    const diff = Date.now() - timestamp;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 30) return `${days}d ago`;
+    return `${Math.floor(days / 30)}mo ago`;
+  }
+
   /* ── Access denied ── */
   if (!isAuthorized) {
     return (
@@ -305,20 +428,39 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {/* Tabs (superadmin gets Users tab) */}
-        {isSuperadmin && (
-          <div className="flex shrink-0 border-b" style={{ borderColor: 'var(--color-border-1)' }}>
-            <button
-              onClick={() => setActiveTab('codes')}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[12px] font-semibold transition-colors"
-              style={{
-                color: activeTab === 'codes' ? '#D4A017' : 'var(--color-text-muted)',
-                borderBottom: activeTab === 'codes' ? '2px solid #D4A017' : '2px solid transparent',
-              }}
-            >
-              <Settings size={13} />
-              Invite Codes
-            </button>
+        {/* Tabs */}
+        <div className="flex shrink-0 border-b" style={{ borderColor: 'var(--color-border-1)' }}>
+          <button
+            onClick={() => setActiveTab('codes')}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[12px] font-semibold transition-colors"
+            style={{
+              color: activeTab === 'codes' ? '#D4A017' : 'var(--color-text-muted)',
+              borderBottom: activeTab === 'codes' ? '2px solid #D4A017' : '2px solid transparent',
+            }}
+          >
+            <Settings size={13} />
+            Invite Codes
+          </button>
+          <button
+            onClick={() => setActiveTab('requests')}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[12px] font-semibold transition-colors relative"
+            style={{
+              color: activeTab === 'requests' ? '#D4A017' : 'var(--color-text-muted)',
+              borderBottom: activeTab === 'requests' ? '2px solid #D4A017' : '2px solid transparent',
+            }}
+          >
+            <Inbox size={13} />
+            Requests
+            {pendingCount > 0 && (
+              <span
+                className="absolute -top-0.5 ml-[70px] min-w-[16px] h-[16px] flex items-center justify-center rounded-full text-[9px] font-bold text-white"
+                style={{ background: '#CE1126' }}
+              >
+                {pendingCount > 99 ? '99+' : pendingCount}
+              </span>
+            )}
+          </button>
+          {isSuperadmin && (
             <button
               onClick={() => setActiveTab('users')}
               className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[12px] font-semibold transition-colors"
@@ -330,8 +472,8 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
               <UserCog size={13} />
               Manage Users
             </button>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
@@ -598,6 +740,176 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
             )}
           </div>
           </>}
+
+          {/* ── Requests management ── */}
+          {activeTab === 'requests' && (
+            <div
+              className="rounded-xl border"
+              style={{
+                background: 'var(--color-surface-1)',
+                borderColor: 'var(--color-border-1)',
+              }}
+            >
+              <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--color-border-1)' }}>
+                <h4 className="text-[12.5px] font-semibold text-text-primary flex items-center gap-1.5">
+                  <Inbox size={14} style={{ color: '#D4A017' }} />
+                  Pending Requests
+                  {!loadingRequests && (
+                    <span className="text-text-muted font-normal ml-1">
+                      ({requests.filter(r => r.status === 'pending').length})
+                    </span>
+                  )}
+                </h4>
+                <button
+                  onClick={fetchRequests}
+                  className="flex items-center gap-1 text-[10.5px] font-semibold"
+                  style={{ color: '#D4A017' }}
+                >
+                  <RefreshCw size={11} />
+                  Refresh
+                </button>
+              </div>
+
+              {loadingRequests ? (
+                <div className="flex items-center justify-center py-8 gap-2 text-text-muted">
+                  <Loader2 size={16} className="animate-spin" />
+                  <span className="text-[12px]">Loading requests...</span>
+                </div>
+              ) : requestsError ? (
+                <div className="px-4 py-6 text-center">
+                  <p className="text-[12px] text-text-muted">{requestsError}</p>
+                  <button
+                    onClick={fetchRequests}
+                    className="mt-2 text-[11px] font-semibold underline underline-offset-2"
+                    style={{ color: '#D4A017' }}
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : requests.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <p className="text-[12px] text-text-muted">No code requests yet.</p>
+                </div>
+              ) : (
+                <div className="max-h-[400px] overflow-y-auto p-3 flex flex-col gap-2.5">
+                  {requests.map(req => {
+                    const isPending = req.status === 'pending';
+                    const isApproved = req.status === 'approved';
+                    const isRejected = req.status === 'rejected';
+                    const isApproving = approvingRequest === req.id;
+                    const isRejecting = rejectingRequest === req.id;
+
+                    const statusConfig = {
+                      pending: { label: 'Pending', color: '#D4A017', bg: 'rgba(212, 160, 23, 0.1)' },
+                      approved: { label: 'Approved', color: '#006B3F', bg: 'rgba(0, 107, 63, 0.1)' },
+                      rejected: { label: 'Rejected', color: '#CE1126', bg: 'rgba(206, 17, 38, 0.1)' },
+                    };
+                    const sc = statusConfig[req.status];
+
+                    return (
+                      <div
+                        key={req.id}
+                        className="rounded-lg border p-3"
+                        style={{
+                          borderColor: 'var(--color-border-1)',
+                          background: 'var(--color-surface-2)',
+                        }}
+                      >
+                        {/* Header row: name + status */}
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                              style={{ background: isPending ? '#D4A017' : isApproved ? '#006B3F' : '#CE1126' }}
+                            >
+                              {req.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                            </div>
+                            <span className="text-[12px] font-semibold text-text-primary">{req.name}</span>
+                          </div>
+                          <span
+                            className="text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full flex items-center gap-1"
+                            style={{ background: sc.bg, color: sc.color }}
+                          >
+                            {isApproved && <CheckCircle size={9} />}
+                            {isRejected && <XCircle size={9} />}
+                            {sc.label}
+                          </span>
+                        </div>
+
+                        {/* Details for pending / full view */}
+                        {isPending && (
+                          <>
+                            <p className="text-[10.5px] text-text-muted mb-0.5">{req.email}</p>
+                            <p className="text-[10.5px] text-text-muted mb-1">
+                              {req.ministry} &middot; {req.department}
+                            </p>
+                            <p className="text-[11px] text-text-secondary italic mb-2"
+                              style={{ borderLeft: '2px solid var(--color-border-1)', paddingLeft: 8 }}
+                            >
+                              &ldquo;{req.reason}&rdquo;
+                            </p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9.5px] text-text-muted">
+                                Requested: {timeAgo(req.createdAt)}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleApprove(req.id)}
+                                  disabled={isApproving || isRejecting}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[10.5px] font-semibold text-white transition-opacity"
+                                  style={{
+                                    background: '#006B3F',
+                                    opacity: isApproving || isRejecting ? 0.5 : 1,
+                                  }}
+                                >
+                                  {isApproving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleReject(req.id)}
+                                  disabled={isApproving || isRejecting}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[10.5px] font-semibold text-white transition-opacity"
+                                  style={{
+                                    background: '#CE1126',
+                                    opacity: isApproving || isRejecting ? 0.5 : 1,
+                                  }}
+                                >
+                                  {isRejecting ? <Loader2 size={11} className="animate-spin" /> : <X size={11} />}
+                                  Reject
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Approved: show generated code */}
+                        {isApproved && req.generatedCode && (
+                          <div className="flex items-center justify-between mt-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-text-muted">Code:</span>
+                              <span className="text-[13px] font-mono font-bold tracking-widest" style={{ color: '#006B3F' }}>
+                                {req.generatedCode}
+                              </span>
+                            </div>
+                            <CopyButton text={req.generatedCode} />
+                          </div>
+                        )}
+
+                        {/* Rejected: show reason */}
+                        {isRejected && (
+                          <div className="mt-1.5">
+                            <span className="text-[10px] text-text-muted">
+                              Reason: {req.rejectionReason || 'No reason provided'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Users management (superadmin only) ── */}
           {activeTab === 'users' && isSuperadmin && (
