@@ -334,33 +334,46 @@ function VoiceNoteView({ voiceNote, isOwn }: { voiceNote: NonNullable<GovChatMes
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const togglePlay = () => {
-    if (!audioRef.current) {
-      const src = resolveMediaUrl(voiceNote.url);
-      if (!src) return;
-      const audio = new Audio(src);
-      audioRef.current = audio;
-      audio.addEventListener('timeupdate', () => {
-        if (audio.duration) setProgress(audio.currentTime / audio.duration);
-      });
-      audio.addEventListener('ended', () => {
-        setIsPlaying(false);
-        setProgress(0);
-        audioRef.current = null;
-      });
-      audio.addEventListener('error', () => {
-        console.warn('[VoiceNote] Playback error');
-        setIsPlaying(false);
-        audioRef.current = null;
-      });
+    // If already playing, pause
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+      return;
     }
 
-    if (isPlaying) {
-      audioRef.current?.pause();
-      setIsPlaying(false);
-    } else {
-      audioRef.current?.play().catch(() => setIsPlaying(false));
-      setIsPlaying(true);
+    // If audio element exists, resume
+    if (audioRef.current) {
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+      return;
     }
+
+    // Create new audio element
+    const src = resolveMediaUrl(voiceNote.url);
+    if (!src) return;
+
+    const audio = new Audio();
+    audioRef.current = audio;
+
+    audio.addEventListener('timeupdate', () => {
+      if (audio.duration) setProgress(audio.currentTime / audio.duration);
+    });
+    audio.addEventListener('ended', () => {
+      setIsPlaying(false);
+      setProgress(0);
+      audioRef.current = null;
+    });
+    audio.addEventListener('error', (e) => {
+      console.warn('[VoiceNote] Playback error:', e);
+      setIsPlaying(false);
+      audioRef.current = null;
+    });
+    audio.addEventListener('canplaythrough', () => {
+      audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    }, { once: true });
+
+    // Set source and start loading
+    audio.src = src;
+    audio.load();
   };
 
   // Cleanup on unmount
