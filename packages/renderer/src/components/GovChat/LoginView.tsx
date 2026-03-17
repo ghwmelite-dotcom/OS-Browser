@@ -169,7 +169,7 @@ export function LoginView() {
   // ─── Request Code View ───
   if (view === 'request') {
     return (
-      <div className="flex-1 flex flex-col items-center overflow-y-auto min-h-0 px-4 py-4" style={{ background: 'var(--color-bg)' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto', minHeight: 0, padding: '16px', background: 'var(--color-bg)' }}>
         <div
           className="w-full max-w-[300px] rounded-2xl border overflow-hidden"
           style={{
@@ -328,7 +328,7 @@ export function LoginView() {
   // ─── Public User View ───
   if (view === 'public') {
     return (
-      <div className="flex-1 flex flex-col items-center overflow-y-auto min-h-0 px-4 py-4" style={{ background: 'var(--color-bg)' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto', minHeight: 0, padding: '16px', background: 'var(--color-bg)' }}>
         <div
           className="w-full max-w-[300px] rounded-2xl border overflow-hidden"
           style={{
@@ -434,7 +434,7 @@ export function LoginView() {
 
   // ─── Login View (default) ───
   return (
-    <div className="flex-1 flex flex-col items-center overflow-y-auto min-h-0 px-4 py-4" style={{ background: 'var(--color-bg)' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto', minHeight: 0, padding: '16px', background: 'var(--color-bg)' }}>
       <div
         className="w-full max-w-[300px] rounded-2xl border overflow-hidden"
         style={{

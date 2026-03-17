@@ -100,8 +100,13 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="h-full flex flex-col shrink-0 min-h-0"
       style={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        flexShrink: 0,
+        minHeight: 0,
+        overflow: 'hidden',
         width: '100%',
         background: 'var(--color-surface-1)',
         borderColor: 'var(--color-border-1)',
