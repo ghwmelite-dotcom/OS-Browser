@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { GAMES } from './GameCenterLayout';
 import { SidebarPanelProps } from '@/features/registry';
+import { useTabsStore } from '@/store/tabs';
 
 // ── Component ────────────────────────────────────────────────────────
 export const GovPlayQuickPanel: React.FC<SidebarPanelProps> = ({ onClose }) => {
@@ -24,15 +25,19 @@ export const GovPlayQuickPanel: React.FC<SidebarPanelProps> = ({ onClose }) => {
   }, [stats]);
 
   const navigateToGame = (gameId: string) => {
-    window.dispatchEvent(
-      new CustomEvent('govplay:navigate', { detail: { view: 'game', gameId } }),
-    );
+    useTabsStore.getState().createTab('os-browser://games');
+    // Small delay to let the tab load, then navigate to specific game
+    setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent('govplay:navigate', { detail: { view: 'game', gameId } }),
+      );
+    }, 100);
+    onClose();
   };
 
   const openGovPlay = () => {
-    window.dispatchEvent(
-      new CustomEvent('govplay:navigate', { detail: { view: 'catalog' } }),
-    );
+    useTabsStore.getState().createTab('os-browser://games');
+    onClose();
   };
 
   // ── Styles ──────────────────────────────────────────────────────

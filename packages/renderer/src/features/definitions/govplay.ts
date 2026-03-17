@@ -32,11 +32,18 @@ const GovPlaySidebarPanel: React.FC<SidebarPanelProps> = (props) => {
 
 // ── Navigation helper ────────────────────────────────────────────────
 const openGovPlay = () => {
-  window.dispatchEvent(new CustomEvent('govplay:navigate', { detail: { view: 'catalog' } }));
+  import('@/store/tabs').then(({ useTabsStore }) => {
+    useTabsStore.getState().createTab('os-browser://games');
+  });
 };
 
 const openGame = (gameId: string) => {
-  window.dispatchEvent(new CustomEvent('govplay:navigate', { detail: { view: 'game', gameId } }));
+  import('@/store/tabs').then(({ useTabsStore }) => {
+    useTabsStore.getState().createTab('os-browser://games');
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('govplay:navigate', { detail: { view: 'game', gameId } }));
+    }, 100);
+  });
 };
 
 // ── Feature Definition ───────────────────────────────────────────────
@@ -44,16 +51,17 @@ const govplayFeature = {
   id: 'govplay',
   name: 'GovPlay',
   description: 'Game center with strategy, puzzle, arcade, and educational games for break-time entertainment.',
-  stripColor: '#D4537E',
+  stripColor: '#FF4081',
   icon: Gamepad2,
   category: 'productivity' as const,
   defaultEnabled: true,
+  priority: 1,
   internalPageUrl: 'os-browser://games',
   surfaces: {
     sidebar: {
       panelComponent: GovPlaySidebarPanel,
-      order: 8,
-      defaultPanelWidth: 320,
+      order: 3,
+      defaultPanelWidth: 340,
     },
     commandBar: [
       {

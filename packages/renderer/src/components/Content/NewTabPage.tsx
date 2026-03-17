@@ -718,6 +718,40 @@ export function NewTabPage() {
           </button>
         </section>
 
+        {/* ── GovPlay Card ── */}
+        <section className="mb-6 animate-fade-up stagger-3" aria-label="GovPlay Game Center">
+          <button
+            onClick={() => {
+              import('@/store/tabs').then(({ useTabsStore }) => {
+                useTabsStore.getState().createTab('os-browser://games');
+              });
+            }}
+            className="shimmer-border group w-full flex items-center gap-5 p-5 rounded-[20px] text-left"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 64, 129, 0.08), rgba(212, 83, 126, 0.08))',
+              border: '1px solid rgba(255, 64, 129, 0.2)',
+            }}
+            aria-label="Open GovPlay game center"
+          >
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+              style={{ background: 'linear-gradient(135deg, rgba(255, 64, 129, 0.2), rgba(212, 83, 126, 0.2))' }}
+            >
+              <span style={{ fontSize: 28 }}>🎮</span>
+            </div>
+            <div className="text-left flex-1 min-w-0">
+              <h3 className="text-lg font-bold mb-0.5" style={{ color: '#FF4081' }}>GovPlay</h3>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                12 built-in games — Oware, Chess, Ludo, Sudoku, Trivia & more. Take a break, sharpen your mind.
+              </p>
+            </div>
+            <div className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+              style={{ background: '#FF4081' }}
+            >
+              Play
+            </div>
+          </button>
+        </section>
+
         {/* ── AI Quick Actions ── */}
         <section className="mb-14 animate-fade-up stagger-4" aria-label="AI Quick Actions">
           <div className="flex items-center gap-3 mb-5">
