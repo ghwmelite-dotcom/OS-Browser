@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   ChevronRight, Globe, User, Shield, Building2, Lock, Languages,
-  Download, Smartphone, Battery, Keyboard, Sidebar, Terminal, BarChart3
+  Download, Smartphone, Battery, Keyboard, Sidebar, Terminal, BarChart3,
+  Gamepad2, Video
 } from 'lucide-react';
 
 interface OnboardingProps {
@@ -13,7 +14,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
   const [direction, setDirection] = useState<'next' | 'prev'>('next');
-  const totalSteps = 6;
+  const totalSteps = 9;
 
   const next = () => {
     if (step < totalSteps - 1) {
@@ -209,8 +210,94 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           </div>
         );
 
-      // Step 4: Quick Tips
+      // Step 4: GovChat — Secure Messaging
       case 4:
+        return (
+          <div className="text-center">
+            <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+              style={{ background: 'linear-gradient(135deg, #D4A017 0%, #006B3F 100%)' }}>
+              <Shield size={40} className="text-white" />
+            </div>
+            <h2 className="text-[22px] font-bold text-text-primary mb-2">GovChat — Secure Messaging</h2>
+            <p className="text-[13px] text-text-muted mb-5 max-w-[380px] mx-auto">
+              Chat with government colleagues using end-to-end encryption. Share files, send voice notes, make video calls. Your conversations are protected with military-grade encryption.
+            </p>
+            <div className="max-w-[380px] mx-auto space-y-2 text-left">
+              {[
+                { label: 'End-to-end encrypted messages', detail: 'UNCLASSIFIED to SECRET classification' },
+                { label: 'Voice notes & file sharing', detail: 'Documents, images up to 50MB' },
+                { label: 'Video & audio calls', detail: '1:1 calls built right in' },
+                { label: 'People directory', detail: 'Find colleagues by name or ministry' },
+              ].map(({ label, detail }) => (
+                <div key={label} className="flex items-start gap-3 p-2.5 rounded-xl"
+                  style={{ background: 'var(--color-surface-2)' }}>
+                  <ChevronRight size={14} className="shrink-0 mt-0.5" style={{ color: '#D4A017' }} />
+                  <div>
+                    <div className="text-[12px] font-semibold text-text-primary">{label}</div>
+                    <div className="text-[10px] text-text-muted">{detail}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      // Step 5: GovPlay — Take a Break
+      case 5:
+        return (
+          <div className="text-center">
+            <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+              style={{ background: 'linear-gradient(135deg, #FF4081 0%, #E91E63 100%)' }}>
+              <Gamepad2 size={40} className="text-white" />
+            </div>
+            <h2 className="text-[22px] font-bold text-text-primary mb-2">GovPlay — Take a Break</h2>
+            <p className="text-[13px] text-text-muted mb-5 max-w-[380px] mx-auto">
+              12 built-in games including Oware (Ghana's national board game), Chess, Ludo, Sudoku, and more. Play offline anytime — sharpen your mind during breaks.
+            </p>
+            <div className="grid grid-cols-3 gap-2 max-w-[360px] mx-auto">
+              {['Oware', 'Chess', 'Checkers', 'Ludo', 'Sudoku', '2048', 'Minesweeper', 'Solitaire', 'Snake', 'Word Scramble', 'Ghana Trivia', 'Typing Test'].map(game => (
+                <div key={game} className="px-2 py-1.5 rounded-lg text-[10px] font-medium text-text-primary text-center"
+                  style={{ background: 'var(--color-surface-2)' }}>
+                  {game}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      // Step 6: Video & Audio Calls
+      case 6:
+        return (
+          <div className="text-center">
+            <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+              style={{ background: 'linear-gradient(135deg, #1565C0 0%, #42A5F5 100%)' }}>
+              <Video size={40} className="text-white" />
+            </div>
+            <h2 className="text-[22px] font-bold text-text-primary mb-2">Video & Audio Calls</h2>
+            <p className="text-[13px] text-text-muted mb-5 max-w-[380px] mx-auto">
+              Make crystal-clear 1:1 video and audio calls right from your chat conversations. No third-party apps needed — it's all built in.
+            </p>
+            <div className="max-w-[380px] mx-auto space-y-2 text-left">
+              {[
+                { label: 'Start from any DM', detail: 'Click the phone or camera icon in the chat header' },
+                { label: 'Full controls', detail: 'Mute, camera toggle, and end call buttons' },
+                { label: 'No extra apps', detail: 'Everything runs inside OS Browser' },
+              ].map(({ label, detail }) => (
+                <div key={label} className="flex items-start gap-3 p-2.5 rounded-xl"
+                  style={{ background: 'var(--color-surface-2)' }}>
+                  <ChevronRight size={14} className="shrink-0 mt-0.5" style={{ color: '#1565C0' }} />
+                  <div>
+                    <div className="text-[12px] font-semibold text-text-primary">{label}</div>
+                    <div className="text-[10px] text-text-muted">{detail}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      // Step 7: Quick Tips
+      case 7:
         return (
           <div className="text-center">
             <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
@@ -241,8 +328,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           </div>
         );
 
-      // Step 5: Ready to Go
-      case 5:
+      // Step 8: Ready to Go
+      case 8:
         return (
           <div className="text-center">
             <div className="w-28 h-28 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
