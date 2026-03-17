@@ -27,6 +27,9 @@ export function LoginView() {
   const [reqSubmitting, setReqSubmitting] = useState(false);
   const [reqSuccess, setReqSuccess] = useState(false);
   const [reqError, setReqError] = useState('');
+  const [checkingStatus, setCheckingStatus] = useState(false);
+  const [approvedCode, setApprovedCode] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState('');
 
   // Public user form state
   const [pubName, setPubName] = useState('');
@@ -207,13 +210,92 @@ export function LoginView() {
               </p>
             </div>
 
-            {/* Success message */}
+            {/* Success message + status check */}
             {reqSuccess ? (
-              <div
-                className="px-3 py-3 rounded-lg text-[11.5px] font-medium leading-snug text-center"
-                style={{ background: 'rgba(0, 107, 63, 0.1)', color: '#006B3F' }}
-              >
-                Request submitted! You'll receive your invite code once approved by an administrator.
+              <div className="flex flex-col gap-3">
+                <div
+                  className="px-3 py-3 rounded-lg text-[11.5px] font-medium leading-snug text-center"
+                  style={{ background: 'rgba(0, 107, 63, 0.1)', color: '#006B3F' }}
+                >
+                  Request submitted! You'll receive your invite code once approved by an administrator.
+                </div>
+
+                {/* Approved code display */}
+                {approvedCode && (
+                  <div
+                    className="px-4 py-3 rounded-lg text-center"
+                    style={{ background: 'rgba(0, 107, 63, 0.15)', border: '1.5px solid rgba(0, 107, 63, 0.3)' }}
+                  >
+                    <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#006B3F' }}>Your Invite Code</p>
+                    <p className="text-[20px] font-mono font-bold tracking-widest" style={{ color: '#006B3F' }}>{approvedCode}</p>
+                    <p className="text-[10px] mt-2" style={{ color: '#006B3F' }}>Use this code on the login screen to join GovChat.</p>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(approvedCode); }}
+                      className="mt-2 px-3 py-1 rounded text-[10px] font-semibold"
+                      style={{ background: 'rgba(0, 107, 63, 0.2)', color: '#006B3F', border: 'none', cursor: 'pointer' }}
+                    >
+                      Copy Code
+                    </button>
+                  </div>
+                )}
+
+                {/* Status message */}
+                {statusMessage && !approvedCode && (
+                  <div
+                    className="px-3 py-2 rounded-lg text-[11px] text-center"
+                    style={{ background: 'rgba(212, 160, 23, 0.1)', color: '#D4A017' }}
+                  >
+                    {statusMessage}
+                  </div>
+                )}
+
+                {/* Check status button */}
+                {!approvedCode && (
+                  <button
+                    onClick={async () => {
+                      setCheckingStatus(true);
+                      setStatusMessage('');
+                      try {
+                        const res = await fetch(
+                          `https://os-browser-worker.ghwmelite.workers.dev/api/v1/govchat/code-requests/status?email=${encodeURIComponent(reqEmail.trim())}`,
+                        );
+                        if (!res.ok) throw new Error('Failed to check status');
+                        const data = await res.json() as { status: string; code?: string; rejectionReason?: string };
+                        if (data.status === 'approved' && data.code) {
+                          setApprovedCode(data.code);
+                        } else if (data.status === 'rejected') {
+                          setStatusMessage(`Request was declined${data.rejectionReason ? ': ' + data.rejectionReason : '. Please contact your IT administrator.'}`);
+                        } else if (data.status === 'pending') {
+                          setStatusMessage('Your request is still pending review. Please check back later.');
+                        } else {
+                          setStatusMessage('No request found for this email. Please submit a new request.');
+                        }
+                      } catch {
+                        setStatusMessage('Unable to check status. Please try again.');
+                      } finally {
+                        setCheckingStatus(false);
+                      }
+                    }}
+                    disabled={checkingStatus}
+                    className="w-full py-2 rounded-lg text-[12px] font-semibold flex items-center justify-center gap-2"
+                    style={{
+                      background: '#D4A017',
+                      color: '#fff',
+                      border: 'none',
+                      cursor: checkingStatus ? 'wait' : 'pointer',
+                      opacity: checkingStatus ? 0.6 : 1,
+                    }}
+                  >
+                    {checkingStatus ? 'Checking...' : 'Check Request Status'}
+                  </button>
+                )}
+
+                <button
+                  onClick={() => { setReqSuccess(false); setApprovedCode(null); setStatusMessage(''); setView('login'); }}
+                  className="text-[10.5px] text-text-muted underline underline-offset-2"
+                >
+                  Back to login
+                </button>
               </div>
             ) : (
               <>

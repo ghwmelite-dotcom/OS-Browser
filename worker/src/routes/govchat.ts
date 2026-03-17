@@ -607,6 +607,30 @@ govchatRoutes.post('/code-requests', async (c) => {
 });
 
 // ---------------------------------------------------------------------------
+// GET /code-requests/status — Public: check request status by email
+// ---------------------------------------------------------------------------
+
+govchatRoutes.get('/code-requests/status', async (c) => {
+  const email = c.req.query('email');
+  if (!email) return c.json({ error: 'Missing email parameter' }, 400);
+
+  const list = await c.env.INVITE_CODES.list({ prefix: 'code-request:' });
+
+  for (const key of list.keys) {
+    const data = await c.env.INVITE_CODES.get(key.name, 'json') as CodeRequest | null;
+    if (data && data.email.toLowerCase() === email.toLowerCase()) {
+      return c.json({
+        status: data.status,
+        code: data.status === 'approved' ? data.generatedCode : undefined,
+        rejectionReason: data.status === 'rejected' ? data.rejectionReason : undefined,
+      });
+    }
+  }
+
+  return c.json({ status: 'not_found' });
+});
+
+// ---------------------------------------------------------------------------
 // GET /code-requests — Admin lists all code requests
 // ---------------------------------------------------------------------------
 
