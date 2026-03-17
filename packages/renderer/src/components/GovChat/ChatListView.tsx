@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Search, Shield } from 'lucide-react';
 import { useGovChatStore } from '@/store/govchat';
 import { ChatListItem } from './ChatListItem';
+import { PeopleDirectory } from './PeopleDirectory';
 import type { ChatFilter } from '@/types/govchat';
 
 /* ─────────── filter tabs ─────────── */
@@ -11,6 +12,7 @@ const FILTER_OPTIONS: { key: ChatFilter; label: string }[] = [
   { key: 'unread', label: 'Unread' },
   { key: 'groups', label: 'Groups' },
   { key: 'direct', label: 'DMs' },
+  { key: 'people', label: 'People' },
 ];
 
 /* ─────────── main component ─────────── */
@@ -70,6 +72,11 @@ export function ChatListView() {
     markRoomAsRead(roomId);
   };
 
+  const handleStartChat = useCallback(async (userId: string, _displayName: string) => {
+    await useGovChatStore.getState().createDirectRoom(userId);
+    setChatFilter('direct');
+  }, [setChatFilter]);
+
   return (
     <>
       {/* Filter tabs */}
@@ -94,47 +101,54 @@ export function ChatListView() {
         })}
       </div>
 
-      {/* Search bar */}
-      <div className="px-2 py-1.5 shrink-0">
-        <div
-          className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg"
-          style={{ background: 'var(--color-surface-2)' }}
-        >
-          <Search size={12} className="text-text-muted shrink-0" />
-          <input
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search rooms..."
-            className="flex-1 bg-transparent text-[11px] text-text-primary outline-none placeholder:text-text-muted min-w-0"
-          />
-        </div>
-      </div>
-
-      {/* Room list */}
-      <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-        {filteredRooms.length === 0 ? (
-          <div className="px-3 py-8 text-center">
-            <p className="text-[11px] text-text-muted">
-              {searchQuery
-                ? 'No rooms match your search'
-                : chatFilter !== 'all'
-                ? 'No rooms in this filter'
-                : 'No conversations yet'}
-            </p>
+      {/* People directory OR normal chat list */}
+      {chatFilter === 'people' ? (
+        <PeopleDirectory onStartChat={handleStartChat} />
+      ) : (
+        <>
+          {/* Search bar */}
+          <div className="px-2 py-1.5 shrink-0">
+            <div
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg"
+              style={{ background: 'var(--color-surface-2)' }}
+            >
+              <Search size={12} className="text-text-muted shrink-0" />
+              <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search rooms..."
+                className="flex-1 bg-transparent text-[11px] text-text-primary outline-none placeholder:text-text-muted min-w-0"
+              />
+            </div>
           </div>
-        ) : (
-          filteredRooms.map(room => (
-            <ChatListItem
-              key={room.roomId}
-              room={room}
-              isActive={room.roomId === activeRoomId}
-              onSelect={() => handleSelectRoom(room.roomId)}
-              onPin={() => togglePinRoom(room.roomId)}
-              onDelete={() => deleteRoom(room.roomId)}
-            />
-          ))
-        )}
-      </div>
+
+          {/* Room list */}
+          <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+            {filteredRooms.length === 0 ? (
+              <div className="px-3 py-8 text-center">
+                <p className="text-[11px] text-text-muted">
+                  {searchQuery
+                    ? 'No rooms match your search'
+                    : chatFilter !== 'all'
+                    ? 'No rooms in this filter'
+                    : 'No conversations yet'}
+                </p>
+              </div>
+            ) : (
+              filteredRooms.map(room => (
+                <ChatListItem
+                  key={room.roomId}
+                  room={room}
+                  isActive={room.roomId === activeRoomId}
+                  onSelect={() => handleSelectRoom(room.roomId)}
+                  onPin={() => togglePinRoom(room.roomId)}
+                  onDelete={() => deleteRoom(room.roomId)}
+                />
+              ))
+            )}
+          </div>
+        </>
+      )}
 
       {/* Bottom classification notice */}
       <div className="px-2 py-2 border-t shrink-0" style={{ borderColor: 'var(--color-border-1)' }}>

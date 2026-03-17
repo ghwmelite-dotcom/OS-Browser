@@ -3,6 +3,16 @@ import type { Env, InviteCode, GovChatSession, CodeRequest } from '../types';
 
 type Variables = { deviceId: string };
 
+interface DirectoryUser {
+  userId: string;
+  staffId: string;
+  displayName: string;
+  department: string;
+  ministry: string;
+  role: string;
+  isOnline: boolean;
+}
+
 export const govchatRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // ---------------------------------------------------------------------------
@@ -448,6 +458,47 @@ govchatRoutes.put('/users/:staffId/role', async (c) => {
   }
 
   return c.json({ success: true, staffId: targetStaffId, role: body.role });
+});
+
+// ---------------------------------------------------------------------------
+// GET /users/directory — Public user directory for authenticated users
+// ---------------------------------------------------------------------------
+
+govchatRoutes.get('/users/directory', async (c) => {
+  const session = await getAuthenticatedSession(c.env, c.req.raw);
+  if (!session) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const list = await c.env.SESSIONS.list({ prefix: 'govchat-session:' });
+  const users: DirectoryUser[] = [];
+
+  for (const key of list.keys) {
+    const data = await c.env.SESSIONS.get(key.name, 'json') as GovChatSession | null;
+    if (!data) continue;
+    // Skip the requesting user
+    if (data.staffId === session.staffId) continue;
+    // Public users can only see other public users
+    if (session.role === 'public' && data.role !== 'public') continue;
+    // Government users can see everyone
+    users.push({
+      userId: data.userId,
+      staffId: data.staffId,
+      displayName: data.displayName,
+      department: data.department,
+      ministry: data.ministry,
+      role: data.role,
+      isOnline: (Date.now() - data.createdAt) < 7 * 24 * 60 * 60 * 1000,
+    });
+  }
+
+  // Sort by ministry, then name
+  users.sort((a, b) => {
+    if (a.ministry !== b.ministry) return a.ministry.localeCompare(b.ministry);
+    return a.displayName.localeCompare(b.displayName);
+  });
+
+  return c.json({ users, total: users.length });
 });
 
 // ---------------------------------------------------------------------------
