@@ -13,17 +13,17 @@ export interface GameMeta {
 
 export const GAMES: GameMeta[] = [
   { id: 'oware', name: 'Oware', description: 'Classic Akan mancala — capture seeds to win', category: 'Strategy', icon: '\u26AB' },
-  { id: 'checkers', name: 'Checkers', description: 'Draughts with jump captures and king promotion', category: 'Strategy', icon: '\u26C0' },
   { id: 'chess', name: 'Chess', description: 'The king of strategy games', category: 'Strategy', icon: '\u265A' },
-  { id: 'solitaire', name: 'Solitaire', description: 'Classic Klondike — sort cards by suit', category: 'Cards', icon: '\u2660' },
-  { id: 'minesweeper', name: 'Minesweeper', description: 'Clear the board without hitting mines', category: 'Puzzles', icon: '\uD83D\uDCA3' },
-  { id: '2048', name: '2048', description: 'Slide and merge tiles to reach 2048', category: 'Puzzles', icon: '\uD83D\uDD22' },
+  { id: 'checkers', name: 'Checkers', description: 'Draughts with jump captures and king promotion', category: 'Strategy', icon: '\u26C0' },
+  { id: 'ludo', name: 'Ludo', description: 'Race your tokens home — roll a 6 to start', category: 'Strategy', icon: '\uD83C\uDFB2' },
   { id: 'sudoku', name: 'Sudoku', description: 'Fill the 9x9 grid with logic', category: 'Puzzles', icon: '\uD83E\uDDEE' },
+  { id: '2048', name: '2048', description: 'Slide and merge tiles to reach 2048', category: 'Puzzles', icon: '\uD83D\uDD22' },
+  { id: 'minesweeper', name: 'Minesweeper', description: 'Clear the board without hitting mines', category: 'Puzzles', icon: '\uD83D\uDCA3' },
+  { id: 'solitaire', name: 'Solitaire', description: 'Classic Klondike — sort cards by suit', category: 'Cards', icon: '\u2660' },
   { id: 'snake', name: 'Snake', description: 'Grow your snake, dodge your tail', category: 'Arcade', icon: '\uD83D\uDC0D' },
-  { id: 'tetris', name: 'Tetris', description: 'Stack and clear falling blocks', category: 'Arcade', icon: '\uD83D\uDFE6' },
-  { id: 'wordscramble', name: 'Word Scramble', description: 'Unscramble letters to find the word', category: 'Educational', icon: '\uD83D\uDD24' },
-  { id: 'mathblitz', name: 'Math Blitz', description: 'Solve arithmetic before time runs out', category: 'Educational', icon: '\u2795' },
-  { id: 'typing', name: 'Typing Test', description: 'Test and improve your typing speed', category: 'Educational', icon: '\u2328\uFE0F' },
+  { id: 'word-scramble', name: 'Word Scramble', description: 'Unscramble letters to find the word', category: 'Educational', icon: '\uD83D\uDD24' },
+  { id: 'trivia', name: 'Ghana Trivia', description: 'Test your knowledge of Ghana', category: 'Educational', icon: '\uD83C\uDDEC\uD83C\uDDED' },
+  { id: 'typing', name: 'Typing Speed', description: 'Test and improve your typing speed', category: 'Educational', icon: '\u2328\uFE0F' },
 ];
 
 const CATEGORIES = ['All', 'Strategy', 'Puzzles', 'Cards', 'Arcade', 'Educational'] as const;
