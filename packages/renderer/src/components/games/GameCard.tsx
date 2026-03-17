@@ -8,6 +8,7 @@ export interface GameCardProps {
   category: string;
   icon: string;
   bestScore?: number;
+  locked?: boolean;
   onPlay: () => void;
 }
 
@@ -18,6 +19,7 @@ export const GameCard: React.FC<GameCardProps> = ({
   category,
   icon,
   bestScore,
+  locked = false,
   onPlay,
 }) => {
   const [hovered, setHovered] = useState(false);
@@ -71,21 +73,46 @@ export const GameCard: React.FC<GameCardProps> = ({
 
   return (
     <div
-      style={card}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={onPlay}
+      onClick={locked ? undefined : onPlay}
       role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
+      tabIndex={locked ? -1 : 0}
+      onKeyDown={locked ? undefined : (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onPlay();
         }
       }}
+      style={{ ...card, cursor: locked ? 'default' : 'pointer', opacity: locked ? 0.85 : 1 }}
     >
-      <div style={iconArea}>
+      <div style={{ ...iconArea, position: 'relative' }}>
         <span>{icon}</span>
+        {locked && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+          }}>
+            <span style={{ fontSize: 20 }}>🔒</span>
+            <span style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#FCD116',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              padding: '3px 10px',
+              borderRadius: 6,
+              background: 'rgba(252,209,22,0.15)',
+              border: '1px solid rgba(252,209,22,0.3)',
+            }}>Coming Soon</span>
+          </div>
+        )}
       </div>
 
       <div style={body}>
@@ -103,23 +130,26 @@ export const GameCard: React.FC<GameCardProps> = ({
             <span style={{ fontSize: 10, color: '#A0845C' }}>Not played</span>
           )}
           <button
-            onClick={(e) => {
+            onClick={locked ? undefined : (e) => {
               e.stopPropagation();
               onPlay();
             }}
+            disabled={locked}
             style={{
               padding: '4px 14px',
               borderRadius: 6,
               border: 'none',
-              background: 'linear-gradient(135deg, #FCD116 0%, #D4A017 100%)',
-              color: '#2C2318',
+              background: locked
+                ? 'rgba(156,163,175,0.3)'
+                : 'linear-gradient(135deg, #FCD116 0%, #D4A017 100%)',
+              color: locked ? '#9CA3AF' : '#2C2318',
               fontSize: 11,
               fontWeight: 700,
-              cursor: 'pointer',
+              cursor: locked ? 'default' : 'pointer',
               fontFamily: 'inherit',
             }}
           >
-            Play
+            {locked ? 'Soon' : 'Play'}
           </button>
         </div>
       </div>
