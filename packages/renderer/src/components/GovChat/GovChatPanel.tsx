@@ -5,6 +5,8 @@ import { LoginView } from './LoginView';
 import { ChatListView } from './ChatListView';
 import { ChatView } from './ChatView';
 import { AdminPanel } from './AdminPanel';
+import { CallView } from './CallView';
+import { WebRTCService } from '@/services/WebRTCService';
 
 /* ─────────── connection badge ─────────── */
 
@@ -109,6 +111,17 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  // Wire WebRTC credentials and start incoming-call polling
+  useEffect(() => {
+    if (credentials?.accessToken) {
+      WebRTCService.setCredentials(credentials);
+      WebRTCService.startIncomingCallPolling();
+    }
+    return () => {
+      WebRTCService.stopIncomingCallPolling();
+    };
+  }, [credentials?.accessToken]);
 
   useEffect(() => {
     if (!isAdmin || !credentials?.accessToken) return;
@@ -232,6 +245,9 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       )}
+
+      {/* Call overlay (renders when a call is active) */}
+      <CallView />
 
       {/* Admin Panel overlay */}
       {showAdminPanel && <AdminPanel onClose={() => setShowAdminPanel(false)} />}

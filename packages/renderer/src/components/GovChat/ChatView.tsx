@@ -7,6 +7,7 @@ import { CLASSIFICATION_COLORS } from '@/types/govchat';
 import type { GovChatMessage, ClassificationLevel } from '@/types/govchat';
 import { MessageBubble } from './MessageBubble';
 import { MessageInput } from '@/components/GovChat/MessageInput';
+import { CallButton } from './CallButton';
 
 /* ─────────── helpers ─────────── */
 
@@ -304,6 +305,11 @@ export function ChatView() {
             )}
           </div>
         </div>
+
+        {/* Call buttons for DM conversations */}
+        {room.isDirect && dmContact && (
+          <CallButton peerId={dmContact.userId} peerName={dmContact.displayName} />
+        )}
 
         {/* E2E badge */}
         {room.isEncrypted && (
