@@ -200,14 +200,25 @@ class MatrixClientServiceClass {
         deviceId: credentials.deviceId,
       });
 
-      // Skip E2E crypto — Olm WASM is not bundled for Electron.
-      // Messages will be sent unencrypted until Olm is set up.
-      // await this.initializeCrypto();
+      // Initialize E2E encryption with Rust crypto backend
+      try {
+        await this.client.initRustCrypto();
+        console.info('[MatrixClientService] Rust E2E encryption initialized.');
+      } catch (cryptoErr) {
+        console.warn('[MatrixClientService] Rust crypto init failed, trying legacy:', cryptoErr);
+        // Fallback to legacy Olm crypto
+        try {
+          await this.client.initCrypto();
+          console.info('[MatrixClientService] Legacy E2E encryption initialized.');
+        } catch (olmErr) {
+          console.warn('[MatrixClientService] All crypto init failed. Messages will be unencrypted:', olmErr);
+        }
+      }
 
       // Bind Matrix events before starting sync
       this.bindMatrixEvents();
 
-      // Start sync — wrap in try/catch since it may fail on first connection
+      // Start sync
       try {
         await this.client.startClient({ initialSyncLimit: 20 });
       } catch (syncErr) {

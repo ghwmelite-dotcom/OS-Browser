@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   Check, CheckCheck, Loader2, AlertCircle, Shield,
   MessageSquare, FileText, Download, Play, Pause, Plus, Reply,
@@ -230,19 +230,48 @@ function ReplyPreview({ replyTo, isOwn }: { replyTo: NonNullable<GovChatMessage[
   );
 }
 
+/* ─────────── media URL resolver ─────────── */
+
+/** Convert mxc:// URLs to HTTPS download URLs via the homeserver */
+function resolveMediaUrl(url: string): string {
+  if (!url) return '';
+  if (url.startsWith('blob:') || url.startsWith('http')) return url;
+  if (url.startsWith('mxc://')) {
+    const parts = url.slice(6);
+    const [server, ...rest] = parts.split('/');
+    const mediaId = rest.join('/');
+    return `https://${server}/_matrix/media/v3/download/${server}/${mediaId}`;
+  }
+  return url;
+}
+
 /* ─────────── file attachment ─────────── */
 
 function FileAttachmentView({ file, isOwn }: { file: NonNullable<GovChatMessage['file']>; isOwn: boolean }) {
   const isImage = file.mimeType.startsWith('image/');
+  const resolvedUrl = resolveMediaUrl(file.url);
+  const resolvedThumb = file.thumbnailUrl ? resolveMediaUrl(file.thumbnailUrl) : '';
 
-  if (isImage && file.thumbnailUrl) {
+  const handleDownload = () => {
+    if (!resolvedUrl) return;
+    const a = document.createElement('a');
+    a.href = resolvedUrl;
+    a.download = file.name;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  if (isImage) {
     return (
       <div className="mb-1.5 rounded-lg overflow-hidden max-w-[240px]">
         <img
-          src={file.thumbnailUrl || file.url}
+          src={resolvedThumb || resolvedUrl}
           alt={file.name}
-          className="w-full h-auto rounded-lg"
+          className="w-full h-auto rounded-lg cursor-pointer"
           style={{ maxHeight: 180, objectFit: 'cover' }}
+          onClick={handleDownload}
         />
         <p
           className="text-[10px] mt-1 truncate"
@@ -283,6 +312,7 @@ function FileAttachmentView({ file, isOwn }: { file: NonNullable<GovChatMessage[
         </p>
       </div>
       <button
+        onClick={handleDownload}
         className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors"
         style={{
           background: isOwn ? 'rgba(255,255,255,0.15)' : 'var(--color-surface-2)',
@@ -298,11 +328,51 @@ function FileAttachmentView({ file, isOwn }: { file: NonNullable<GovChatMessage[
 
 function VoiceNoteView({ voiceNote, isOwn }: { voiceNote: NonNullable<GovChatMessage['voiceNote']>; isOwn: boolean }) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const togglePlay = () => {
+    if (!audioRef.current) {
+      const src = resolveMediaUrl(voiceNote.url);
+      if (!src) return;
+      const audio = new Audio(src);
+      audioRef.current = audio;
+      audio.addEventListener('timeupdate', () => {
+        if (audio.duration) setProgress(audio.currentTime / audio.duration);
+      });
+      audio.addEventListener('ended', () => {
+        setIsPlaying(false);
+        setProgress(0);
+        audioRef.current = null;
+      });
+      audio.addEventListener('error', () => {
+        console.warn('[VoiceNote] Playback error');
+        setIsPlaying(false);
+        audioRef.current = null;
+      });
+    }
+
+    if (isPlaying) {
+      audioRef.current?.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current?.play().catch(() => setIsPlaying(false));
+      setIsPlaying(true);
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
+  }, []);
 
   return (
     <div className="flex items-center gap-2.5 mb-1 min-w-[200px]">
       <button
-        onClick={() => setIsPlaying(!isPlaying)}
+        onClick={togglePlay}
         className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors"
         style={{
           background: isOwn ? 'rgba(255,255,255,0.2)' : 'rgba(0, 107, 63, 0.12)',
@@ -315,7 +385,20 @@ function VoiceNoteView({ voiceNote, isOwn }: { voiceNote: NonNullable<GovChatMes
         )}
       </button>
       <div className="flex-1 flex flex-col gap-1">
-        <VoiceWaveform waveform={voiceNote.waveform} isOwn={isOwn} />
+        <div className="relative">
+          <VoiceWaveform waveform={voiceNote.waveform} isOwn={isOwn} />
+          {/* Playback progress overlay */}
+          {progress > 0 && (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: isOwn ? 'rgba(255,255,255,0.15)' : 'rgba(0,107,63,0.1)',
+                width: `${progress * 100}%`,
+                borderRadius: 4,
+              }}
+            />
+          )}
+        </div>
         <span
           className="text-[9.5px] font-medium"
           style={{ color: isOwn ? 'rgba(255,255,255,0.5)' : 'var(--color-text-muted)' }}
