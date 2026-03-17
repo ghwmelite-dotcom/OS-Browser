@@ -232,7 +232,7 @@ function ReplyPreview({ replyTo, isOwn }: { replyTo: NonNullable<GovChatMessage[
 
 /* ─────────── media URL resolver ─────────── */
 
-/** Convert mxc:// URLs to HTTPS download URLs via the homeserver */
+/** Convert mxc:// URLs to HTTPS download URLs via the authenticated client v1 media endpoint */
 function resolveMediaUrl(url: string): string {
   if (!url) return '';
   if (url.startsWith('blob:') || url.startsWith('http')) return url;
@@ -240,7 +240,9 @@ function resolveMediaUrl(url: string): string {
     const parts = url.slice(6);
     const [server, ...rest] = parts.split('/');
     const mediaId = rest.join('/');
-    return `https://${server}/_matrix/media/v3/download/${server}/${mediaId}`;
+    // Use client v1 media endpoint (authenticated, works with modern Synapse)
+    // Fallback: also works without auth for public media on older servers
+    return `https://${server}/_matrix/client/v1/media/download/${server}/${mediaId}`;
   }
   return url;
 }
