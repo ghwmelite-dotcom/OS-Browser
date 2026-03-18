@@ -734,6 +734,88 @@
       .govchat-stat:last-child { border-bottom: none; }
     }
 
+    /* ═══════════════ ASKOZZY SECTION ═══════════════ */
+    .askozzy-section {
+      background: linear-gradient(180deg, #0a0a0f 0%, #0f0d04 30%, #0d0b03 60%, #0a0a0f 100%);
+      position: relative; overflow: hidden;
+    }
+    .askozzy-section::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at 50% 20%, rgba(252,209,22,0.06), transparent 70%);
+      pointer-events: none;
+    }
+    .askozzy-icon-wrap {
+      width: 80px; height: 80px; border-radius: 24px;
+      background: linear-gradient(135deg, rgba(252,209,22,0.12), rgba(212,160,23,0.08));
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      animation: askozzyGlow 3s ease-in-out infinite;
+    }
+    @keyframes askozzyGlow {
+      0%, 100% { box-shadow: 0 0 20px rgba(252,209,22,0.1); }
+      50% { box-shadow: 0 0 40px rgba(252,209,22,0.25), 0 0 60px rgba(252,209,22,0.1); }
+    }
+    .askozzy-title {
+      font-size: 42px; font-weight: 800; letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #FCD116, #D4A017, #FCD116);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; margin-bottom: 8px;
+    }
+    .askozzy-subtitle {
+      font-size: 18px; font-weight: 500; color: var(--gold); opacity: 0.7;
+      letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 16px;
+    }
+    .askozzy-content { max-width: 900px; margin: 0 auto; }
+    .askozzy-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 20px; margin: 48px 0;
+    }
+    .askozzy-feature {
+      padding: 24px; border-radius: 16px;
+      background: rgba(252,209,22,0.03);
+      border: 1px solid rgba(252,209,22,0.08);
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .askozzy-feature:hover {
+      transform: translateY(-3px);
+      border-color: rgba(252,209,22,0.2);
+      box-shadow: 0 8px 24px rgba(252,209,22,0.08);
+    }
+    .askozzy-feature-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 14px;
+    }
+    .askozzy-feature-title {
+      font-size: 15px; font-weight: 700; color: var(--text-light); margin-bottom: 8px;
+    }
+    .askozzy-feature-desc {
+      font-size: 13px; color: var(--text-muted); line-height: 1.5;
+    }
+    .askozzy-cta {
+      text-align: center; margin-top: 40px;
+    }
+    .askozzy-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 32px; border-radius: 12px;
+      background: linear-gradient(135deg, #FCD116 0%, #D4A017 100%);
+      color: #0a0a0f; font-size: 15px; font-weight: 700;
+      text-decoration: none; transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .askozzy-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(252,209,22,0.3);
+    }
+
+    @media (max-width: 900px) {
+      .askozzy-grid { grid-template-columns: repeat(2, 1fr); }
+      .askozzy-title { font-size: 32px; }
+    }
+    @media (max-width: 480px) {
+      .askozzy-grid { grid-template-columns: 1fr; }
+      .askozzy-title { font-size: 28px; }
+    }
+
     /* ═══════════════ GOVPLAY SECTION ═══════════════ */
     .govplay-section {
       background: linear-gradient(180deg, #0a0a0f 0%, #150a14 30%, #12080f 60%, #0a0a0f 100%);
@@ -1337,7 +1419,7 @@
     <a href="#adblocker">Ad Blocker</a>
     <a href="#messenger">GovChat</a>
     <a href="#govplay">GovPlay</a>
-    <a href="https://www.askozzy.work" target="_blank">AskOzzy</a>
+    <a href="#askozzy">AskOzzy</a>
     <a href="#download">Download</a>
   </div>
   <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/latest/download/OS.Browser.Setup.1.0.0.exe" class="nav-cta">
@@ -1876,6 +1958,78 @@
     <div class="govplay-stat">
       <div class="govplay-stat-value">Ghana-Themed</div>
       <div class="govplay-stat-label">Cultural Content</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ASKOZZY AI ═══════════════ -->
+<section id="askozzy" class="section askozzy-section">
+  <div class="section-header reveal">
+    <div class="askozzy-icon-wrap">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#FCD116" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></svg>
+    </div>
+    <h2 class="askozzy-title">AskOzzy</h2>
+    <p class="askozzy-subtitle">Ghana's Sovereign AI Platform</p>
+    <p class="section-desc" style="max-width: 600px;">
+      Deep research, data analysis, document drafting, and intelligent assistance — built for Ghana, powered by cutting-edge AI. Access it directly from your OS Browser.
+    </p>
+  </div>
+
+  <div class="askozzy-content reveal">
+    <!-- Features grid -->
+    <div class="askozzy-grid">
+      <div class="askozzy-feature">
+        <div class="askozzy-feature-icon" style="background: rgba(252,209,22,0.15); color: #FCD116;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="askozzy-feature-title">Intelligent Chat</div>
+        <div class="askozzy-feature-desc">Ask anything — from policy questions to technical problems. Get instant, context-aware answers.</div>
+      </div>
+      <div class="askozzy-feature">
+        <div class="askozzy-feature-icon" style="background: rgba(0,107,63,0.15); color: #006B3F;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="askozzy-feature-title">Document Drafting</div>
+        <div class="askozzy-feature-desc">Generate reports, memos, briefs, and policy documents with AI assistance. Edit and refine in real time.</div>
+      </div>
+      <div class="askozzy-feature">
+        <div class="askozzy-feature-icon" style="background: rgba(21,101,192,0.15); color: #1565C0;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <div class="askozzy-feature-title">Deep Research</div>
+        <div class="askozzy-feature-desc">Analyze data, summarize documents, cross-reference sources. Research that would take hours done in minutes.</div>
+      </div>
+      <div class="askozzy-feature">
+        <div class="askozzy-feature-icon" style="background: rgba(206,17,38,0.15); color: #CE1126;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="askozzy-feature-title">Page Safety Check</div>
+        <div class="askozzy-feature-desc">Instantly analyze any webpage for security risks, phishing attempts, and suspicious content.</div>
+      </div>
+      <div class="askozzy-feature">
+        <div class="askozzy-feature-icon" style="background: rgba(139,95,71,0.15); color: #8B5F47;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <div class="askozzy-feature-title">Built-In Tutorials</div>
+        <div class="askozzy-feature-desc">Step-by-step guidance on using government portals, digital tools, and OS Browser features.</div>
+      </div>
+      <div class="askozzy-feature">
+        <div class="askozzy-feature-icon" style="background: rgba(212,160,23,0.15); color: #D4A017;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <div class="askozzy-feature-title">Form Assistance</div>
+        <div class="askozzy-feature-desc">Get help filling out complex government forms. AI explains each field and suggests appropriate entries.</div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="askozzy-cta">
+      <a href="https://www.askozzy.work" target="_blank" class="askozzy-btn">
+        Visit AskOzzy Platform →
+      </a>
+      <p style="font-size: 13px; color: var(--text-muted); margin-top: 12px;">
+        Also available directly inside OS Browser's sidebar
+      </p>
     </div>
   </div>
 </section>
