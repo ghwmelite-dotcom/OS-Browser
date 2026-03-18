@@ -7,6 +7,7 @@ import { initAutoUpdater } from './services/auto-update';
 import { stopConnectivityMonitor } from './net/connectivity';
 import { stopTabSuspension } from './services/tab-suspension';
 import { AdBlockService, setAdBlockService } from './services/adblock-engine';
+import { updateTrayTooltip } from './services/tray';
 
 let mainWindow: BrowserWindow | null = null;
 const adBlockService = new AdBlockService();
@@ -127,45 +128,6 @@ function createWindow() {
   // Register IPC handlers
   registerAllHandlers(mainWindow);
 
-  // Desktop notification handler
-  ipcMain.handle('notification:show', (_event, data: { title: string; body: string; type?: string }) => {
-    if (Notification.isSupported()) {
-      const notification = new Notification({
-        title: data.title,
-        body: data.body,
-        silent: false,
-        icon: path.join(__dirname, '..', '..', 'assets', 'icon.png'),
-      });
-
-      notification.on('click', () => {
-        if (mainWindow) {
-          mainWindow.show();
-          mainWindow.focus();
-          // Send event to renderer to navigate to the relevant feature
-          mainWindow.webContents.send('notification:clicked', data);
-        }
-      });
-
-      notification.show();
-    }
-  });
-
-  // Taskbar badge handler (Windows overlay icon with count)
-  ipcMain.handle('notification:badge', (_event, count: number) => {
-    if (!mainWindow) return;
-    if (count > 0) {
-      // Create a small badge image with the count
-      const badgeCanvas = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">
-        <circle cx="8" cy="8" r="8" fill="#CE1126"/>
-        <text x="8" y="12" text-anchor="middle" fill="white" font-size="10" font-family="Arial" font-weight="bold">${count > 99 ? '99+' : count}</text>
-      </svg>`;
-      const badge = nativeImage.createFromBuffer(Buffer.from(badgeCanvas));
-      mainWindow.setOverlayIcon(badge, `${count} notifications`);
-    } else {
-      mainWindow.setOverlayIcon(null, '');
-    }
-  });
-
   // Auto-updater — checks GitHub Releases for new versions
   initAutoUpdater(mainWindow);
 
@@ -241,6 +203,51 @@ app.whenReady().then(async () => {
   }
 
   createWindow();
+
+  // Desktop notification handler — registered once outside createWindow to avoid duplicates
+  try {
+    ipcMain.handle('notification:show', (_event, data: { title: string; body: string; type?: string }) => {
+      if (Notification.isSupported()) {
+        const notification = new Notification({
+          title: data.title,
+          body: data.body,
+          silent: false,
+          icon: path.join(__dirname, '..', '..', 'assets', 'icon.png'),
+        });
+
+        notification.on('click', () => {
+          if (mainWindow) {
+            mainWindow.show();
+            mainWindow.focus();
+            // Send event to renderer to navigate to the relevant feature
+            mainWindow.webContents.send('notification:clicked', data);
+          }
+        });
+
+        notification.show();
+      }
+    });
+  } catch { /* already registered */ }
+
+  // Taskbar badge handler — registered once outside createWindow to avoid duplicates
+  try {
+    ipcMain.handle('notification:badge', (_event, count: number) => {
+      if (!mainWindow) return;
+      if (count > 0) {
+        // Flash taskbar to attract attention
+        mainWindow.flashFrame(true);
+        // Set the overlay text (Windows supports this)
+        mainWindow.setTitle(`(${count}) OS Browser`);
+      } else {
+        mainWindow.flashFrame(false);
+        mainWindow.setTitle('OS Browser');
+      }
+      // Clear any previous overlay icon
+      mainWindow.setOverlayIcon(null, '');
+      // Update tray tooltip with unread count
+      updateTrayTooltip(count);
+    });
+  } catch { /* already registered */ }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

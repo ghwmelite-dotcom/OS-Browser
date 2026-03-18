@@ -39,7 +39,8 @@ export function initDesktopNotifications(): void {
 
   // Listen for notification clicks from main process
   window.osBrowser?.notification?.onClicked((data: any) => {
-    // Handle navigation based on notification type
-    console.log('[DesktopNotification] Clicked:', data);
+    if (data.type === 'chat' || data.type === 'call') {
+      window.dispatchEvent(new CustomEvent('os-browser:messaging'));
+    }
   });
 }

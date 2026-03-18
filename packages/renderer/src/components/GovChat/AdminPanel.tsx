@@ -312,7 +312,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
           prev.map(r => r.id === requestId ? { ...r, status: 'approved' as const, generatedCode: data.code, reviewedAt: Date.now() } : r)
         );
         useNotificationStore.getState().addNotification({
-          type: 'info',
+          type: 'success',
           title: 'Code Request Approved',
           message: `Invite code generated for ${approvedReq?.name ?? 'user'}`,
           source: 'admin',

@@ -9,7 +9,7 @@ import { useTabsStore } from '@/store/tabs';
 
 export function NotificationBell() {
   const notifications = useNotificationStore((s) => s.notifications);
-  const unreadCount = useNotificationStore((s) => s.unreadCount)();
+  const unreadCount = useNotificationStore((s) => s.notifications.filter(n => !n.read).length);
   const markAsRead = useNotificationStore((s) => s.markAsRead);
   const clearAll = useNotificationStore((s) => s.clearAll);
 
@@ -32,7 +32,11 @@ export function NotificationBell() {
   const handleNotificationClick = (n: AppNotification) => {
     markAsRead(n.id);
     if (n.actionRoute) {
-      useTabsStore.getState().createTab(n.actionRoute);
+      if (n.actionRoute === 'govchat') {
+        window.dispatchEvent(new CustomEvent('os-browser:messaging'));
+      } else if (n.actionRoute.startsWith('os-browser://') || n.actionRoute.startsWith('http')) {
+        useTabsStore.getState().createTab(n.actionRoute);
+      }
     }
     setOpen(false);
   };
