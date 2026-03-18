@@ -20,6 +20,11 @@ export function initTray(mainWindow: BrowserWindow): void {
   const contextMenu = Menu.buildFromTemplate([
     { label: 'Open OS Browser', click: () => mainWindow.show() },
     { label: 'New Tab', click: () => mainWindow.webContents.send('shortcut:new-tab') },
+    { label: 'Notifications', click: () => {
+      mainWindow.show();
+      mainWindow.focus();
+      mainWindow.webContents.send('navigate:notifications');
+    }},
     { type: 'separator' },
     { label: 'Quit', click: () => { app.quit(); } },
   ]);
@@ -33,6 +38,15 @@ export function initTray(mainWindow: BrowserWindow): void {
       mainWindow.show();
     }
   });
+}
+
+export function updateTrayTooltip(unreadCount: number): void {
+  if (!tray) return;
+  if (unreadCount > 0) {
+    tray.setToolTip(`OS Browser — ${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`);
+  } else {
+    tray.setToolTip('OS Browser');
+  }
 }
 
 export function destroyTray(): void {

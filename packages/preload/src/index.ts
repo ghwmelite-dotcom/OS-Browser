@@ -170,6 +170,18 @@ contextBridge.exposeInMainWorld('osBrowser', {
       ipcRenderer.invoke('pwa:install', data),
   },
 
+  notification: {
+    show: (data: { title: string; body: string; type?: string }) =>
+      ipcRenderer.invoke('notification:show', data),
+    setBadge: (count: number) =>
+      ipcRenderer.invoke('notification:badge', count),
+    onClicked: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('notification:clicked', listener);
+      return () => ipcRenderer.removeListener('notification:clicked', listener);
+    },
+  },
+
   adblock: {
     getStatus: () => ipcRenderer.invoke('adblock:get-status'),
     toggleGlobal: () => ipcRenderer.invoke('adblock:toggle-global'),

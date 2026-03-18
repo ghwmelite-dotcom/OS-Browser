@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useNotificationStore } from '@/store/notifications';
 
 export interface Document {
   id: string;
@@ -110,6 +111,14 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
     const updated = [...documents, doc];
     saveToStorage(updated);
     set({ documents: updated });
+
+    useNotificationStore.getState().addNotification({
+      type: 'success',
+      title: 'Document Imported',
+      message: `${file.name} saved to workspace`,
+      source: 'documents',
+      icon: '\u{1F4C4}',
+    });
   },
 
   removeDocument: (id: string) => {

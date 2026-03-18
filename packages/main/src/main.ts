@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, MenuItem, clipboard, screen, dialog } from 'electron';
+import { app, BrowserWindow, Menu, MenuItem, clipboard, screen, dialog, Notification, nativeImage, ipcMain } from 'electron';
 import path from 'path';
 import { initDatabase, getDatabase, closeDatabase, runMigrations } from './db/database';
 import { seedDatabase } from './db/seed';
@@ -126,6 +126,45 @@ function createWindow() {
 
   // Register IPC handlers
   registerAllHandlers(mainWindow);
+
+  // Desktop notification handler
+  ipcMain.handle('notification:show', (_event, data: { title: string; body: string; type?: string }) => {
+    if (Notification.isSupported()) {
+      const notification = new Notification({
+        title: data.title,
+        body: data.body,
+        silent: false,
+        icon: path.join(__dirname, '..', '..', 'assets', 'icon.png'),
+      });
+
+      notification.on('click', () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+          // Send event to renderer to navigate to the relevant feature
+          mainWindow.webContents.send('notification:clicked', data);
+        }
+      });
+
+      notification.show();
+    }
+  });
+
+  // Taskbar badge handler (Windows overlay icon with count)
+  ipcMain.handle('notification:badge', (_event, count: number) => {
+    if (!mainWindow) return;
+    if (count > 0) {
+      // Create a small badge image with the count
+      const badgeCanvas = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+        <circle cx="8" cy="8" r="8" fill="#CE1126"/>
+        <text x="8" y="12" text-anchor="middle" fill="white" font-size="10" font-family="Arial" font-weight="bold">${count > 99 ? '99+' : count}</text>
+      </svg>`;
+      const badge = nativeImage.createFromBuffer(Buffer.from(badgeCanvas));
+      mainWindow.setOverlayIcon(badge, `${count} notifications`);
+    } else {
+      mainWindow.setOverlayIcon(null, '');
+    }
+  });
 
   // Auto-updater — checks GitHub Releases for new versions
   initAutoUpdater(mainWindow);

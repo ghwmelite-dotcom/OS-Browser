@@ -7,6 +7,7 @@
  */
 import type { GovChatCredentials } from '@/types/govchat';
 import { API_BASE_URL } from '@/lib/api-config';
+import { useNotificationStore } from '@/store/notifications';
 
 type CallEventCallback = (data: unknown) => void;
 
@@ -270,6 +271,16 @@ class WebRTCServiceClass {
             offer: call.offer,
           });
           this.emit('call:state', { ...this.currentCall });
+
+          useNotificationStore.getState().addNotification({
+            type: 'call',
+            title: `Incoming call from ${call.callerName}`,
+            message: call.isVideo ? 'Video call' : 'Audio call',
+            source: 'govchat',
+            icon: '\u{1F4DE}',
+            actionLabel: 'Answer',
+            actionRoute: 'govchat',
+          });
         }
       } catch {
         // Silently ignore polling errors
