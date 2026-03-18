@@ -34,6 +34,7 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
       'os-browser://offline': 'Offline Library',
       'os-browser://features': 'Feature Directory',
       'os-browser://games': 'GovPlay',
+      'os-browser://passwords': 'Passwords',
     };
     const title = INTERNAL_TITLES[tabUrl] || (tabUrl.startsWith('os-browser://') ? tabUrl.replace('os-browser://', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'New Tab');
 
