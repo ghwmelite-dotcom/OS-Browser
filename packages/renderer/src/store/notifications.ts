@@ -133,33 +133,37 @@ export const useNotificationStore = create<NotificationState>((set, get) => {
     /* ---------- actions ---------- */
 
     addNotification(partial) {
-      const notification: AppNotification = {
-        ...partial,
-        id: generateId(),
-        timestamp: Date.now(),
-        read: false,
-      };
+      try {
+        const notification: AppNotification = {
+          ...partial,
+          id: generateId(),
+          timestamp: Date.now(),
+          read: false,
+        };
 
-      set((state) => {
-        const notifications = [notification, ...state.notifications].slice(0, MAX_NOTIFICATIONS);
-        saveToStorage(notifications);
+        set((state) => {
+          const notifications = [notification, ...state.notifications].slice(0, MAX_NOTIFICATIONS);
+          saveToStorage(notifications);
 
-        // If no toast is currently showing, show immediately
-        if (!state.currentToast) {
-          scheduleAutoDismiss();
+          // If no toast is currently showing, show immediately
+          if (!state.currentToast) {
+            scheduleAutoDismiss();
+            return {
+              notifications,
+              currentToast: notification,
+              toastQueue: state.toastQueue,
+            };
+          }
+
+          // Otherwise queue it
           return {
             notifications,
-            currentToast: notification,
-            toastQueue: state.toastQueue,
+            toastQueue: [...state.toastQueue, notification],
           };
-        }
-
-        // Otherwise queue it
-        return {
-          notifications,
-          toastQueue: [...state.toastQueue, notification],
-        };
-      });
+        });
+      } catch (err) {
+        console.warn('[Notifications] Failed to add notification:', err);
+      }
     },
 
     markAsRead(id) {

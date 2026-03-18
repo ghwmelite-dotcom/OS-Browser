@@ -35,6 +35,7 @@ import { LiteracyAssistant } from './components/DigitalLiteracy/LiteracyAssistan
 import { ReportGenerator, type ReportData } from './components/ScreenshotReport/ReportGenerator';
 import { MobileMoneyPanel } from './components/MobileMoney/MobileMoneyPanel';
 import { initializeFeatures } from './features';
+import { initDesktopNotifications } from '@/services/DesktopNotificationBridge';
 import { KenteSidebar } from './components/KenteSystem/KenteSidebar';
 import { KenteStatusBar } from './components/KenteSystem/KenteStatusBar';
 import { KenteCommandBar } from './components/KenteSystem/KenteCommandBar';
@@ -134,6 +135,7 @@ export function App() {
     const init = async () => {
       try {
         initializeFeatures();
+        initDesktopNotifications();
         await loadSettings();
         const settings = useSettingsStore.getState().settings as any;
         const startupMode = settings?.startup_mode || 'newtab';

@@ -38,6 +38,24 @@ export function ToastNotification() {
 
   const DURATION = 5_000;
 
+  /* ---- inject keyframes once ---- */
+  useEffect(() => {
+    if (document.getElementById('toast-keyframes')) return;
+    const style = document.createElement('style');
+    style.id = 'toast-keyframes';
+    style.textContent = `
+      @keyframes toastSlideIn {
+        from { transform: translateX(120%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes toastSlideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(120%); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  }, []);
+
   /* ---- progress bar animation ---- */
   const tick = useCallback(
     (now: number) => {
@@ -93,8 +111,11 @@ export function ToastNotification() {
   /* ---- action click ---- */
   const handleAction = () => {
     if (currentToast?.actionRoute) {
-      // Navigate to the route — if it starts with os-browser:// open as internal page
-      useTabsStore.getState().createTab(currentToast.actionRoute);
+      if (currentToast.actionRoute === 'govchat') {
+        window.dispatchEvent(new CustomEvent('os-browser:messaging'));
+      } else if (currentToast.actionRoute.startsWith('os-browser://') || currentToast.actionRoute.startsWith('http')) {
+        useTabsStore.getState().createTab(currentToast.actionRoute);
+      }
     }
     handleDismiss();
   };
@@ -263,17 +284,6 @@ export function ToastNotification() {
         />
       </div>
 
-      {/* Keyframes injected once via <style> */}
-      <style>{`
-        @keyframes toastSlideIn {
-          from { transform: translateX(120%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes toastSlideOut {
-          from { transform: translateX(0); opacity: 1; }
-          to { transform: translateX(120%); opacity: 0; }
-        }
-      `}</style>
     </div>
   );
 }
