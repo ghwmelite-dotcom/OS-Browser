@@ -181,7 +181,10 @@ export function BrowserMenu({ onOpenHistory, onOpenBookmarks, onOpenSettings, on
             <Separator />
 
             {/* Core browser features */}
-            <MenuItem icon={Key} label="Passwords and autofill" disabled badge="Coming Soon" />
+            <MenuItem icon={Key} label="Passwords and autofill" onClick={() => {
+              createTab('os-browser://passwords' as any);
+              close();
+            }} sub />
             <MenuItem icon={Clock} label="History" shortcut="Ctrl+H" onClick={onOpenHistory} />
             <MenuItem icon={Download} label="Downloads" shortcut="Ctrl+J" onClick={() => {
               createTab('os-browser://downloads' as any);

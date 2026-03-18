@@ -13,6 +13,7 @@ import { GovHubPage } from './GovHubPage';
 import { OfflinePage } from './OfflinePage';
 import { FeatureDirectoryPage } from './FeatureDirectoryPage';
 import { GameCenterPage } from './GameCenterPage';
+import { PasswordManager } from '../Panels/PasswordManager';
 
 // Detect if we're in a private window
 const isPrivateWindow = new URLSearchParams(window.location.search).get('private') === 'true';
@@ -97,6 +98,11 @@ export function ContentArea() {
   // Feature Directory
   if (tabUrl === 'os-browser://features') {
     return <FeatureDirectoryPage />;
+  }
+
+  // Password Manager
+  if (tabUrl === 'os-browser://passwords') {
+    return <PasswordManager />;
   }
 
   // GovPlay Game Center
