@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { gameSounds } from '@/components/games/GameSoundEngine';
+import { useNotificationStore } from '@/store/notifications';
 
 // ── Types ────────────────────────────────────────────────────────────
 export interface HighScore {
@@ -102,6 +103,19 @@ export const useGameStore = create<GameState>((set, get) => ({
           bestScore: Math.max(currentStats.bestScore, score),
         },
       };
+
+      // Notify if this is a new personal best
+      if (score > currentStats.bestScore) {
+        useNotificationStore.getState().addNotification({
+          type: 'success',
+          title: 'New High Score!',
+          message: `You scored ${score} in ${gameId}`,
+          source: 'govplay',
+          icon: '\u{1F3C6}',
+          actionLabel: 'Play Again',
+          actionRoute: 'os-browser://games',
+        });
+      }
 
       const newState = { highScores: newHighScores, stats: newStats };
       persist({ ...state, ...newState });

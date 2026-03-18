@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Settings, X, Loader2, Copy, Check, XCircle, ShieldAlert, UserCog, Shield, ChevronDown, Inbox, RefreshCw, CheckCircle } from 'lucide-react';
 import { useGovChatStore } from '@/store/govchat';
+import { useNotificationStore } from '@/store/notifications';
 
 const API_BASE = 'https://os-browser-worker.ghwmelite.workers.dev';
 
@@ -306,9 +307,17 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
       if (!res.ok) throw new Error(`Approve failed (${res.status})`);
       const data = await res.json();
       if (data.code) {
+        const approvedReq = requests.find(r => r.id === requestId);
         setRequests(prev =>
           prev.map(r => r.id === requestId ? { ...r, status: 'approved' as const, generatedCode: data.code, reviewedAt: Date.now() } : r)
         );
+        useNotificationStore.getState().addNotification({
+          type: 'info',
+          title: 'Code Request Approved',
+          message: `Invite code generated for ${approvedReq?.name ?? 'user'}`,
+          source: 'admin',
+          icon: '\u2705',
+        });
       }
       await fetchRequests();
       await fetchPendingCount();

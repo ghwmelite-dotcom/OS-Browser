@@ -40,6 +40,7 @@ import { KenteStatusBar } from './components/KenteSystem/KenteStatusBar';
 import { KenteCommandBar } from './components/KenteSystem/KenteCommandBar';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import type { PWAInstallData } from './components/PWAInstallPrompt';
+import { ToastNotification } from './components/Notifications/ToastNotification';
 
 export function App() {
   const { loadTabs, createTab } = useTabsStore();
@@ -479,6 +480,9 @@ export function App() {
 
       {/* PWA Install Prompt */}
       {pwaData && <PWAInstallPrompt data={pwaData} onClose={() => setPwaData(null)} />}
+
+      {/* Toast Notifications — always visible, top-right overlay */}
+      <ToastNotification />
     </div>
   );
 }

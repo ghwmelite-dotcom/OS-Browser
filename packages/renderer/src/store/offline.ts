@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useNotificationStore } from '@/store/notifications';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -207,6 +208,14 @@ export const useOfflineStore = create<OfflineState>((set, get) => {
         totalStorageUsed: state.totalStorageUsed + size,
       }));
       persistState();
+
+      useNotificationStore.getState().addNotification({
+        type: 'success',
+        title: 'Page Saved Offline',
+        message: `${page.title} saved for offline viewing`,
+        source: 'offline',
+        icon: '\u{1F4E5}',
+      });
     },
 
     removePage: (id) => {

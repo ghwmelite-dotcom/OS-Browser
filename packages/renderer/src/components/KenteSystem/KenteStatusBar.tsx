@@ -3,6 +3,7 @@ import { useFeatureRegistry } from '@/hooks/useFeatureRegistry';
 import { useKenteSidebarStore } from '@/store/kente-sidebar';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
+import { NotificationBell } from '@/components/Notifications/NotificationBell';
 
 /**
  * KenteStatusBar — replacement for the original StatusBar.
@@ -136,6 +137,10 @@ export function KenteStatusBar() {
           flexShrink: 0,
         }}
       >
+        {/* Notification Bell */}
+        <NotificationBell />
+        {right.length > 0 && <Divider />}
+
         {right.map((f, i) => {
           const StatusComp = f.surfaces.statusBar!.component;
           return (

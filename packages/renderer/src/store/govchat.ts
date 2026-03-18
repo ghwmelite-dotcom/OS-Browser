@@ -12,6 +12,7 @@ import type {
 import { DEFAULT_RETENTION_DAYS } from '@/types/govchat';
 
 import { MatrixClientService } from '@/services/MatrixClientService';
+import { useNotificationStore } from '@/store/notifications';
 
 /* ──────────────── Credentials persistence ──────────────── */
 
@@ -207,6 +208,20 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
               : r,
           ),
         });
+
+        // Emit notification for messages in non-active rooms
+        if (!isActiveRoom) {
+          useNotificationStore.getState().addNotification({
+            type: 'chat',
+            title: `Message from ${rawMsg.senderName}`,
+            message: rawMsg.body.slice(0, 100),
+            source: 'govchat',
+            icon: '\u{1F4AC}',
+            actionLabel: 'Open Chat',
+            actionRoute: 'govchat',
+            actionData: { roomId },
+          });
+        }
 
         // Auto-mark as read if viewing this room
         if (isActiveRoom) {
