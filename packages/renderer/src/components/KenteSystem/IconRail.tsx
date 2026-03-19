@@ -185,9 +185,14 @@ function RailIconButton({
       : 'transparent';
 
   const isDark = document.documentElement.classList.contains('dark');
-  const defaultColor = isDark ? '#D4A017' : 'var(--color-text-muted)';
-  const hoverColor = isDark ? '#F2C94C' : 'var(--color-text-secondary)';
+  // Light mode: each icon gets its own stripColor so they stand out distinctly
+  // Dark mode: gold default, brighter on hover
+  const defaultColor = isDark ? '#D4A017' : stripColor;
+  const hoverColor = isDark ? '#F2C94C' : stripColor;
   const iconColor = isActive ? stripColor : hovered ? hoverColor : defaultColor;
+  // In light mode, non-active icons get slight transparency so active one pops
+  const iconOpacity = isActive ? 1 : isDark ? 0.85 : 0.7;
+  const iconHoverOpacity = isActive ? 1 : 1;
 
   return (
     <div
@@ -225,9 +230,10 @@ function RailIconButton({
           border: 'none',
           background: activeBg,
           color: iconColor,
+          opacity: hovered ? iconHoverOpacity : iconOpacity,
           cursor: 'pointer',
           position: 'relative',
-          transition: 'background 150ms ease, color 150ms ease',
+          transition: 'background 150ms ease, color 150ms ease, opacity 150ms ease',
           padding: 0,
         }}
       >

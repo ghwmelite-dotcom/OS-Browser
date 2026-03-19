@@ -31,32 +31,32 @@
   --sidebar-bg: #141620;
 }
 
-/* Light mode: Warm peach/sand with golden-orange accents */
+/* Light mode: Clean Chrome-style white/grey */
 .light {
-  --color-bg: #fce8c8;
-  --color-surface-1: #fff5e6;
-  --color-surface-2: #fbe0b8;
-  --color-surface-3: #f5d4a0;
-  --color-border-1: #e8c896;
-  --color-border-2: #d4ad78;
-  --color-text-primary: #2a1f0e;
-  --color-text-secondary: #5c4a2e;
-  --color-text-muted: #8a7558;
-  --color-accent: #d4870b;
-  --color-accent-green: #1a7a3e;
-  --color-heading: #d4870b;
-  --color-subheading: #1a7a3e;
-  --color-link: #b87308;
-  --color-btn-bg: #d4870b;
+  --color-bg: #ffffff;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #f1f3f4;
+  --color-surface-3: #e8eaed;
+  --color-border-1: #dadce0;
+  --color-border-2: #c4c7cc;
+  --color-text-primary: #202124;
+  --color-text-secondary: #5f6368;
+  --color-text-muted: #80868b;
+  --color-accent: #1a73e8;
+  --color-accent-green: #1e8e3e;
+  --color-heading: #202124;
+  --color-subheading: #1a73e8;
+  --color-link: #1a73e8;
+  --color-btn-bg: #1a73e8;
   --color-btn-text: #ffffff;
-  --glass-bg: rgba(255, 245, 230, 0.9);
-  --glass-border: rgba(232, 200, 150, 0.7);
-  --noise-opacity: 0.008;
-  --search-shadow: 0 0 0 1px rgba(232, 200, 150, 0.6), 0 4px 16px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --search-glow: 0 0 0 2px rgba(212, 135, 11, 0.4), 0 0 20px rgba(212, 135, 11, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
-  --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-  --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.03);
-  --sidebar-bg: #fae4bc;
+  --glass-bg: rgba(255, 255, 255, 0.92);
+  --glass-border: rgba(218, 220, 224, 0.7);
+  --noise-opacity: 0;
+  --search-shadow: 0 1px 6px rgba(32, 33, 36, 0.08), 0 1px 3px rgba(32, 33, 36, 0.04);
+  --search-glow: 0 0 0 2px rgba(26, 115, 232, 0.3), 0 1px 6px rgba(32, 33, 36, 0.08);
+  --card-shadow: 0 1px 3px rgba(32, 33, 36, 0.08), 0 1px 2px rgba(32, 33, 36, 0.04);
+  --card-shadow-hover: 0 4px 12px rgba(32, 33, 36, 0.12), 0 2px 6px rgba(32, 33, 36, 0.06);
+  --sidebar-bg: #f8f9fa;
 }
 
 /* ─── Base layer ─── */

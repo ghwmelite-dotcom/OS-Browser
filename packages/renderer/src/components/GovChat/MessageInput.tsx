@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { useGovChatStore } from '@/store/govchat';
+import { MatrixClientService } from '@/services/MatrixClientService';
 import type { ClassificationLevel, ReplyTo } from '@/types/govchat';
 import { CLASSIFICATION_COLORS } from '@/types/govchat';
 
@@ -142,11 +143,26 @@ export function MessageInput() {
     resizeTextarea();
   }, [inputText, resizeTextarea]);
 
+  /* ── typing indicator debounce ── */
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   /* ── @mention detection ── */
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const value = e.target.value;
       setInputText(value);
+
+      // Send typing indicator (debounced)
+      if (activeRoomId && value.length > 0) {
+        if (!typingTimeoutRef.current) {
+          MatrixClientService.sendTyping(activeRoomId, true).catch(() => {});
+        }
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = setTimeout(() => {
+          if (activeRoomId) MatrixClientService.sendTyping(activeRoomId, false).catch(() => {});
+          typingTimeoutRef.current = null;
+        }, 4000);
+      }
 
       // Detect @mention
       const cursorPos = e.target.selectionStart ?? value.length;
@@ -161,7 +177,7 @@ export function MessageInput() {
         setMentionQuery('');
       }
     },
-    [],
+    [activeRoomId],
   );
 
   /* ── mention autocomplete list ── */

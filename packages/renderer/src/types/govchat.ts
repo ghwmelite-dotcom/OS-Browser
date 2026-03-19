@@ -147,7 +147,8 @@ export type AuthStep = 'idle' | 'redeeming' | 'authenticated' | 'error';
 
 export interface GovChatCredentials {
   userId: string; // Matrix user ID
-  accessToken: string; // Matrix access token
+  accessToken: string; // Worker session token (for API calls)
+  matrixToken?: string; // Matrix access token (for SDK)
   homeserverUrl: string;
   staffId: string;
   deviceId: string;

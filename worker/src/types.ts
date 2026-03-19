@@ -73,6 +73,8 @@ export interface GovChatSession {
   deviceId: string;
   createdAt: number;
   role: 'user' | 'admin' | 'superadmin' | 'public';
+  matrixAccessToken?: string;
+  matrixPassword?: string;
 }
 
 export interface CodeRequest {

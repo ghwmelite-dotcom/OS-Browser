@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Shield, PenSquare, X, LogOut, MessageCircle, Lock, Settings } from 'lucide-react';
 import { useGovChatStore } from '@/store/govchat';
+import { useNotificationStore } from '@/store/notifications';
 import { LoginView } from './LoginView';
 import { ChatListView } from './ChatListView';
 import { ChatView } from './ChatView';
@@ -47,6 +48,7 @@ class GovChatErrorBoundary extends React.Component<
 function ConnectionBadge() {
   const connectionStatus = useGovChatStore(s => s.connectionStatus);
   const authStep = useGovChatStore(s => s.authStep);
+  const hasMatrixToken = useGovChatStore(s => !!s.credentials?.matrixToken);
 
   if (authStep !== 'authenticated') return null;
 
@@ -58,7 +60,11 @@ function ConnectionBadge() {
     error: { color: '#CE1126', label: 'Error' },
   };
 
-  const cfg = configs[connectionStatus] ?? configs.disconnected;
+  let cfg = configs[connectionStatus] ?? configs.disconnected;
+  // Show "API Only" when connected to worker but no Matrix token
+  if (connectionStatus === 'connected' && !hasMatrixToken) {
+    cfg = { color: '#D4A017', label: 'API Only' };
+  }
 
   return (
     <div className="flex items-center gap-1.5 text-[9.5px] font-medium" style={{ color: cfg.color }}>
@@ -157,14 +163,44 @@ export function GovChatPanel({ onClose }: { onClose: () => void }) {
     };
   }, [credentials?.accessToken]);
 
+  // Poll for new code requests every 30s — notify admin when count increases
+  const prevCountRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (!isAdmin || !credentials?.accessToken) return;
-    fetch(`https://os-browser-worker.ghwmelite.workers.dev/api/v1/govchat/code-requests/count`, {
-      headers: { Authorization: `Bearer ${credentials.accessToken}` },
-    })
-      .then(r => r.json())
-      .then(d => setPendingRequestCount(d.count ?? 0))
-      .catch(() => {});
+
+    const fetchCount = () => {
+      fetch(`https://os-browser-worker.ghwmelite.workers.dev/api/v1/govchat/code-requests/count`, {
+        headers: { Authorization: `Bearer ${credentials.accessToken}` },
+      })
+        .then(r => r.json())
+        .then(d => {
+          const newCount = d.count ?? 0;
+          const prevCount = prevCountRef.current;
+
+          // Notify if count increased (new request came in)
+          if (prevCount !== null && newCount > prevCount) {
+            const diff = newCount - prevCount;
+            useNotificationStore.getState().addNotification({
+              type: 'info',
+              title: 'New Invite Code Request',
+              message: `${diff} new code ${diff === 1 ? 'request' : 'requests'} pending your review`,
+              source: 'govchat',
+              icon: '\u{1F4E9}',
+              actionLabel: 'Review',
+              actionRoute: 'govchat-admin',
+            });
+          }
+
+          prevCountRef.current = newCount;
+          setPendingRequestCount(newCount);
+        })
+        .catch(() => {});
+    };
+
+    fetchCount();
+    const interval = setInterval(fetchCount, 30_000);
+    return () => clearInterval(interval);
   }, [isAdmin, credentials?.accessToken]);
 
   const isAuthenticated = authStep === 'authenticated';

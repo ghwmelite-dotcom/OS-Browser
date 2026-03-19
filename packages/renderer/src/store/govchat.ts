@@ -13,6 +13,7 @@ import { DEFAULT_RETENTION_DAYS } from '@/types/govchat';
 
 import { MatrixClientService } from '@/services/MatrixClientService';
 import { useNotificationStore } from '@/store/notifications';
+import { useProfileStore } from '@/store/profile';
 
 /* ──────────────── Credentials persistence ──────────────── */
 
@@ -68,6 +69,10 @@ const currentUser: GovUser = {
 /* ──────────────── Counter for local message IDs ──────────────── */
 
 let msgCounter = 100;
+
+/* ──────────────── Prevent concurrent DM creation ──────────────── */
+
+const pendingDMs = new Set<string>();
 
 /* ──────────────── Typing-indicator timers ──────────────── */
 
@@ -142,6 +147,7 @@ interface GovChatState {
 export const useGovChatStore = create<GovChatState>((set, get) => {
   /* ── helper: wire service events to store ── */
   let listenersBound = false;
+  let initializeStarted = false;
 
   const unsubscribers: Array<() => void> = [];
 
@@ -155,10 +161,8 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
         const { state } = data as { state: 'PREPARED' | 'SYNCING' | 'ERROR' | 'STOPPED' };
         switch (state) {
           case 'PREPARED':
-            set({ connectionStatus: 'connected', isSyncing: false });
-            break;
           case 'SYNCING':
-            set({ connectionStatus: 'syncing', isSyncing: true });
+            set({ connectionStatus: 'connected', isSyncing: false });
             break;
           case 'ERROR':
             // Sync error — client is still usable for API calls, just retry sync
@@ -193,7 +197,11 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
         // Don't re-add our own messages
         if (user && rawMsg.senderId === user.userId) return;
 
-        const convoMessages = [...(messages[roomId] || []), rawMsg];
+        // Dedup: don't add if we already have this event
+        const existing = messages[roomId] || [];
+        if (rawMsg.eventId && existing.some(m => m.eventId === rawMsg.eventId)) return;
+
+        const convoMessages = [...existing, rawMsg];
         const isActiveRoom = activeRoomId === roomId;
 
         set({
@@ -267,10 +275,22 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
       MatrixClientService.on('room', (data: unknown) => {
         const { room } = data as { room: ChatRoom };
         const { rooms, messages } = get();
-        // Only add if not already present
-        if (!rooms.some(r => r.roomId === room.roomId)) {
+        // Only add if not already present (check by roomId AND by name for DMs)
+        const existsById = rooms.some(r => r.roomId === room.roomId);
+        const existsByName = room.isDirect && rooms.some(
+          r => r.isDirect && r.name === room.name && r.roomId !== room.roomId,
+        );
+        if (!existsById && !existsByName) {
           set({
             rooms: [...rooms, room],
+            messages: { ...messages, [room.roomId]: messages[room.roomId] ?? [] },
+          });
+        } else if (existsByName && !existsById) {
+          // Replace the local room with the Matrix room (has the real roomId)
+          set({
+            rooms: rooms.map(r =>
+              r.isDirect && r.name === room.name ? room : r,
+            ),
             messages: { ...messages, [room.roomId]: messages[room.roomId] ?? [] },
           });
         }
@@ -293,12 +313,26 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
   const savedCredentials = loadCredentials();
   const isRestored = savedCredentials !== null;
 
+  // Build currentUser from saved credentials (not the generic hardcoded one)
+  const restoredUser: GovUser | null = isRestored
+    ? {
+        userId: savedCredentials!.userId,
+        staffId: savedCredentials!.staffId,
+        displayName: 'You', // Will be enriched from /auth/me
+        department: '',
+        ministry: '',
+        role: 'user',
+        isOnline: true,
+        lastSeen: null,
+      }
+    : null;
+
   return {
     // Auth
     authStep: isRestored ? 'authenticated' : 'idle',
     authError: null,
     credentials: savedCredentials,
-    currentUser: isRestored ? currentUser : null,
+    currentUser: restoredUser,
 
     // Rooms
     rooms: [],
@@ -327,11 +361,9 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
     redeemInviteCode: async (code: string, staffId: string, displayName: string) => {
       set({ authStep: 'redeeming', authError: null });
 
-      try {
-        const creds = await MatrixClientService.redeemInviteCode(code, staffId, displayName);
+      // Helper to complete auth after getting credentials
+      const completeAuth = async (creds: GovChatCredentials, name: string) => {
         saveCredentials(creds);
-
-        // Fetch user info (including role) from the worker
         let userRole: 'user' | 'admin' | 'superadmin' = 'user';
         let dept = '';
         let min = '';
@@ -346,26 +378,59 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
             dept = meData.department ?? '';
             min = meData.ministry ?? '';
           }
-        } catch {
-          // Non-critical — default to 'user' role
-        }
+        } catch { /* default to 'user' */ }
 
         const user: GovUser = {
           userId: creds.userId,
           staffId: creds.staffId,
-          displayName,
+          displayName: name,
           department: dept,
           ministry: min,
           role: userRole,
           isOnline: true,
           lastSeen: null,
         };
-        set({
-          authStep: 'authenticated',
-          credentials: creds,
-          currentUser: user,
+        set({ authStep: 'authenticated', credentials: creds, currentUser: user });
+        useProfileStore.getState().setProfile({
+          displayName: name,
+          staffId: creds.staffId,
+          department: dept,
+          ministry: min,
         });
         get().initialize();
+      };
+
+      // 1. Try login-by-staffId first (for existing users, no invite code needed)
+      try {
+        const loginRes = await fetch(
+          'https://os-browser-worker.ghwmelite.workers.dev/api/v1/govchat/auth/login',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ staffId, displayName }),
+          },
+        );
+        if (loginRes.ok) {
+          const data = await loginRes.json() as any;
+          const creds: GovChatCredentials = {
+            userId: data.userId,
+            accessToken: data.accessToken,
+            matrixToken: data.matrixToken || undefined,
+            homeserverUrl: data.homeserverUrl,
+            staffId: data.staffId,
+            deviceId: data.deviceId,
+          };
+          await completeAuth(creds, displayName);
+          return true;
+        }
+      } catch {
+        // Login endpoint failed — try invite code redemption
+      }
+
+      // 2. Try invite code redemption (for new users)
+      try {
+        const creds = await MatrixClientService.redeemInviteCode(code, staffId, displayName);
+        await completeAuth(creds, displayName);
         return true;
       } catch (err) {
         console.warn('[GovChatStore] redeemInviteCode failed, falling back to local mode:', err);
@@ -373,7 +438,7 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
 
       // Local mode fallback: accept any code
       const localCreds: GovChatCredentials = {
-        userId: `@${staffId}:govchat.gov.gh`,
+        userId: `@${staffId}:gov.gh`,
         accessToken: `local_${Date.now()}`,
         homeserverUrl: 'https://govchat.gov.gh',
         staffId,
@@ -466,6 +531,7 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
       MatrixClientService.clearCredentials();
 
       clearCredentials();
+      useProfileStore.getState().clearProfile();
       set({
         authStep: 'idle',
         authError: null,
@@ -498,52 +564,80 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
       // Check if a DM with this user already exists
       const { rooms, messages } = get();
       const existing = rooms.find(
-        r => r.isDirect && r.members.some(m => m.userId === userId),
+        r => r.isDirect && (
+          r.members.some(m => m.userId === userId) ||
+          (displayName && r.name === displayName)
+        ),
       );
       if (existing) {
         set({ activeRoomId: existing.roomId, isComposing: false });
         return existing.roomId;
       }
 
+      // Prevent concurrent creation for the same user
+      if (pendingDMs.has(userId)) {
+        // Wait for the first call to finish, then find the room
+        await new Promise(r => setTimeout(r, 2000));
+        const retryRooms = get().rooms;
+        const found = retryRooms.find(
+          r => r.isDirect && (
+            r.members.some(m => m.userId === userId) ||
+            (displayName && r.name === displayName)
+          ),
+        );
+        if (found) {
+          set({ activeRoomId: found.roomId, isComposing: false });
+          return found.roomId;
+        }
+        return null;
+      }
+      pendingDMs.add(userId);
+
       try {
         const roomId = await MatrixClientService.createDirectRoom(userId);
         if (roomId) {
-          // Create the room locally so it appears immediately
-          const peerUser: GovUser = {
-            userId,
-            staffId: userId.replace('@', '').split(':')[0],
-            displayName: displayName || userId,
-            department: '',
-            ministry: '',
-            role: 'user',
-            isOnline: true,
-            lastSeen: null,
-          };
-          const newRoom: ChatRoom = {
-            roomId,
-            name: displayName || userId,
-            isDirect: true,
-            isEncrypted: true,
-            classification: 'OFFICIAL',
-            members: [get().currentUser || currentUser, peerUser],
-            lastMessage: null,
-            unreadCount: 0,
-            isPinned: false,
-            retentionDays: DEFAULT_RETENTION_DAYS.OFFICIAL,
-            createdAt: Date.now(),
-          };
-          set({
-            rooms: [...get().rooms, newRoom],
-            messages: { ...get().messages, [roomId]: [] },
-            activeRoomId: roomId,
-          });
+          // Check again — sync may have added it while we were creating
+          const currentRooms = get().rooms;
+          if (!currentRooms.some(r => r.roomId === roomId)) {
+            const peerUser: GovUser = {
+              userId,
+              staffId: userId.replace('@', '').split(':')[0],
+              displayName: displayName || userId,
+              department: '',
+              ministry: '',
+              role: 'user',
+              isOnline: true,
+              lastSeen: null,
+            };
+            const newRoom: ChatRoom = {
+              roomId,
+              name: displayName || userId,
+              isDirect: true,
+              isEncrypted: false,
+              classification: 'OFFICIAL',
+              members: [get().currentUser || currentUser, peerUser],
+              lastMessage: null,
+              unreadCount: 0,
+              isPinned: false,
+              retentionDays: DEFAULT_RETENTION_DAYS.OFFICIAL,
+              createdAt: Date.now(),
+            };
+            set({
+              rooms: [...currentRooms, newRoom],
+              messages: { ...get().messages, [roomId]: [] },
+              activeRoomId: roomId,
+            });
+          } else {
+            set({ activeRoomId: roomId });
+          }
+          pendingDMs.delete(userId);
           return roomId;
         }
       } catch (err) {
         console.warn('[GovChatStore] createDirectRoom via Matrix failed, using local fallback:', err);
       }
 
-      // Local mode fallback — create room with the display name
+      // Local mode fallback
       const peerName = displayName || userId;
       const peerUser: GovUser = {
         userId,
@@ -560,7 +654,7 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
         roomId,
         name: peerName,
         isDirect: true,
-        isEncrypted: true,
+        isEncrypted: false,
         classification: 'OFFICIAL',
         members: [get().currentUser || currentUser, peerUser],
         lastMessage: null,
@@ -570,11 +664,12 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
         createdAt: Date.now(),
       };
       set({
-        rooms: [...rooms, newRoom],
-        messages: { ...messages, [roomId]: [] },
+        rooms: [...get().rooms, newRoom],
+        messages: { ...get().messages, [roomId]: [] },
         activeRoomId: roomId,
         isComposing: false,
       });
+      pendingDMs.delete(userId);
       return roomId;
     },
 
@@ -604,7 +699,7 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
         roomId,
         name,
         isDirect: false,
-        isEncrypted: true,
+        isEncrypted: false,
         classification,
         members,
         lastMessage: null,
@@ -668,6 +763,10 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
       const eventId = `evt-${++msgCounter}-${Date.now()}`;
       const { replyingTo } = get();
 
+      // Can send if we have a matrixToken (raw HTTP doesn't need SDK sync status)
+      const hasMatrixToken = !!(credentials?.matrixToken);
+      const canSendViaMatrix = hasMatrixToken && !credentials?.accessToken.startsWith('local_');
+
       const message: GovChatMessage = {
         eventId,
         roomId,
@@ -676,8 +775,8 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
         type: 'text',
         body,
         timestamp: Date.now(),
-        status: credentials && connectionStatus === 'connected' ? 'sending' : 'sent',
-        isEncrypted: true,
+        status: canSendViaMatrix ? 'sending' : 'sent',
+        isEncrypted: false,
         classification: msgClassification,
         reactions: [],
         replyTo: replyingTo ?? undefined,
@@ -694,8 +793,8 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
         replyingTo: null,
       });
 
-      // Send via Matrix if connected
-      if (connectionStatus === 'connected') {
+      // Send via Matrix if we have valid credentials (raw HTTP bypasses SDK encryption)
+      if (canSendViaMatrix) {
         MatrixClientService.sendMessage(roomId, body)
           .then(() => {
             const { messages: currentMessages } = get();
@@ -704,7 +803,8 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
             );
             set({ messages: { ...currentMessages, [roomId]: updated } });
           })
-          .catch(() => {
+          .catch((err) => {
+            console.error('[GovChatStore] sendMessage failed:', err);
             const { messages: currentMessages } = get();
             const updated = (currentMessages[roomId] || []).map(m =>
               m.eventId === eventId ? { ...m, status: 'failed' as const } : m,
@@ -742,7 +842,7 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
         body: file.name,
         timestamp: Date.now(),
         status: 'sending',
-        isEncrypted: true,
+        isEncrypted: false,
         classification: msgClassification,
         reactions: [],
         mentions: [],
@@ -802,7 +902,7 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
         body: `Voice note (${Math.round(duration)}s)`,
         timestamp: Date.now(),
         status: 'sending',
-        isEncrypted: true,
+        isEncrypted: false,
         classification: msgClassification,
         reactions: [],
         mentions: [],
@@ -934,12 +1034,16 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
     },
 
     initialize: () => {
+      // Prevent double initialization (Provider + Panel both call this)
+      if (initializeStarted) return;
+      initializeStarted = true;
+
       bindServiceListeners();
 
       const { credentials } = get();
       if (!credentials) {
-        // Not authenticated — use sample data (already set as defaults)
         set({ connectionStatus: 'disconnected' });
+        initializeStarted = false;
         return;
       }
 
@@ -947,54 +1051,125 @@ export const useGovChatStore = create<GovChatState>((set, get) => {
       const isLocalCredentials = credentials.accessToken.startsWith('local_');
       if (isLocalCredentials) {
         set({ connectionStatus: 'disconnected', isSyncing: false });
+        initializeStarted = false;
         return;
       }
 
       set({ connectionStatus: 'connecting' });
 
-      // Attempt to log in with a timeout — don't hang forever
-      const loginTimeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Connection timeout')), 15000),
-      );
+      // Fetch user profile + matrixToken from /auth/me, then connect
+      const enrichAndConnect = async () => {
+        // 1. Fetch user profile from worker (enriches displayName, role, matrixToken)
+        let enrichedCreds = { ...credentials };
+        try {
+          const meRes = await fetch(
+            'https://os-browser-worker.ghwmelite.workers.dev/api/v1/govchat/auth/me',
+            { headers: { Authorization: `Bearer ${credentials.accessToken}` } },
+          );
+          if (meRes.ok) {
+            const meData = await meRes.json() as {
+              userId?: string;
+              staffId?: string;
+              displayName?: string;
+              department?: string;
+              ministry?: string;
+              role?: string;
+              matrixToken?: string;
+              deviceId?: string;
+            };
 
-      Promise.race([
-        MatrixClientService.loginWithCredentials(credentials),
-        loginTimeout,
-      ])
-        .then(async () => {
-          // Client is created — show connected immediately
-          // Sync runs in background and will update rooms as they arrive
+            console.info('[GovChatStore] /auth/me response:', {
+              userId: meData.userId,
+              displayName: meData.displayName,
+              hasMatrixToken: !!meData.matrixToken,
+              role: meData.role,
+            });
+
+            // Update currentUser with real profile data
+            const serverUserId = meData.userId || credentials.userId;
+            const user: GovUser = {
+              userId: serverUserId,
+              staffId: meData.staffId || credentials.staffId,
+              displayName: meData.displayName || 'You',
+              department: meData.department || '',
+              ministry: meData.ministry || '',
+              role: (meData.role as 'user' | 'admin' | 'superadmin') || 'user',
+              isOnline: true,
+              lastSeen: null,
+            };
+            set({ currentUser: user });
+
+            // Sync enriched profile to shared store
+            useProfileStore.getState().setProfile({
+              displayName: user.displayName,
+              staffId: user.staffId,
+              department: user.department,
+              ministry: user.ministry,
+            });
+
+            // Always update credentials from server — ensures matrixToken + deviceId migration
+            enrichedCreds = {
+              ...credentials,
+              userId: serverUserId,
+              matrixToken: meData.matrixToken || credentials.matrixToken,
+              deviceId: meData.deviceId || credentials.deviceId,
+            };
+            set({ credentials: enrichedCreds });
+            saveCredentials(enrichedCreds);
+          } else {
+            console.warn('[GovChatStore] /auth/me failed:', meRes.status);
+          }
+        } catch (fetchErr) {
+          console.warn('[GovChatStore] /auth/me fetch error:', fetchErr);
+        }
+
+        // 2. Connect to Matrix if we have a matrixToken
+        if (!enrichedCreds.matrixToken) {
+          console.warn('[GovChatStore] No matrixToken — running in API-only mode');
+          set({ connectionStatus: 'connected', isSyncing: false });
+          return;
+        }
+
+        // 3. Attempt Matrix login with timeout
+        const loginTimeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Connection timeout')), 15000),
+        );
+
+        try {
+          await Promise.race([
+            MatrixClientService.loginWithCredentials(enrichedCreds),
+            loginTimeout,
+          ]);
+
           set({ connectionStatus: 'connected', isSyncing: true });
 
-          try {
-            // Give sync a moment to populate rooms
-            await new Promise(r => setTimeout(r, 2000));
-            const backendRooms = await MatrixClientService.getRooms();
+          // Set presence to online
+          MatrixClientService.setPresence(true).catch(() => {});
 
-            if (backendRooms.length > 0) {
-              const messagesByRoom: Record<string, GovChatMessage[]> = {};
-              for (const room of backendRooms) {
-                messagesByRoom[room.roomId] = [];
-              }
-              set({
-                rooms: backendRooms,
-                messages: messagesByRoom,
-                isSyncing: false,
-              });
-            } else {
-              // No rooms from server — keep sample data for demo
-              set({ isSyncing: false });
+          // Give sync a moment to populate rooms
+          await new Promise(r => setTimeout(r, 2000));
+          const backendRooms = await MatrixClientService.getRooms();
+
+          if (backendRooms.length > 0) {
+            const messagesByRoom: Record<string, GovChatMessage[]> = {};
+            for (const room of backendRooms) {
+              messagesByRoom[room.roomId] = [];
             }
-          } catch {
-            // Failed to load rooms — keep sample data
+            set({
+              rooms: backendRooms,
+              messages: messagesByRoom,
+              isSyncing: false,
+            });
+          } else {
             set({ isSyncing: false });
           }
-        })
-        .catch(() => {
-          // Connection failed or timed out — still show connected if we have credentials
-          // The user has valid credentials, chat works via API even without sync
+        } catch {
+          // Matrix connection failed — still functional via worker API
           set({ connectionStatus: 'connected', isSyncing: false });
-        });
+        }
+      };
+
+      enrichAndConnect();
     },
   };
 });

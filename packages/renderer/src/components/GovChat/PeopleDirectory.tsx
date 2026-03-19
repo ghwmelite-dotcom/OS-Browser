@@ -6,6 +6,7 @@ import { useGovChatStore } from '@/store/govchat';
 
 interface DirectoryUser {
   userId: string;
+  staffId?: string;
   displayName: string;
   department?: string;
   ministry?: string;
@@ -61,6 +62,8 @@ function lastSeenLabel(ts?: string): string {
 
 export function PeopleDirectory({ onStartChat }: PeopleDirectoryProps) {
   const accessToken = useGovChatStore(s => s.credentials?.accessToken);
+  const currentUserId = useGovChatStore(s => s.currentUser?.userId);
+  const currentStaffId = useGovChatStore(s => s.credentials?.staffId);
 
   const [users, setUsers] = useState<DirectoryUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -91,13 +94,17 @@ export function PeopleDirectory({ onStartChat }: PeopleDirectoryProps) {
       const data = await res.json();
       // Support both { users: [...] } and raw array responses
       const list: DirectoryUser[] = Array.isArray(data) ? data : data.users ?? [];
-      setUsers(list);
+      // Filter out current user (backup — server should already exclude them)
+      const filtered = list.filter(
+        u => u.userId !== currentUserId && u.staffId !== currentStaffId,
+      );
+      setUsers(filtered);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load directory');
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, currentUserId, currentStaffId]);
 
   useEffect(() => {
     fetchDirectory();

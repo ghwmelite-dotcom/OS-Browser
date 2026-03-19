@@ -14,7 +14,9 @@ export function NotificationBell() {
   const clearAll = useNotificationStore((s) => s.clearAll);
 
   const [open, setOpen] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const bellRef = useRef<HTMLButtonElement>(null);
 
   /* ---- close on outside click ---- */
   useEffect(() => {
@@ -48,7 +50,17 @@ export function NotificationBell() {
     >
       {/* Bell button */}
       <button
-        onClick={() => setOpen((prev) => !prev)}
+        ref={bellRef}
+        onClick={() => {
+          if (!open && bellRef.current) {
+            const rect = bellRef.current.getBoundingClientRect();
+            setDropdownPos({
+              top: rect.top - 8, // 8px gap above the bell
+              right: window.innerWidth - rect.right,
+            });
+          }
+          setOpen((prev) => !prev);
+        }}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
         style={{
           position: 'relative',
@@ -95,18 +107,17 @@ export function NotificationBell() {
         <div
           role="menu"
           style={{
-            position: 'absolute',
-            top: '100%',
-            right: 0,
-            marginTop: 6,
+            position: 'fixed',
+            bottom: window.innerHeight - dropdownPos.top,
+            right: dropdownPos.right,
             width: 320,
-            maxHeight: 400,
+            maxHeight: Math.min(400, dropdownPos.top - 10),
             overflowY: 'auto',
             background: 'var(--color-surface-1)',
             border: '1px solid var(--color-border-2)',
             borderRadius: 10,
-            boxShadow: '0 8px 30px rgba(0,0,0,.15)',
-            zIndex: 210,
+            boxShadow: '0 -4px 24px rgba(0,0,0,.12), 0 2px 8px rgba(0,0,0,.08)',
+            zIndex: 9999,
             fontSize: 12,
           }}
         >

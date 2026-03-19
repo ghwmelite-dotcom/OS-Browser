@@ -285,7 +285,7 @@ class WebRTCServiceClass {
       } catch {
         // Silently ignore polling errors
       }
-    }, 2000);
+    }, 10000);
   }
 
   stopIncomingCallPolling(): void {
