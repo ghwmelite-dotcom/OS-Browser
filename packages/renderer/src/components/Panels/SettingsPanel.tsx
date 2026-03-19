@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Settings, Check } from 'lucide-react';
 import { useSettingsStore } from '@/store/settings';
+import { useProfileStore } from '@/store/profile';
+import { AvatarPicker } from '@/components/shared/AvatarPicker';
 
 // Auto-save toast
 function SaveIndicator({ show }: { show: boolean }) {
@@ -17,7 +19,17 @@ function SaveIndicator({ show }: { show: boolean }) {
 // Full settings page rendered inside a tab
 export function SettingsPage() {
   const { settings, isLoaded, updateSettings, loadSettings } = useSettingsStore();
+  const profile = useProfileStore();
+  const [profileName, setProfileName] = useState(profile.displayName);
+  const [profileEmail, setProfileEmail] = useState(profile.email);
+  const [profileSaved, setProfileSaved] = useState(false);
   const [saveShow, setSaveShow] = useState(false);
+
+  // Sync local state if profile store changes externally
+  useEffect(() => {
+    setProfileName(profile.displayName);
+    setProfileEmail(profile.email);
+  }, [profile.displayName, profile.email]);
 
   useEffect(() => {
     // Only load if not already loaded
@@ -109,6 +121,110 @@ export function SettingsPage() {
             <p className="text-[12px] text-text-muted">Changes are saved automatically</p>
           </div>
         </div>
+
+        {/* ── Profile ── */}
+        <Section title="Profile">
+          <div className="px-5 py-4 flex items-center gap-5 border-b" style={{ borderColor: 'var(--color-border-1)' }}>
+            <AvatarPicker
+              currentAvatar={profile.avatarUrl || undefined}
+              displayName={profileName || 'User'}
+              size={72}
+              onAvatarChange={(url) => {
+                useProfileStore.getState().setAvatar(url);
+              }}
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-[14px] font-semibold text-text-primary truncate">
+                {profileName || 'No name set'}
+              </p>
+              <p className="text-[12px] text-text-muted truncate">
+                {profileEmail || 'No email set'}
+              </p>
+              {profile.department && (
+                <p className="text-[11px] text-text-muted mt-0.5 truncate">
+                  {profile.department}
+                </p>
+              )}
+            </div>
+          </div>
+          <Row>
+            <div className="flex-1 mr-4">
+              <label className="text-[14px] text-text-primary font-medium" htmlFor="profile-name">Display Name</label>
+              <p className="text-[12px] text-text-muted mt-0.5">How your name appears across the browser</p>
+            </div>
+            <input
+              id="profile-name"
+              type="text"
+              value={profileName}
+              onChange={e => { setProfileName(e.target.value); setProfileSaved(false); }}
+              placeholder="Enter your name"
+              className="px-3 py-1.5 rounded-lg text-[13px] outline-none border transition-colors w-[200px] shrink-0"
+              style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }}
+            />
+          </Row>
+          <Row>
+            <div className="flex-1 mr-4">
+              <label className="text-[14px] text-text-primary font-medium" htmlFor="profile-email">Email</label>
+              <p className="text-[12px] text-text-muted mt-0.5">Your government email address</p>
+            </div>
+            <input
+              id="profile-email"
+              type="email"
+              value={profileEmail}
+              onChange={e => { setProfileEmail(e.target.value); setProfileSaved(false); }}
+              placeholder="you@gov.gh"
+              className="px-3 py-1.5 rounded-lg text-[13px] outline-none border transition-colors w-[200px] shrink-0"
+              style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }}
+            />
+          </Row>
+          {profile.staffId && (
+            <Row>
+              <div className="flex-1">
+                <span className="text-[14px] text-text-primary font-medium">Staff ID</span>
+              </div>
+              <span className="text-[13px] text-text-muted">{profile.staffId}</span>
+            </Row>
+          )}
+          {profile.department && (
+            <Row>
+              <div className="flex-1">
+                <span className="text-[14px] text-text-primary font-medium">Department</span>
+              </div>
+              <span className="text-[13px] text-text-muted">{profile.department}</span>
+            </Row>
+          )}
+          {profile.ministry && (
+            <Row>
+              <div className="flex-1">
+                <span className="text-[14px] text-text-primary font-medium">Ministry</span>
+              </div>
+              <span className="text-[13px] text-text-muted">{profile.ministry}</span>
+            </Row>
+          )}
+          <div className="px-5 py-3 flex justify-end">
+            <button
+              onClick={() => {
+                useProfileStore.getState().setProfile({ displayName: profileName, email: profileEmail });
+                setProfileSaved(true);
+                setTimeout(() => setProfileSaved(false), 2000);
+              }}
+              disabled={profileName === profile.displayName && profileEmail === profile.email}
+              className="px-4 py-2 rounded-lg text-[13px] font-semibold transition-all"
+              style={{
+                background: profileSaved ? '#006B3F' : 'var(--color-accent)',
+                color: '#fff',
+                opacity: (profileName === profile.displayName && profileEmail === profile.email) ? 0.5 : 1,
+                cursor: (profileName === profile.displayName && profileEmail === profile.email) ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {profileSaved ? (
+                <span className="flex items-center gap-1.5"><Check size={14} /> Saved</span>
+              ) : (
+                'Save Profile'
+              )}
+            </button>
+          </div>
+        </Section>
 
         <Section title="On Startup">
           <Select label="When OS Browser opens" desc="Choose what happens when you launch the browser"

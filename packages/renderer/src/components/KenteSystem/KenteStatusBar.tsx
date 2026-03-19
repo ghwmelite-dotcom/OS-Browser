@@ -70,7 +70,7 @@ export function KenteStatusBar() {
         fontSize: 11,
         userSelect: 'none',
         flexShrink: 0,
-        overflow: 'hidden',
+        position: 'relative',
       }}
       aria-live="polite"
     >
@@ -133,7 +133,7 @@ export function KenteStatusBar() {
           display: 'flex',
           alignItems: 'center',
           height: '100%',
-          overflow: 'hidden',
+          overflow: 'visible',
           flexShrink: 0,
         }}
       >

@@ -85,7 +85,18 @@ function TypingIndicator({ names }: { names: string[] }) {
 
 /* ─────────── room avatar ─────────── */
 
-function RoomAvatar({ name, isDirect, size = 36 }: { name: string; isDirect: boolean; size?: number }) {
+function RoomAvatar({ name, isDirect, size = 36, avatarUrl }: { name: string; isDirect: boolean; size?: number; avatarUrl?: string }) {
+  if (avatarUrl) {
+    return (
+      <div
+        className="rounded-full overflow-hidden shrink-0"
+        style={{ width: size, height: size, flexShrink: 0 }}
+      >
+        <img src={avatarUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </div>
+    );
+  }
+
   const bgColors = ['#CE1126', '#006B3F', '#D4A017', '#1565C0', '#6A1B9A'];
   const colorIndex = name.charCodeAt(0) % bgColors.length;
 

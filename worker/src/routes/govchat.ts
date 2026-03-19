@@ -10,7 +10,7 @@ interface DirectoryUser {
   department: string;
   ministry: string;
   role: string;
-  isOnline: boolean;
+  online: boolean;
 }
 
 export const govchatRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
@@ -142,6 +142,64 @@ govchatRoutes.post('/invite-codes/generate', async (c) => {
 });
 
 // ---------------------------------------------------------------------------
+// POST /auth/login — Existing user logs in with staffId (no invite code needed)
+// ---------------------------------------------------------------------------
+
+govchatRoutes.post('/auth/login', async (c) => {
+  const ip = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || 'unknown';
+  if (await checkRateLimit(c.env.INVITE_CODES, 'login', ip, 5, 5)) {
+    return c.json({ error: 'Too many attempts. Please try again later.' }, 429);
+  }
+
+  const body = await c.req.json<{ staffId: string; displayName?: string }>();
+  if (!body.staffId) {
+    return c.json({ error: 'staffId is required' }, 400);
+  }
+  if (body.staffId.length > 50) return c.json({ error: 'staffId too long' }, 400);
+
+  // Find an existing session for this staffId
+  const list = await c.env.SESSIONS.list({ prefix: 'govchat-session:' });
+  let existingSession: GovChatSession | null = null;
+  let existingKey = '';
+
+  for (const key of list.keys) {
+    const data = await c.env.SESSIONS.get(key.name, 'json') as GovChatSession | null;
+    if (data && data.staffId === body.staffId) {
+      existingSession = data;
+      existingKey = key.name;
+      break;
+    }
+  }
+
+  if (!existingSession) {
+    return c.json({ error: 'No account found for this Staff ID. Please use an invite code to register.' }, 404);
+  }
+
+  // Generate a fresh session token (the old one stays valid too)
+  const sessionToken = generateToken();
+  const newSession: GovChatSession = {
+    ...existingSession,
+    token: sessionToken,
+    displayName: body.displayName || existingSession.displayName,
+    createdAt: Date.now(),
+  };
+
+  await c.env.SESSIONS.put(`govchat-session:${sessionToken}`, JSON.stringify(newSession), {
+    expirationTtl: 7 * 24 * 60 * 60,
+  });
+
+  return c.json({
+    success: true,
+    userId: existingSession.userId,
+    accessToken: sessionToken,
+    homeserverUrl: existingSession.homeserverUrl,
+    staffId: existingSession.staffId,
+    deviceId: existingSession.deviceId,
+    matrixToken: existingSession.matrixAccessToken || undefined,
+  });
+});
+
+// ---------------------------------------------------------------------------
 // POST /auth/redeem-invite — User redeems invite code with staff ID
 // ---------------------------------------------------------------------------
 
@@ -227,9 +285,12 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
   // Register user on Synapse homeserver via shared-secret registration
   const homeserverUrl = c.env.MATRIX_HOMESERVER_URL || 'https://govchat.askozzy.work';
   const serverName = new URL(homeserverUrl).hostname;
-  const matrixUserId = `@${body.staffId}:${serverName}`;
+  // Synapse rejects purely numeric usernames (reserved for guests) — prefix with "staff_"
+  const synapseUsername = /^\d+$/.test(body.staffId) ? `staff_${body.staffId}` : body.staffId;
+  const matrixUserId = `@${synapseUsername}:${serverName}`;
   let matrixAccessToken = '';
   let matrixDeviceId = '';
+  let matrixPassword = '';
 
   try {
     // Generate HMAC for shared-secret registration
@@ -254,7 +315,7 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
 
       // HMAC message: nonce + NUL + username + NUL + password + NUL + "notadmin"
       const password = `GovChat_${generateToken().slice(0, 16)}`;
-      const hmacMessage = `${nonce}\x00${body.staffId}\x00${password}\x00notadmin`;
+      const hmacMessage = `${nonce}\x00${synapseUsername}\x00${password}\x00notadmin`;
       const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(hmacMessage));
       const mac = Array.from(new Uint8Array(signature))
         .map(b => b.toString(16).padStart(2, '0'))
@@ -266,7 +327,7 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nonce,
-          username: body.staffId,
+          username: synapseUsername,
           displayname: body.displayName,
           password,
           admin: false,
@@ -282,12 +343,56 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
         };
         matrixAccessToken = regData.access_token;
         matrixDeviceId = regData.device_id;
+        matrixPassword = password;
       } else {
         const errBody = await regRes.text();
-        // User already exists — skip Synapse login (we can't use a random password
-        // for an existing account). Continue with our own session token instead.
+        // User already exists — try to retrieve stored Matrix token from previous session,
+        // or login with stored password
         if (errBody.includes('User ID already taken')) {
-          console.info(`Synapse user ${body.staffId} already exists — using worker session token only`);
+          console.info(`Synapse user ${body.staffId} already exists — trying to recover Matrix token`);
+
+          // Look for an existing session with a stored Matrix token or password
+          const existingSessions = await c.env.SESSIONS.list({ prefix: 'govchat-session:' });
+          for (const key of existingSessions.keys) {
+            const existing = await c.env.SESSIONS.get(key.name, 'json') as GovChatSession | null;
+            if (existing && existing.staffId === body.staffId) {
+              // Try to use stored Matrix token
+              if (existing.matrixAccessToken) {
+                matrixAccessToken = existing.matrixAccessToken;
+                matrixDeviceId = existing.deviceId;
+                matrixPassword = existing.matrixPassword || '';
+                console.info(`Recovered Matrix token for ${body.staffId} from previous session`);
+              }
+              // If we have a stored password but no token, try login
+              if (!matrixAccessToken && existing.matrixPassword) {
+                try {
+                  const loginRes = await fetch(`${homeserverUrl}/_matrix/client/v3/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      type: 'm.login.password',
+                      identifier: { type: 'm.id.user', user: synapseUsername },
+                      password: existing.matrixPassword,
+                    }),
+                  });
+                  if (loginRes.ok) {
+                    const loginData = await loginRes.json() as {
+                      user_id: string;
+                      access_token: string;
+                      device_id: string;
+                    };
+                    matrixAccessToken = loginData.access_token;
+                    matrixDeviceId = loginData.device_id;
+                    matrixPassword = existing.matrixPassword;
+                    console.info(`Matrix login succeeded for ${body.staffId}`);
+                  }
+                } catch (loginErr) {
+                  console.warn(`Matrix login failed for ${body.staffId}:`, loginErr);
+                }
+              }
+              break;
+            }
+          }
         }
       }
     }
@@ -325,6 +430,8 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
     deviceId,
     createdAt: Date.now(),
     role: existingRole,
+    matrixAccessToken: matrixAccessToken || undefined,
+    matrixPassword: matrixPassword || undefined,
   };
 
   // Store session with 7-day TTL
@@ -391,6 +498,128 @@ govchatRoutes.delete('/invite-codes/:code', async (c) => {
 });
 
 // ---------------------------------------------------------------------------
+// POST /auth/register-synapse — Superadmin: register self on Synapse homeserver
+// ---------------------------------------------------------------------------
+
+govchatRoutes.post('/auth/register-synapse', async (c) => {
+  const session = await getAuthenticatedSession(c.env, c.req.raw);
+  if (!session || session.role !== 'superadmin') {
+    return c.json({ error: 'Superadmin only' }, 403);
+  }
+
+  // Already has a Matrix token?
+  if (session.matrixAccessToken) {
+    return c.json({
+      success: true,
+      message: 'Already registered on Synapse',
+      matrixToken: session.matrixAccessToken,
+      userId: session.userId,
+    });
+  }
+
+  const homeserverUrl = c.env.MATRIX_HOMESERVER_URL || 'https://govchat.askozzy.work';
+  const serverName = new URL(homeserverUrl).hostname;
+  const registrationSecret = c.env.SYNAPSE_REGISTRATION_SECRET;
+
+  if (!registrationSecret) {
+    return c.json({ error: 'SYNAPSE_REGISTRATION_SECRET not configured' }, 500);
+  }
+
+  const staffId = session.staffId;
+  // Synapse rejects purely numeric usernames (reserved for guests) — prefix with "staff_"
+  const synapseUsername = /^\d+$/.test(staffId) ? `staff_${staffId}` : staffId;
+  const password = `GovChat_${generateToken().slice(0, 16)}`;
+
+  try {
+    // Step 1: Get a nonce
+    const nonceRes = await fetch(`${homeserverUrl}/_synapse/admin/v1/register`, { method: 'GET' });
+    const nonceData = await nonceRes.json() as { nonce: string };
+    const nonce = nonceData.nonce;
+
+    // Step 2: Compute HMAC — register as admin so superadmin can manage Synapse
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(registrationSecret),
+      { name: 'HMAC', hash: 'SHA-1' },
+      false,
+      ['sign'],
+    );
+    const hmacMessage = `${nonce}\x00${synapseUsername}\x00${password}\x00admin`;
+    const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(hmacMessage));
+    const mac = Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    // Step 3: Register
+    const regRes = await fetch(`${homeserverUrl}/_synapse/admin/v1/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nonce,
+        username: synapseUsername,
+        displayname: session.displayName,
+        password,
+        admin: true,
+        mac,
+      }),
+    });
+
+    let matrixAccessToken = '';
+    let matrixDeviceId = '';
+
+    if (regRes.ok) {
+      const regData = await regRes.json() as {
+        user_id: string;
+        access_token: string;
+        device_id: string;
+      };
+      matrixAccessToken = regData.access_token;
+      matrixDeviceId = regData.device_id;
+    } else {
+      const errBody = await regRes.text();
+      // User already exists — try login with a new password set approach
+      if (errBody.includes('User ID already taken')) {
+        // Try to login if we have previous password stored
+        // For now, return error — user already exists
+        return c.json({
+          error: 'Synapse user already exists. Try logging in with existing credentials.',
+          detail: errBody,
+        }, 409);
+      }
+      return c.json({ error: 'Synapse registration failed', detail: errBody }, 500);
+    }
+
+    // Step 4: Update KV session with Matrix credentials
+    const matrixUserId = `@${synapseUsername}:${serverName}`;
+    const auth = c.req.header('Authorization')!;
+    const token = auth.slice(7);
+    const updatedSession: GovChatSession = {
+      ...session,
+      userId: matrixUserId,
+      deviceId: matrixDeviceId || session.deviceId,
+      matrixAccessToken,
+      matrixPassword: password,
+    };
+    await c.env.SESSIONS.put(`govchat-session:${token}`, JSON.stringify(updatedSession), {
+      expirationTtl: 7 * 24 * 60 * 60,
+    });
+
+    return c.json({
+      success: true,
+      userId: matrixUserId,
+      matrixToken: matrixAccessToken,
+      deviceId: matrixDeviceId,
+    });
+  } catch (err) {
+    return c.json({
+      error: 'Synapse registration failed',
+      detail: err instanceof Error ? err.message : String(err),
+    }, 500);
+  }
+});
+
+// ---------------------------------------------------------------------------
 // GET /auth/me — Get current user info from token
 // ---------------------------------------------------------------------------
 
@@ -401,16 +630,49 @@ govchatRoutes.get('/auth/me', async (c) => {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
+  // If this session doesn't have a matrixAccessToken, search other sessions
+  // for the same staffId that DO have one (e.g. from register-synapse)
+  let matrixToken = session.matrixAccessToken || '';
+  let bestUserId = session.userId;
+  let bestDeviceId = session.deviceId;
+
+  if (!matrixToken) {
+    const list = await c.env.SESSIONS.list({ prefix: 'govchat-session:' });
+    for (const key of list.keys) {
+      const data = await c.env.SESSIONS.get(key.name, 'json') as GovChatSession | null;
+      if (data && data.staffId === session.staffId && data.matrixAccessToken) {
+        matrixToken = data.matrixAccessToken;
+        bestUserId = data.userId;
+        bestDeviceId = data.deviceId; // Use the deviceId that matches the matrixToken
+        // Also update THIS session so future lookups are fast
+        const updatedSession: GovChatSession = {
+          ...session,
+          userId: data.userId,
+          deviceId: data.deviceId,
+          matrixAccessToken: data.matrixAccessToken,
+          matrixPassword: data.matrixPassword,
+        };
+        const auth = c.req.header('Authorization')!;
+        const token = auth.slice(7);
+        await c.env.SESSIONS.put(`govchat-session:${token}`, JSON.stringify(updatedSession), {
+          expirationTtl: 7 * 24 * 60 * 60,
+        });
+        break;
+      }
+    }
+  }
+
   return c.json({
-    userId: session.userId,
+    userId: bestUserId,
     staffId: session.staffId,
     displayName: session.displayName,
     department: session.department,
     ministry: session.ministry,
     homeserverUrl: session.homeserverUrl,
-    deviceId: session.deviceId,
+    deviceId: bestDeviceId,
     role: session.role,
     createdAt: session.createdAt,
+    matrixToken: matrixToken || undefined,
   });
 });
 
@@ -508,6 +770,9 @@ govchatRoutes.get('/users/directory', async (c) => {
   // Track seen staffIds to avoid duplicates (multiple sessions per user)
   const seen = new Set<string>();
 
+  // Compute homeserver once outside the loop
+  const homeserver = new URL(c.env.MATRIX_HOMESERVER_URL || 'https://govchat.askozzy.work').hostname;
+
   for (const key of list.keys) {
     const data = await c.env.SESSIONS.get(key.name, 'json') as GovChatSession | null;
     if (!data) continue;
@@ -522,14 +787,20 @@ govchatRoutes.get('/users/directory', async (c) => {
     if (!data.displayName || data.displayName === 'Test User' || data.displayName === 'Test User Two' || data.displayName === 'Verify Test' || data.displayName === 'Public Test') continue;
     // User has a valid session in KV = they are a registered active user
     // Show as online (true presence tracking requires Matrix sync which runs client-side)
+    // Normalize userId to Synapse format — old sessions may have @staffId:gov.gh fallback
+    const synapseUser = /^\d+$/.test(data.staffId) ? `staff_${data.staffId}` : data.staffId;
+    const normalizedUserId = data.matrixAccessToken
+      ? data.userId // Has Matrix token → userId is already correct
+      : `@${synapseUser}:${homeserver}`; // Normalize to expected Synapse format
+
     users.push({
-      userId: data.userId,
+      userId: normalizedUserId,
       staffId: data.staffId,
       displayName: data.displayName,
       department: data.department,
       ministry: data.ministry,
       role: data.role,
-      isOnline: true,
+      online: true,
     });
   }
 

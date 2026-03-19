@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Shield, Loader2, ArrowLeft, Send, Globe } from 'lucide-react';
 import { useGovChatStore } from '@/store/govchat';
+import { useNotificationStore } from '@/store/notifications';
+import { useProfileStore } from '@/store/profile';
 
 type ViewMode = 'login' | 'request' | 'public';
 
@@ -17,6 +19,7 @@ export function LoginView() {
   const [inviteCode, setInviteCode] = useState('');
   const [staffId, setStaffId] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
 
   // Request code form state
   const [reqFullName, setReqFullName] = useState('');
@@ -30,6 +33,62 @@ export function LoginView() {
   const [checkingStatus, setCheckingStatus] = useState(false);
   const [approvedCode, setApprovedCode] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
+  const statusPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Auto-poll request status every 20s after submission — notify when approved/rejected
+  useEffect(() => {
+    if (!reqSuccess || !reqEmail.trim() || approvedCode) return;
+
+    const pollStatus = async () => {
+      try {
+        const res = await fetch(
+          `https://os-browser-worker.ghwmelite.workers.dev/api/v1/govchat/code-requests/status?email=${encodeURIComponent(reqEmail.trim())}`,
+        );
+        if (!res.ok) return;
+        const data = await res.json() as { status: string; code?: string; rejectionReason?: string };
+
+        if (data.status === 'approved' && data.code) {
+          setApprovedCode(data.code);
+          setStatusMessage('');
+          useNotificationStore.getState().addNotification({
+            type: 'success',
+            title: 'Invite Code Ready!',
+            message: `Your invite code request has been approved. Code: ${data.code}`,
+            source: 'govchat',
+            icon: '\u2705',
+            actionLabel: 'Login Now',
+            actionRoute: 'govchat',
+          });
+          // Stop polling once resolved
+          if (statusPollRef.current) clearInterval(statusPollRef.current);
+        } else if (data.status === 'rejected') {
+          const reason = data.rejectionReason
+            ? `Reason: ${data.rejectionReason}`
+            : 'Please contact your IT administrator.';
+          setStatusMessage(`Request was declined. ${reason}`);
+          useNotificationStore.getState().addNotification({
+            type: 'warning',
+            title: 'Code Request Declined',
+            message: `Your invite code request was declined. ${reason}`,
+            source: 'govchat',
+            icon: '\u274C',
+          });
+          if (statusPollRef.current) clearInterval(statusPollRef.current);
+        }
+      } catch {
+        // Silent — will retry on next interval
+      }
+    };
+
+    // Initial check after 5s, then every 20s
+    const initialTimeout = setTimeout(pollStatus, 5000);
+    statusPollRef.current = setInterval(pollStatus, 20_000);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      if (statusPollRef.current) clearInterval(statusPollRef.current);
+    };
+  }, [reqSuccess, reqEmail, approvedCode]);
 
   // Public user form state
   const [pubName, setPubName] = useState('');
@@ -47,7 +106,10 @@ export function LoginView() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid || isRedeeming) return;
-    await redeemInviteCode(inviteCode.trim().toUpperCase(), staffId.trim(), displayName.trim());
+    const success = await redeemInviteCode(inviteCode.trim().toUpperCase(), staffId.trim(), displayName.trim());
+    if (success && email.trim()) {
+      useProfileStore.getState().setProfile({ email: email.trim() });
+    }
   };
 
   const handleInviteCodeChange = (val: string) => {
@@ -621,6 +683,21 @@ export function LoginView() {
                   background: 'var(--color-surface-2)',
                   border: '1.5px solid var(--color-border-1)',
                 }}
+              />
+            </div>
+
+            {/* Email (optional) */}
+            <div>
+              <label className="text-[10.5px] font-semibold text-text-muted uppercase tracking-wide mb-1 block">
+                Email (optional)
+              </label>
+              <input
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="Email (optional)"
+                className="w-full px-3 py-2 rounded-lg text-[12px] text-text-primary outline-none placeholder:text-text-muted"
+                style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border-1)' }}
+                type="email"
               />
             </div>
 

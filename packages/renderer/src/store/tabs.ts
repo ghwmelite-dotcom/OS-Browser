@@ -42,6 +42,8 @@ export const useTabsStore = create<TabsState>((set, get) => ({
       tabs: [...s.tabs, tab],
       activeTabId: tab.id,
     }));
+    // Switch to the new tab in the main process (hides old WebContentsView, shows new content)
+    await window.osBrowser.tabs.switch(tab.id);
   },
 
   closeTab: async (id) => {

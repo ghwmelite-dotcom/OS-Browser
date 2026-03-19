@@ -89,8 +89,9 @@ function ToolbarButton({
   const iconColor = isActive
     ? feature.stripColor
     : hovered
-      ? (isDark ? '#F2C94C' : 'var(--color-text-secondary)')
-      : (isDark ? '#D4A017' : 'var(--color-text-muted)');
+      ? feature.stripColor
+      : isDark ? '#D4A017' : feature.stripColor;
+  const iconOpacity = isActive ? 1 : hovered ? 1 : isDark ? 0.85 : 0.65;
 
   return (
     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -114,7 +115,7 @@ function ToolbarButton({
           transition: 'background 100ms ease, color 100ms ease',
         }}
       >
-        <Icon size={15} strokeWidth={1.8} style={{ color: iconColor }} />
+        <Icon size={15} strokeWidth={1.8} style={{ color: iconColor, opacity: iconOpacity, transition: 'opacity 150ms ease' }} />
       </button>
       {/* Chevron dropdown trigger — separate clickable area */}
       {hasDropdown && (

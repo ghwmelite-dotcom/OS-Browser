@@ -134,8 +134,10 @@ export function OmniBar() {
           style={{
             height: '36px',
             background: isFocused ? 'var(--color-surface-1)' : 'var(--color-surface-2)',
-            border: isFocused ? '2px solid var(--color-accent)' : '1.5px solid var(--color-border-2)',
-            boxShadow: isFocused ? 'var(--search-glow)' : '0 1px 3px rgba(0,0,0,0.06)',
+            border: isFocused ? '2px solid var(--color-accent)' : '1.5px solid var(--color-border-1)',
+            boxShadow: isFocused
+              ? 'var(--search-glow)'
+              : '0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)',
           }}
         >
           {/* Icon */}

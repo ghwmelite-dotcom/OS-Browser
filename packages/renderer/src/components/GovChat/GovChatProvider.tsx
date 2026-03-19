@@ -35,18 +35,9 @@ export function GovChatProvider({ children }: { children: React.ReactNode }) {
       // 2. Initialize notification service
       await GovChatNotificationService.initialize();
 
-      // 3. Check for stored credentials and try to restore session
-      const stored = MatrixClientService.loadStoredCredentials();
-      if (stored) {
-        try {
-          await MatrixClientService.loginWithCredentials(stored);
-          AuditService.log('login', stored.userId, { method: 'stored_credentials' });
-        } catch (e) {
-          console.warn('[GovChat] Failed to restore session:', e);
-        }
-      }
-
-      // 4. Initialize store
+      // 3. Initialize store (handles /auth/me fetch + Matrix connection)
+      // Do NOT pre-load credentials into MatrixClientService — let enrichAndConnect
+      // fetch the correct matrixToken from /auth/me before touching the SDK
       useGovChatStore.getState().initialize();
 
       // 5. Start retention service
@@ -57,7 +48,16 @@ export function GovChatProvider({ children }: { children: React.ReactNode }) {
 
     init();
 
+    // Track window focus/blur for presence
+    const handleFocus = () => MatrixClientService.setPresence(true).catch(() => {});
+    const handleBlur = () => MatrixClientService.setPresence(false).catch(() => {});
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+
     return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+      MatrixClientService.setPresence(false).catch(() => {});
       RetentionService.stop();
       MatrixClientService.destroy();
     };

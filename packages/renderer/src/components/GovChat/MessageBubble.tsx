@@ -386,7 +386,15 @@ function SystemMessage({ message }: { message: GovChatMessage }) {
 
 /* ─────────── sender avatar for group chats ─────────── */
 
-function SenderAvatar({ name }: { name: string }) {
+function SenderAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
+  if (avatarUrl) {
+    return (
+      <div className="w-7 h-7 rounded-full overflow-hidden shrink-0">
+        <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+      </div>
+    );
+  }
+
   const bgColors = ['#CE1126', '#006B3F', '#D4A017', '#1565C0', '#6A1B9A'];
   const colorIndex = name.charCodeAt(0) % bgColors.length;
 
