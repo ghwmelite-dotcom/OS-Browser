@@ -5,7 +5,7 @@ import { seedDatabase } from './db/seed';
 import { registerAllHandlers } from './ipc/handlers';
 import { initAutoUpdater } from './services/auto-update';
 import { stopConnectivityMonitor } from './net/connectivity';
-import { stopTabSuspension } from './services/tab-suspension';
+import { stopMemorySaver } from './services/tab-suspension';
 import { AdBlockService, setAdBlockService } from './services/adblock-engine';
 import { updateTrayTooltip } from './services/tray';
 import { initProfileManager, getActiveProfileId, getProfileDataDir } from './services/profile-manager';
@@ -250,7 +250,7 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     stopConnectivityMonitor();
-    stopTabSuspension();
+    stopMemorySaver();
     adBlockService.destroy();
     mainWindow = null;
   });
