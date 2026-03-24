@@ -155,7 +155,11 @@
       "Bash(gh repo:*)",
       "Bash(npx eas:*)",
       "Bash(eas:*)",
-      "Bash(npx expo-doctor:*)"
+      "Bash(npx expo-doctor:*)",
+      "Bash(cp /c/osm/android/app/build/outputs/apk/release/app-release.apk \"/c/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/OzzySurf-OS Browser/out/OS-Mini-v1.0.0-release.apk\")",
+      "Bash(npm start:*)",
+      "Bash(rm -f /c/Users/USER/.gradle/caches/journal-1/journal-1.lock)",
+      "Bash('JAVA_HOME=C:/Program Files/Android/Android Studio/jbr' ./gradlew --stop)"
     ]
   }
 }

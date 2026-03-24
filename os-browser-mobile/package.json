@@ -19,6 +19,7 @@
     "expo-network": "~55.0.9",
     "expo-splash-screen": "~55.0.12",
     "expo-status-bar": "~55.0.4",
+    "expo-updates": "~55.0.15",
     "react": "19.2.0",
     "react-native": "0.83.2",
     "react-native-safe-area-context": "~5.6.2",
