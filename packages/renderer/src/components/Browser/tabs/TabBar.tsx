@@ -410,8 +410,10 @@ export function TabBar() {
           <TabDragOverlay activeTab={activeDragTab} accentColor={activeDragColor} />
          </DndContext>
 
-          {/* ── New tab button ── */}
-          <NewTabButton onClick={() => createTab()} />
+          {/* ── New tab button — inline right after last tab (Chrome-style) ── */}
+          <div className="shrink-0 sticky right-0 z-20" style={{ background: 'var(--kente-tab-bg, var(--color-bg))' }}>
+            <NewTabButton onClick={() => createTab()} />
+          </div>
         </div>
 
         {showFadeRight && (
