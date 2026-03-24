@@ -160,6 +160,50 @@ export async function fetchUserProfile(
   }
 }
 
+// ── Display name cache ───────────────────────────────────────────────────
+
+const displayNameCache = new Map<string, string>();
+
+/** Fetch a user's display name from Matrix profile API, with caching */
+async function getDisplayName(
+  homeserverUrl: string,
+  token: string,
+  userId: string,
+): Promise<string> {
+  // Check cache first
+  const cached = displayNameCache.get(userId);
+  if (cached) return cached;
+
+  try {
+    const res = await fetch(
+      `${homeserverUrl}/_matrix/client/v3/profile/${encodeURIComponent(userId)}/displayname`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (data.displayname) {
+        displayNameCache.set(userId, data.displayname);
+        return data.displayname;
+      }
+    }
+  } catch {}
+
+  // Fallback: strip @userId:server → readable name
+  const fallback = userId.replace(/@([^:]+):.*/, '$1').replace(/^staff_/, '').replace(/_/g, ' ');
+  displayNameCache.set(userId, fallback);
+  return fallback;
+}
+
+/** Batch-fetch display names for multiple user IDs */
+async function resolveDisplayNames(
+  homeserverUrl: string,
+  token: string,
+  userIds: string[],
+): Promise<void> {
+  const uncached = userIds.filter((id) => !displayNameCache.has(id));
+  await Promise.all(uncached.map((id) => getDisplayName(homeserverUrl, token, id)));
+}
+
 // ── Rooms ────────────────────────────────────────────────────────────────
 
 /** Fetch joined rooms from Matrix */
@@ -221,14 +265,28 @@ async function fetchRoomDetails(
       const chunks = memberData.chunk || [];
       for (const m of chunks) {
         if (m.state_key) members.push(m.state_key);
+        // Cache display name from member event if available
+        if (m.state_key && m.content?.displayname) {
+          displayNameCache.set(m.state_key, m.content.displayname);
+        }
       }
       isDirect = members.length <= 2;
 
-      // For DMs, use the other person's name
-      if (isDirect && name === roomId) {
-        const other = members.find((m) => m !== creds.userId);
-        if (other) {
-          name = other.replace(/@([^:]+):.*/, '$1');
+      // For DMs or unnamed rooms, resolve display names
+      if (name === roomId) {
+        if (isDirect) {
+          const other = members.find((m) => m !== creds.userId);
+          if (other) {
+            name = await getDisplayName(base, token, other);
+          }
+        } else {
+          // Group room with no name — build from member display names
+          await resolveDisplayNames(base, token, members.slice(0, 4));
+          const names = members
+            .filter((m) => m !== creds.userId)
+            .slice(0, 3)
+            .map((m) => displayNameCache.get(m) || m.replace(/@([^:]+):.*/, '$1'));
+          name = names.join(', ') + (members.length > 4 ? ` +${members.length - 4}` : '');
         }
       }
     }
@@ -288,12 +346,16 @@ export async function fetchMessages(
     const data = await res.json();
     const events = data.chunk || [];
 
+    // Resolve display names for all senders
+    const senderIds = [...new Set(events.map((e: any) => e.sender).filter(Boolean))];
+    await resolveDisplayNames(creds.homeserverUrl, token, senderIds);
+
     return events
       .map((e: any): MatrixMessage => ({
         eventId: e.event_id,
         roomId,
         senderId: e.sender,
-        senderName: e.sender?.replace(/@([^:]+):.*/, '$1') || 'Unknown',
+        senderName: displayNameCache.get(e.sender) || e.sender?.replace(/@([^:]+):.*/, '$1') || 'Unknown',
         type: e.content?.msgtype === 'm.image' ? 'image' : 'text',
         body: e.content?.body || '',
         timestamp: e.origin_server_ts || 0,
@@ -393,11 +455,17 @@ export function startSync(
           for (const e of events) {
             if (e.type === 'm.room.message' && e.sender !== creds.userId) {
               hasNewMessages = true;
+              // Resolve display name (uses cache, fast for known users)
+              const senderName = await getDisplayName(
+                creds.homeserverUrl,
+                creds.matrixToken || creds.accessToken,
+                e.sender,
+              );
               onMessage({
                 eventId: e.event_id,
                 roomId,
                 senderId: e.sender,
-                senderName: e.sender?.replace(/@([^:]+):.*/, '$1') || 'Unknown',
+                senderName,
                 type: e.content?.msgtype === 'm.image' ? 'image' : 'text',
                 body: e.content?.body || '',
                 timestamp: e.origin_server_ts || Date.now(),

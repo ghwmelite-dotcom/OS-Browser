@@ -3,6 +3,7 @@
     "name": "OS Mini",
     "slug": "os-browser-mobile",
     "version": "1.0.0",
+    "runtimeVersion": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -10,6 +11,12 @@
       "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#0f1117"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 5000,
+      "url": "https://u.expo.dev/2a6938b2-5d47-45a8-94ac-85796cecb38b"
     },
     "ios": {
       "supportsTablet": true,
@@ -46,6 +53,12 @@
         }
       ],
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "2a6938b2-5d47-45a8-94ac-85796cecb38b"
+      }
+    },
+    "owner": "ohwpstudios"
   }
 }
