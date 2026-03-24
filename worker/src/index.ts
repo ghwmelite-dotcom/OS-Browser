@@ -69,6 +69,30 @@ app.route('/api/v1/downloads', downloadRoutes);
 app.route('/api/v1/govchat', govchatRoutes);
 app.route('/api/v1/exchange', exchangeRoutes);
 
+// ── Browser auto-login: validate os_browser_token cookie ────────────
+// GET /api/v1/auth/me — returns user info if the cookie contains a valid session
+app.get('/api/v1/auth/me', async (c) => {
+  try {
+    const cookieHeader = c.req.header('cookie') || '';
+    const match = cookieHeader.match(/os_browser_token=([^;]+)/);
+    if (!match) return c.json({ authenticated: false }, 200);
+
+    const token = match[1];
+    const session = await c.env.SESSIONS.get(`govchat-session:${token}`, 'json') as any;
+    if (!session) return c.json({ authenticated: false }, 200);
+
+    return c.json({
+      authenticated: true,
+      userId: session.userId || null,
+      staffId: session.staffId || null,
+      displayName: session.displayName || null,
+      role: session.role || 'user',
+    }, 200);
+  } catch {
+    return c.json({ authenticated: false }, 200);
+  }
+});
+
 export default app;
 
 // Durable Object exports

@@ -34,6 +34,56 @@ let _tabManager: TabManager;
 // the OAuth tab, switching focus back to the opener.
 const oauthTabOrigins = new Map<string, { openerTabId: string; openerHost: string }>();
 
+// ── Auto-login to askozzy.work ──────────────────────────────────────
+// Injects the GovChat session token as a cookie so askozzy.work recognizes the user.
+// Reads encrypted credentials from disk — if none exist, does nothing (no disruption).
+import fs from 'fs';
+import { decryptCredential } from '../services/credential-encryption';
+
+const GOVCHAT_CRED_FILE = path.join(app.getPath('userData'), '.govchat-credentials');
+
+function injectAskOzzySession(session: Electron.Session, url: string): void {
+  try {
+    if (!fs.existsSync(GOVCHAT_CRED_FILE)) return;
+    const encrypted = fs.readFileSync(GOVCHAT_CRED_FILE, 'utf8');
+    if (!encrypted) return;
+    const creds = JSON.parse(decryptCredential(encrypted));
+    if (!creds?.accessToken) return;
+
+    const domain = new URL(url).hostname;
+    // Set httpOnly cookie — accessible to the server but not page JS (secure)
+    session.cookies.set({
+      url: `https://${domain}`,
+      name: 'os_browser_token',
+      value: creds.accessToken,
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      expirationDate: Math.floor(Date.now() / 1000) + 86400 * 7, // 7 days
+    }).catch(() => {});
+
+    // Also set user info as a non-httpOnly cookie so the landing page JS can read it
+    const userInfo = JSON.stringify({
+      userId: creds.userId || '',
+      staffId: creds.staffId || '',
+      displayName: creds.displayName || '',
+    });
+    session.cookies.set({
+      url: `https://${domain}`,
+      name: 'os_browser_user',
+      value: encodeURIComponent(userInfo),
+      httpOnly: false,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      expirationDate: Math.floor(Date.now() / 1000) + 86400 * 7,
+    }).catch(() => {});
+  } catch {
+    // Silent — no credentials = no auto-login, which is fine
+  }
+}
+
 export function registerTabHandlers(mainWindow: BrowserWindow): void {
   // ── Create TabManager ────────────────────────────────────────────────
   // Debounce state broadcasts to prevent flooding the renderer during bulk operations
@@ -646,6 +696,16 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     }
     // Note: Cross-domain navigation is allowed — this is a web browser.
     // Ad redirect hijacking is already blocked by the isAdPopupUrl check above.
+
+    // ── Auto-login to askozzy.work ─────────────────────────────────────
+    // If navigating to askozzy.work and user has GovChat credentials,
+    // inject the session token as a cookie BEFORE the page loads.
+    try {
+      const host = new URL(url).hostname;
+      if (host === 'askozzy.work' || host.endsWith('.askozzy.work') || host === 'osbrowser.askozzy.work') {
+        injectAskOzzySession(wc.session, url);
+      }
+    } catch {}
   });
 
   // Handle target="_blank" links, window.open(), and middle-click
