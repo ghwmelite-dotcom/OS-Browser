@@ -450,6 +450,7 @@ export function runMigrations(): void {
   ensureTable('adblock_whitelist');
   ensureTable('tab_groups');
   ensureTable('session_data');
+  ensureTable('memory_saver_excludes');
 
   // Ensure default user profile
   const profile = ensureTable('user_profile');

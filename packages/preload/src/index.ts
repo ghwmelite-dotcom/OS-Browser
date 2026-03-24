@@ -117,6 +117,24 @@ contextBridge.exposeInMainWorld('osBrowser', {
     },
   },
 
+  memorySaver: {
+    stats: () => ipcRenderer.invoke('memory-saver:stats'),
+    tabInfo: (tabId: string) => ipcRenderer.invoke('memory-saver:tab-info', tabId),
+    excludeAdd: (domain: string) => ipcRenderer.invoke('memory-saver:exclude-add', domain),
+    excludeRemove: (domain: string) => ipcRenderer.invoke('memory-saver:exclude-remove', domain),
+    excludeList: () => ipcRenderer.invoke('memory-saver:exclude-list'),
+    onTabSuspended: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('tab:suspended', listener);
+      return () => ipcRenderer.removeListener('tab:suspended', listener);
+    },
+    onTabRestored: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('tab:restored', listener);
+      return () => ipcRenderer.removeListener('tab:restored', listener);
+    },
+  },
+
   groups: {
     create: (tabIds: string[], name?: string) => ipcRenderer.invoke(IPC.GROUP_CREATE, tabIds, name),
     addTab: (tabId: string, groupId: string) => ipcRenderer.invoke(IPC.GROUP_ADD_TAB, tabId, groupId),

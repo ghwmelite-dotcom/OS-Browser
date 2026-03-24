@@ -3,7 +3,11 @@ import { IPC } from '../../../shared/dist';
 import { getDatabase } from '../db/database';
 import path from 'path';
 // import { cachePage } from '../services/page-cache'; // Disabled: automatic page caching removed (I5 security fix)
-import { isTabSuspended, markTabRestored } from '../services/tab-suspension';
+import {
+  isTabSuspended, markTabRestored, stopMemorySaver,
+  getTabSuspendInfo, getTotalMemorySaved, getSuspendedTabCount,
+  addExcludedDomain, removeExcludedDomain, getExcludedDomains,
+} from '../services/tab-suspension';
 import { getAdBlockService } from '../services/adblock-engine';
 import { isGovCaptureDomain, captureCurrentPage } from '../services/interaction-vault';
 import { TabManager } from '../tabs/TabManager';
@@ -55,7 +59,18 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     sessionManager.save(tabManager);
     sessionManager.markCleanExit();
     sessionManager.stopAutoSave();
+    stopMemorySaver();
   });
+
+  // ── Memory Saver IPC ──────────────────────────────────────────────
+  ipcMain.handle('memory-saver:stats', () => ({
+    totalSaved: getTotalMemorySaved(),
+    suspendedCount: getSuspendedTabCount(),
+  }));
+  ipcMain.handle('memory-saver:tab-info', (_e, tabId: string) => getTabSuspendInfo(tabId));
+  ipcMain.handle('memory-saver:exclude-add', (_e, domain: string) => addExcludedDomain(domain));
+  ipcMain.handle('memory-saver:exclude-remove', (_e, domain: string) => removeExcludedDomain(domain));
+  ipcMain.handle('memory-saver:exclude-list', () => getExcludedDomains());
 
   ipcMain.handle(IPC.TAB_CREATE, (_event, url?: string) => {
     return tabManager.createTab(url);
@@ -66,10 +81,25 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
   });
 
   ipcMain.handle(IPC.TAB_SWITCH, (_event, id: string) => {
+    // Check if tab was suspended BEFORE activating (activation recreates the view)
+    const wasSuspended = isTabSuspended(id);
+    let suspendInfo: any = null;
+    if (wasSuspended) {
+      try {
+        const { getTabSuspendInfo } = require('../services/tab-suspension');
+        suspendInfo = getTabSuspendInfo(id);
+      } catch {}
+    }
+
     const result = tabManager.activateTab(id);
-    // Handle suspended tab restoration
-    if (isTabSuspended(id)) {
+
+    // Notify renderer that a suspended tab was restored (triggers Memory Saver banner)
+    if (wasSuspended) {
       markTabRestored(id);
+      mainWindow.webContents.send('tab:restored', {
+        id,
+        memorySavedBytes: suspendInfo?.memorySavedBytes || 0,
+      });
     }
     return result;
   });
