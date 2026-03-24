@@ -12,7 +12,7 @@ export function useKeyboardShortcuts(callbacks: {
   onToggleSplitScreen?: () => void;
   onBookmarkPage?: () => void;
 }) {
-  const { createTab, closeTab, activeTabId, switchTab, tabs, reopenLastClosed } = useTabsStore();
+  const { createTab, closeTab, activeTabId, switchTab, tabs, reopenLastClosed, moveTabLeft, moveTabRight } = useTabsStore();
   const { reload, stop, isLoading, currentUrl } = useNavigationStore();
   const { toggleSidebar, openPanel, closePanel, activePanel } = useSidebarStore();
 
@@ -41,11 +41,36 @@ export function useKeyboardShortcuts(callbacks: {
         const prev = tabs[(idx - 1 + tabs.length) % tabs.length];
         if (prev) switchTab(prev.id);
       }
-      // Ctrl+1-9 — Switch to tab N
-      else if (ctrl && key >= '1' && key <= '9') {
+      // Ctrl+9 — Always jump to LAST tab (Chrome behavior)
+      else if (ctrl && key === '9' && !shift) {
+        e.preventDefault();
+        if (tabs.length > 0) switchTab(tabs[tabs.length - 1].id);
+      }
+      // Ctrl+1-8 — Switch to tab N
+      else if (ctrl && key >= '1' && key <= '8' && !shift) {
         e.preventDefault();
         const idx = parseInt(key) - 1;
         if (tabs[idx]) switchTab(tabs[idx].id);
+      }
+      // Ctrl+Shift+PageUp — Move tab left
+      else if (ctrl && shift && key === 'pageup') {
+        e.preventDefault();
+        if (activeTabId) moveTabLeft(activeTabId);
+      }
+      // Ctrl+Shift+PageDown — Move tab right
+      else if (ctrl && shift && key === 'pagedown') {
+        e.preventDefault();
+        if (activeTabId) moveTabRight(activeTabId);
+      }
+      // Ctrl+N — New window
+      else if (ctrl && key === 'n' && !shift) {
+        e.preventDefault();
+        window.osBrowser?.newWindow?.();
+      }
+      // Ctrl+Shift+W — Close window
+      else if (ctrl && shift && key === 'w') {
+        e.preventDefault();
+        window.osBrowser?.close?.();
       }
       // Ctrl+Shift+T — Reopen closed tab
       else if (ctrl && shift && key === 't') { e.preventDefault(); reopenLastClosed(); }
@@ -118,5 +143,5 @@ export function useKeyboardShortcuts(callbacks: {
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [activeTabId, tabs, isLoading, activePanel, currentUrl, createTab, closeTab, switchTab, reopenLastClosed, reload, stop, toggleSidebar, openPanel, closePanel, callbacks.onToggleHistory, callbacks.onToggleBookmarks, callbacks.onToggleSettings, callbacks.onToggleCommandPalette, callbacks.onToggleSplitScreen, callbacks.onBookmarkPage]);
+  }, [activeTabId, tabs, isLoading, activePanel, currentUrl, createTab, closeTab, switchTab, reopenLastClosed, moveTabLeft, moveTabRight, reload, stop, toggleSidebar, openPanel, closePanel, callbacks.onToggleHistory, callbacks.onToggleBookmarks, callbacks.onToggleSettings, callbacks.onToggleCommandPalette, callbacks.onToggleSplitScreen, callbacks.onBookmarkPage]);
 }

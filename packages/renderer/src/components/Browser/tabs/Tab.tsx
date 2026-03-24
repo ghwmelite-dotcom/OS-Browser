@@ -1,22 +1,30 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { X } from 'lucide-react';
+import { X, Volume2, VolumeX } from 'lucide-react';
+import { useTabsStore } from '@/store/tabs';
+import { useTabDrag } from '@/hooks/useTabDrag';
+import { TabPreview } from './TabPreview';
 
 interface TabProps {
   id: string;
   title: string;
-  favicon?: string | null;
-  url?: string;
+  favicon: string | null;
+  url: string;
   isActive: boolean;
   isPinned: boolean;
   isLoading?: boolean;
-  index?: number;
-  tabCount?: number;
-  containerWidth?: number;
+  isAudioPlaying?: boolean;
+  isMuted?: boolean;
+  isSelected?: boolean;
+  groupColor?: string | null;
+  index: number;
+  tabCount: number;
+  containerWidth: number;
   onSwitch: () => void;
   onClose: () => void;
+  onContextMenu: (e: React.MouseEvent) => void;
 }
 
-// Edge-style tab color palette — each tab gets a unique tint
+// Edge-style tab color palette -- each tab gets a unique tint
 const TAB_COLORS = [
   { bg: 'rgba(212,160,23,0.10)', border: 'rgba(212,160,23,0.35)', accent: '#D4A017' },   // Gold
   { bg: 'rgba(0,107,63,0.10)', border: 'rgba(0,107,63,0.35)', accent: '#006B3F' },       // Green
@@ -32,10 +40,10 @@ function getTabColor(index: number) {
   return TAB_COLORS[index % TAB_COLORS.length];
 }
 
-// Chrome-style tab width: fills available space, shrinks as tabs increase, min 60px
+// Chrome-style tab width: fills available space, shrinks as tabs increase
 const MIN_TAB_WIDTH = 60;
 const MAX_TAB_WIDTH = 280;
-const PINNED_TAB_WIDTH = 52;
+const PINNED_TAB_WIDTH = 34;
 const NEW_TAB_BTN_WIDTH = 36;
 
 function calcTabWidth(tabCount: number, pinnedCount: number, containerWidth: number): number {
@@ -46,14 +54,41 @@ function calcTabWidth(tabCount: number, pinnedCount: number, containerWidth: num
   return Math.max(MIN_TAB_WIDTH, Math.min(MAX_TAB_WIDTH, width));
 }
 
-export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, index = 0, tabCount = 1, containerWidth = 800, onSwitch, onClose }: TabProps) {
+export { TAB_COLORS, getTabColor, calcTabWidth, MIN_TAB_WIDTH, MAX_TAB_WIDTH, PINNED_TAB_WIDTH, NEW_TAB_BTN_WIDTH };
+
+export function Tab({
+  id,
+  title,
+  favicon,
+  url,
+  isActive,
+  isPinned,
+  isLoading,
+  isAudioPlaying,
+  isMuted,
+  isSelected,
+  groupColor,
+  index,
+  tabCount,
+  containerWidth,
+  onSwitch,
+  onClose,
+  onContextMenu,
+}: TabProps) {
+  const muteTab = useTabsStore((s) => s.muteTab);
+  const unmuteTab = useTabsStore((s) => s.unmuteTab);
+  const { attributes: dragAttributes, listeners: dragListeners, setNodeRef: setDragRef, style: dragStyle, isDragging } = useTabDrag(id);
+
   const [isHovered, setIsHovered] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [previewPos, setPreviewPos] = useState<{ top: number; left: number } | null>(null);
   const tabRef = useRef<HTMLDivElement>(null);
   const color = useMemo(() => getTabColor(index), [index]);
-  const dynamicWidth = useMemo(() => isPinned ? PINNED_TAB_WIDTH : calcTabWidth(tabCount, 0, containerWidth), [tabCount, containerWidth, isPinned]);
+  const dynamicWidth = useMemo(
+    () => (isPinned ? PINNED_TAB_WIDTH : calcTabWidth(tabCount, 0, containerWidth)),
+    [tabCount, containerWidth, isPinned],
+  );
   const isCompact = dynamicWidth < 100;
 
   const handleClose = (e: React.MouseEvent) => {
@@ -61,6 +96,15 @@ export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, in
     if (isClosing) return;
     setIsClosing(true);
     setTimeout(() => onClose(), 150);
+  };
+
+  const handleMuteToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isMuted) {
+      unmuteTab(id);
+    } else {
+      muteTab(id);
+    }
   };
 
   // Smooth mount animation
@@ -74,12 +118,23 @@ export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, in
       el.style.width = `${dynamicWidth}px`;
       el.style.opacity = '1';
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Show audio indicator between title and close button
+  const showAudioIndicator = !isPinned && !isCompact && (isAudioPlaying || isMuted);
+
+  // Merge refs: tabRef for internal logic + setDragRef for @dnd-kit sortable
+  const mergedRef = (node: HTMLDivElement | null) => {
+    (tabRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+    setDragRef(node);
+  };
 
   return (
     <div
-      ref={tabRef}
+      ref={mergedRef}
       onClick={onSwitch}
+      onContextMenu={onContextMenu}
       onMouseEnter={() => {
         setIsHovered(true);
         const timer = setTimeout(() => {
@@ -88,7 +143,7 @@ export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, in
             setPreviewPos({ top: rect.bottom + 4, left: rect.left + rect.width / 2 });
           }
           setShowPreview(true);
-        }, 600);
+        }, 400);
         (tabRef.current as any).__hoverTimer = timer;
       }}
       onMouseLeave={() => {
@@ -97,13 +152,18 @@ export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, in
         setPreviewPos(null);
         clearTimeout((tabRef.current as any)?.__hoverTimer);
       }}
+      {...dragAttributes}
+      {...dragListeners}
       className={`
         group relative flex items-center h-[34px] cursor-pointer overflow-hidden
         transition-all duration-200 ease-out rounded-t-lg mx-[1px]
         ${isPinned ? 'justify-center px-1' : isCompact ? 'px-1.5 gap-1' : 'px-3 gap-2.5'}
         ${isClosing ? 'tab-closing' : ''}
+        ${isSelected ? 'ring-1 ring-white/20 ring-inset' : ''}
+        ${isDragging ? 'border-dashed border border-white/20' : ''}
       `}
       style={{
+        ...dragStyle,
         width: `${dynamicWidth}px`,
         minWidth: isPinned ? `${PINNED_TAB_WIDTH}px` : `${MIN_TAB_WIDTH}px`,
         maxWidth: `${MAX_TAB_WIDTH}px`,
@@ -111,10 +171,12 @@ export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, in
         borderTop: isActive ? `2px solid ${color.accent}` : '2px solid transparent',
         borderLeft: isActive ? `1px solid ${color.border}` : '1px solid transparent',
         borderRight: isActive ? `1px solid ${color.border}` : '1px solid transparent',
+        borderBottom: groupColor ? `2px solid ${groupColor}` : '2px solid transparent',
       }}
       role="tab"
       aria-selected={isActive}
       title={title}
+      data-tab-id={id}
     >
       {/* Separator between inactive tabs */}
       {!isActive && !isHovered && (
@@ -140,7 +202,7 @@ export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, in
         )}
       </div>
 
-      {/* Title — hidden when tab is too compact */}
+      {/* Title -- hidden when tab is too compact */}
       {!isPinned && !isCompact && (
         <div className="flex-1 min-w-0 relative overflow-hidden">
           <span
@@ -165,7 +227,23 @@ export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, in
         </div>
       )}
 
-      {/* Close button — always visible normally, hover-only when compact */}
+      {/* Audio indicator */}
+      {showAudioIndicator && (
+        <button
+          onClick={handleMuteToggle}
+          className="w-[18px] h-[18px] flex items-center justify-center rounded shrink-0 hover:bg-white/10 transition-colors duration-100"
+          aria-label={isMuted ? `Unmute ${title}` : `Mute ${title}`}
+          title={isMuted ? 'Unmute tab' : 'Mute tab'}
+        >
+          {isMuted ? (
+            <VolumeX size={14} className="text-text-muted" />
+          ) : (
+            <Volume2 size={14} className="text-text-secondary" />
+          )}
+        </button>
+      )}
+
+      {/* Close button -- always visible normally, hover-only when compact */}
       {!isPinned && (
         <button
           onClick={handleClose}
@@ -186,34 +264,12 @@ export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, in
         </button>
       )}
 
-      {/* Tab preview tooltip — fixed position, centered below tab */}
+      {/* Tab preview tooltip -- fixed position, centered below tab */}
       {showPreview && !isPinned && previewPos && (
-        <div
-          className="fixed z-[9999] pointer-events-none"
-          style={{
-            top: previewPos.top,
-            left: previewPos.left,
-            transform: 'translateX(-50%)',
-            maxWidth: '300px',
-            minWidth: '180px',
-          }}
-        >
-          <div
-            className="rounded-lg border px-3 py-2.5 text-left"
-            style={{
-              background: 'var(--color-surface-1)',
-              borderColor: 'var(--color-border-1)',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
-            }}
-          >
-            <p className="text-[12px] font-medium text-text-primary leading-snug" style={{ wordBreak: 'break-word' }}>{title}</p>
-            {url && url !== 'os-browser://newtab' && (
-              <p className="text-[11px] text-text-muted mt-1 truncate">
-                {url.length > 60 ? url.slice(0, 60) + '...' : url}
-              </p>
-            )}
-          </div>
-        </div>
+        <TabPreview
+          tab={{ title, url, favicon_path: favicon }}
+          position={previewPos}
+        />
       )}
     </div>
   );

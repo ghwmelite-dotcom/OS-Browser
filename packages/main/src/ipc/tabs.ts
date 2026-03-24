@@ -1,12 +1,14 @@
 import { app, ipcMain, BrowserWindow, WebContentsView, nativeImage, net, Menu, MenuItem, clipboard, shell, dialog } from 'electron';
 import { IPC } from '../../../shared/dist';
 import { getDatabase } from '../db/database';
-import crypto from 'crypto';
 import path from 'path';
 // import { cachePage } from '../services/page-cache'; // Disabled: automatic page caching removed (I5 security fix)
 import { isTabSuspended, markTabRestored } from '../services/tab-suspension';
 import { getAdBlockService } from '../services/adblock-engine';
 import { isGovCaptureDomain, captureCurrentPage } from '../services/interaction-vault';
+import { TabManager } from '../tabs/TabManager';
+import { TabSessionManager } from '../tabs/TabSessionManager';
+import { getTabView, getAllTabViews, resizeAllViews, hideAllTabViews } from '../tabs/TabWebContents';
 
 function isAllowedUrl(url: string): boolean {
   if (!url) return false;
@@ -19,7 +21,8 @@ function isAllowedUrl(url: string): boolean {
 // Track which tabs have already had PWA detection run (once per page load)
 const pwaDetectedTabs = new Set<string>();
 
-const tabViews = new Map<string, WebContentsView>();
+// Module-level TabManager reference — set in registerTabHandlers, used by setupViewEvents & createTabFromMain
+let _tabManager: TabManager;
 
 // ── OAuth tab tracking ────────────────────────────────────────────────
 // Maps an OAuth tab ID → { openerTabId, openerHost } so we can detect
@@ -28,166 +31,90 @@ const tabViews = new Map<string, WebContentsView>();
 const oauthTabOrigins = new Map<string, { openerTabId: string; openerHost: string }>();
 
 export function registerTabHandlers(mainWindow: BrowserWindow): void {
+  // ── Create TabManager ────────────────────────────────────────────────
+  // Debounce state broadcasts to prevent flooding the renderer during bulk operations
+  let broadcastTimer: NodeJS.Timeout | null = null;
+  const broadcastState = () => {
+    if (broadcastTimer) clearTimeout(broadcastTimer);
+    broadcastTimer = setTimeout(() => {
+      try { mainWindow.webContents.send('tabs:state-updated', tabManager.getState()); } catch {}
+    }, 16); // ~1 frame at 60fps
+  };
+  const tabManager = new TabManager(mainWindow, broadcastState);
+  tabManager.setupViewEventsFn = (view, tabId, win) => setupViewEvents(view, tabId, win);
+  _tabManager = tabManager;
+
+  // ── Session save/restore ──────────────────────────────────────────────
+  const sessionManager = new TabSessionManager();
+  sessionManager.startAutoSave(tabManager);
+
+  ipcMain.handle('session:save', () => sessionManager.save(tabManager));
+  ipcMain.handle('session:restore', () => sessionManager.restore());
+
+  app.on('before-quit', () => {
+    sessionManager.save(tabManager);
+    sessionManager.markCleanExit();
+    sessionManager.stopAutoSave();
+  });
+
   ipcMain.handle(IPC.TAB_CREATE, (_event, url?: string) => {
-    const db = getDatabase();
-    const id = crypto.randomUUID();
-    const tabUrl = url || 'os-browser://newtab';
-    const position = (db.prepare('SELECT MAX(position) as max FROM tabs').get() as any)?.max + 1 || 0;
-
-    // Map internal URLs to meaningful tab titles
-    const INTERNAL_TITLES: Record<string, string> = {
-      'os-browser://newtab': 'New Tab',
-      'os-browser://settings': 'Settings',
-      'os-browser://downloads': 'Downloads',
-      'os-browser://stats': 'Statistics',
-      'os-browser://docs': 'Documents',
-      'os-browser://bookmarks': 'Bookmarks',
-      'os-browser://documents': 'Documents',
-      'os-browser://data': 'Data Dashboard',
-      'os-browser://help': 'Help',
-      'os-browser://gov': 'Gov Hub',
-      'os-browser://offline': 'Offline Library',
-      'os-browser://features': 'Feature Directory',
-      'os-browser://games': 'GovPlay',
-      'os-browser://passwords': 'Passwords',
-    };
-    const title = INTERNAL_TITLES[tabUrl] || (tabUrl.startsWith('os-browser://') ? tabUrl.replace('os-browser://', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'New Tab');
-
-    db.prepare('UPDATE tabs SET is_active = 0 WHERE is_active = 1').run();
-    db.prepare(
-      'INSERT INTO tabs (id, title, url, position, is_active, last_accessed_at) VALUES (?, ?, ?, ?, 1, datetime("now"))'
-    ).run(id, title, tabUrl, position);
-
-    // Only create a WebContentsView for real URLs — not internal os-browser:// pages
-    // Internal pages (newtab, settings, etc.) are rendered by React in the renderer
-    if (!tabUrl.startsWith('os-browser://')) {
-      const view = new WebContentsView();
-      mainWindow.contentView.addChildView(view);
-      resizeViewToContent(view, mainWindow);
-      setupViewEvents(view, id, mainWindow);
-      (view.webContents as any).__markUserNavigation?.();
-      view.webContents.loadURL(tabUrl);
-      tabViews.set(id, view);
-    }
-
-    return { id, title, url: tabUrl, position, is_pinned: false, is_active: true, is_muted: false, favicon_path: null, last_accessed_at: new Date().toISOString() };
+    return tabManager.createTab(url);
   });
 
   ipcMain.handle(IPC.TAB_CLOSE, (_event, id: string) => {
-    const db = getDatabase();
-    db.prepare('DELETE FROM tabs WHERE id = ?').run(id);
-    const view = tabViews.get(id);
-    if (view) {
-      mainWindow.contentView.removeChildView(view);
-      (view.webContents as any).destroy?.();
-      tabViews.delete(id);
-    }
+    return tabManager.closeTab(id);
   });
 
   ipcMain.handle(IPC.TAB_SWITCH, (_event, id: string) => {
-    const db = getDatabase();
-    db.prepare('UPDATE tabs SET is_active = 0').run();
-    db.prepare('UPDATE tabs SET is_active = 1, last_accessed_at = datetime("now") WHERE id = ?').run(id);
-
-    // Hide all views, show target
-    for (const [viewId, view] of tabViews) {
-      view.setVisible(viewId === id);
+    const result = tabManager.activateTab(id);
+    // Handle suspended tab restoration
+    if (isTabSuspended(id)) {
+      markTabRestored(id);
     }
-
-    const tab = db.prepare('SELECT * FROM tabs WHERE id = ?').get(id) as any;
-    // Only create WebContentsView for real URLs — not internal os-browser:// pages
-    if (tab && tab.url && !tab.url.startsWith('os-browser://') && !tabViews.has(id)) {
-      const view = new WebContentsView();
-      mainWindow.contentView.addChildView(view);
-      resizeViewToContent(view, mainWindow);
-      setupViewEvents(view, id, mainWindow);
-      (view.webContents as any).__markUserNavigation?.();
-      view.webContents.loadURL(tab.url);
-      tabViews.set(id, view);
-      if (isTabSuspended(id)) {
-        markTabRestored(id);
-      }
-    }
-
-    // Hide all views when switching to an internal page
-    if (tab && tab.url && tab.url.startsWith('os-browser://')) {
-      for (const view of tabViews.values()) {
-        view.setVisible(false);
-      }
-    }
-
-    return tab;
+    return result;
   });
 
   ipcMain.handle(IPC.TAB_LIST, () => {
-    const db = getDatabase();
-    return db.prepare('SELECT * FROM tabs ORDER BY position').all();
+    return tabManager.getTabs();
   });
 
   ipcMain.handle(IPC.TAB_NAVIGATE, (_event, id: string, url: string) => {
     if (!isAllowedUrl(url)) return;
-
-    const db = getDatabase();
-    db.prepare('UPDATE tabs SET url = ?, last_accessed_at = datetime("now") WHERE id = ?').run(url, id);
-
-    // Don't create WebContentsView for internal pages
-    if (url.startsWith('os-browser://')) return;
-
-    let view = tabViews.get(id);
-    if (!view) {
-      view = new WebContentsView();
-      mainWindow.contentView.addChildView(view);
-      resizeViewToContent(view, mainWindow);
-      setupViewEvents(view, id, mainWindow);
-      tabViews.set(id, view);
-    }
-    view.setVisible(true);
-    // Mark as user-initiated so will-navigate doesn't block cross-domain navigation
-    (view.webContents as any).__markUserNavigation?.();
-    view.webContents.loadURL(url);
+    tabManager.navigate(id, url);
   });
 
   ipcMain.handle(IPC.TAB_GO_BACK, (_event, id: string) => {
-    const view = tabViews.get(id);
+    const view = getTabView(id);
     if (view?.webContents.canGoBack()) view.webContents.goBack();
   });
 
   ipcMain.handle(IPC.TAB_GO_FORWARD, (_event, id: string) => {
-    const view = tabViews.get(id);
+    const view = getTabView(id);
     if (view?.webContents.canGoForward()) view.webContents.goForward();
   });
 
   ipcMain.handle(IPC.TAB_RELOAD, (_event, id: string) => {
-    const view = tabViews.get(id);
+    const view = getTabView(id);
     view?.webContents.reload();
   });
 
   ipcMain.handle(IPC.TAB_STOP, (_event, id: string) => {
-    const view = tabViews.get(id);
+    const view = getTabView(id);
     view?.webContents.stop();
   });
 
   ipcMain.handle(IPC.TAB_UPDATE, (_event, id: string, data: any) => {
-    const db = getDatabase();
-    // Only allow known safe fields
     const allowed = ['title', 'url', 'favicon_path', 'is_pinned', 'is_muted'];
     const fields = Object.keys(data).filter(k => allowed.includes(k));
     if (fields.length === 0) return;
-
-    // Validate field values — reject oversized strings
     for (const field of fields) {
-      const value = data[field];
-      if (typeof value === 'string' && value.length > 2048) return;
+      tabManager.updateTabField(id, field, data[field]);
     }
-
-    const sets = fields.map(f => `\`${f}\` = ?`).join(', ');
-    const values = fields.map(f => data[f]);
-    db.prepare(`UPDATE tabs SET ${sets} WHERE id = ?`).run(...values, id);
   });
 
   // Picture-in-Picture — find first <video> in the active tab and trigger PiP
   ipcMain.handle('tab:pip', async (_event, id: string) => {
-    const view = tabViews.get(id);
+    const view = getTabView(id);
     if (!view) return { success: false, error: 'No view found' };
     try {
       const result = await view.webContents.executeJavaScript(`
@@ -211,7 +138,7 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
   });
 
   ipcMain.handle('tab:print', (_event, id: string) => {
-    const view = tabViews.get(id);
+    const view = getTabView(id);
     if (view) {
       view.webContents.print({}, (success, failureReason) => {
         mainWindow.webContents.send('print:result', { success, failureReason });
@@ -220,7 +147,7 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
   });
 
   ipcMain.handle('tab:print-to-pdf', async (_event, id: string) => {
-    const view = tabViews.get(id);
+    const view = getTabView(id);
     if (!view) return null;
 
     const { filePath } = await dialog.showSaveDialog(mainWindow, {
@@ -241,7 +168,7 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
   // Injects a content script that detects foreign currency prices on the page
   // and shows GHS conversion tooltips on hover.
   ipcMain.handle('exchange:inject-overlay', async (_event, id: string, rates: Record<string, number>) => {
-    const view = tabViews.get(id);
+    const view = getTabView(id);
     if (!view) return { success: false, error: 'No view found' };
 
     try {
@@ -466,7 +393,7 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
 
   // Remove exchange overlay from page
   ipcMain.handle('exchange:remove-overlay', async (_event, id: string) => {
-    const view = tabViews.get(id);
+    const view = getTabView(id);
     if (!view) return { success: false };
 
     try {
@@ -552,7 +479,7 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
 
   // Get readable content from the active tab's page
   ipcMain.handle('tab:get-content', async (_event, id: string) => {
-    const view = tabViews.get(id);
+    const view = getTabView(id);
     if (!view) return null;
     try {
       const result = await view.webContents.executeJavaScript(`
@@ -570,12 +497,29 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
 
   // Resize views when window resizes
   mainWindow.on('resize', () => {
-    for (const view of tabViews.values()) {
-      if ((view as any).getVisible?.() !== false) {
-        resizeViewToContent(view, mainWindow);
-      }
-    }
+    resizeAllViews(mainWindow);
   });
+
+  // ── New TabManager-backed IPC handlers ─────────────────────────────
+  ipcMain.handle(IPC.TAB_REORDER, (_e, id: string, newIndex: number) => tabManager.reorderTab(id, newIndex));
+  ipcMain.handle(IPC.TAB_DUPLICATE, (_e, id: string) => tabManager.duplicateTab(id));
+  ipcMain.handle(IPC.TAB_CLOSE_OTHERS, (_e, id: string) => tabManager.closeOtherTabs(id));
+  ipcMain.handle(IPC.TAB_CLOSE_TO_RIGHT, (_e, id: string) => tabManager.closeTabsToRight(id));
+  ipcMain.handle(IPC.TAB_MOVE_LEFT, (_e, id: string) => tabManager.moveTabLeft(id));
+  ipcMain.handle(IPC.TAB_MOVE_RIGHT, (_e, id: string) => tabManager.moveTabRight(id));
+  ipcMain.handle(IPC.TAB_PIN, (_e, id: string) => tabManager.pinTab(id));
+  ipcMain.handle(IPC.TAB_UNPIN, (_e, id: string) => tabManager.unpinTab(id));
+  ipcMain.handle(IPC.TAB_MUTE, (_e, id: string) => tabManager.muteTab(id));
+  ipcMain.handle(IPC.TAB_UNMUTE, (_e, id: string) => tabManager.unmuteTab(id));
+  ipcMain.handle(IPC.TAB_REOPEN_CLOSED, () => tabManager.reopenClosedTab());
+  ipcMain.handle(IPC.TAB_GET_STATE, () => tabManager.getState());
+  ipcMain.handle(IPC.GROUP_CREATE, (_e, tabIds: string[], name?: string) => tabManager.createGroup(tabIds, name));
+  ipcMain.handle(IPC.GROUP_ADD_TAB, (_e, tabId: string, groupId: string) => tabManager.addTabToGroup(tabId, groupId));
+  ipcMain.handle(IPC.GROUP_REMOVE_TAB, (_e, tabId: string) => tabManager.removeTabFromGroup(tabId));
+  ipcMain.handle(IPC.GROUP_UPDATE, (_e, groupId: string, data: any) => tabManager.updateGroup(groupId, data));
+  ipcMain.handle(IPC.GROUP_COLLAPSE, (_e, groupId: string) => tabManager.collapseGroup(groupId));
+  ipcMain.handle(IPC.GROUP_EXPAND, (_e, groupId: string) => tabManager.expandGroup(groupId));
+  ipcMain.handle(IPC.GROUP_DELETE, (_e, groupId: string, closeTabs: boolean) => tabManager.deleteGroup(groupId));
 }
 
 function resizeViewToContent(view: WebContentsView, win: BrowserWindow): void {
@@ -600,51 +544,26 @@ function resizeViewToContent(view: WebContentsView, win: BrowserWindow): void {
 
 /**
  * Create a new tab from the main process (used by context menu and window.open handler).
- * Creates the tab in the DB + WebContentsView, then notifies the renderer to sync its store.
+ * Delegates to TabManager, then notifies the renderer to sync its store.
  * @param oauthOpener If provided, marks this tab as an OAuth flow so we can auto-close it
  *                    when the auth redirects back to the opener's domain.
  */
 export function createTabFromMain(mainWindow: BrowserWindow, url: string, oauthOpener?: { openerTabId: string; openerHost: string }): void {
   if (!url || (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('view-source:'))) return;
 
-  const db = getDatabase();
-  const id = crypto.randomUUID();
-  const position = (db.prepare('SELECT MAX(position) as max FROM tabs').get() as any)?.max + 1 || 0;
-
-  // Deactivate current tab
-  db.prepare('UPDATE tabs SET is_active = 0 WHERE is_active = 1').run();
-
-  // Insert new tab as active
-  db.prepare(
-    'INSERT INTO tabs (id, title, url, position, is_active, last_accessed_at) VALUES (?, ?, ?, ?, 1, datetime("now"))'
-  ).run(id, 'Loading...', url, position);
-
-  // Hide all existing views
-  for (const v of tabViews.values()) {
-    v.setVisible(false);
-  }
-
-  // Create WebContentsView for the new tab
-  const view = new WebContentsView();
-  mainWindow.contentView.addChildView(view);
-  resizeViewToContent(view, mainWindow);
-  setupViewEvents(view, id, mainWindow);
-  tabViews.set(id, view);
-  (view.webContents as any).__markUserNavigation?.();
-  view.webContents.loadURL(url);
-  view.setVisible(true);
+  const tab = _tabManager.createTab(url);
 
   // If this is an OAuth tab, track it so we can auto-close when auth completes
   if (oauthOpener) {
-    oauthTabOrigins.set(id, oauthOpener);
+    oauthTabOrigins.set(tab.id, oauthOpener);
   }
 
-  // Tell the renderer to reload its tab list so the UI syncs
+  // Tell the renderer to reload its tab list so the UI syncs (legacy backward compat)
   mainWindow.webContents.send('tabs:refresh', {
-    newTabId: id,
+    newTabId: tab.id,
     url,
-    title: 'Loading...',
-    position,
+    title: tab.title,
+    position: tab.position,
   });
 }
 
@@ -921,10 +840,10 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
           setTimeout(() => {
             try {
               // Switch to the opener tab
-              const openerView = tabViews.get(oauthOrigin.openerTabId);
+              const openerView = getTabView(oauthOrigin.openerTabId);
               if (openerView && !openerView.webContents.isDestroyed()) {
                 // Hide all views, show opener
-                for (const v of tabViews.values()) v.setVisible(false);
+                hideAllTabViews();
                 openerView.setVisible(true);
                 db.prepare('UPDATE tabs SET is_active = 0').run();
                 db.prepare('UPDATE tabs SET is_active = 1, last_accessed_at = datetime("now") WHERE id = ?').run(oauthOrigin.openerTabId);
@@ -932,16 +851,8 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
                 openerView.webContents.reload();
                 mainWindow.webContents.send('tabs:refresh', { switchToTabId: oauthOrigin.openerTabId });
               }
-              // Close the OAuth tab
-              const oauthView = tabViews.get(tabId);
-              if (oauthView) {
-                mainWindow.contentView.removeChildView(oauthView);
-                if (!oauthView.webContents.isDestroyed()) {
-                  (oauthView.webContents as any).destroy?.();
-                }
-                tabViews.delete(tabId);
-              }
-              db.prepare('DELETE FROM tabs WHERE id = ?').run(tabId);
+              // Close the OAuth tab via TabManager's destroy helper
+              _tabManager.closeTab(tabId);
               mainWindow.webContents.send('tabs:refresh', { closedTabId: tabId });
             } catch (err) {
               console.error('[OAuth] Auto-close failed:', err);
@@ -1137,6 +1048,15 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
   wc.on('did-stop-loading', () => {
     if (wc.isDestroyed() || mainWindow.isDestroyed()) return;
     mainWindow.webContents.send('tab:loading', { id: tabId, isLoading: false });
+  });
+
+  // ── Audio indicator ───────────────────────────────────────────────
+  wc.on('media-started-playing', () => {
+    _tabManager.setAudioPlaying(tabId, true);
+  });
+
+  wc.on('media-paused', () => {
+    _tabManager.setAudioPlaying(tabId, false);
   });
 
   // Page caching disabled — was caching every page load including potentially sensitive content
@@ -1344,5 +1264,5 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
 }
 
 export function getTabViews(): Map<string, WebContentsView> {
-  return tabViews;
+  return getAllTabViews();
 }
