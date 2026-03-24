@@ -42,49 +42,86 @@ import { decryptCredential } from '../services/credential-encryption';
 
 const GOVCHAT_CRED_FILE = path.join(app.getPath('userData'), '.govchat-credentials');
 
-function injectAskOzzySession(session: Electron.Session, url: string): void {
+// Cache to avoid reading the file on every request
+let _cachedCreds: { accessToken: string; userId: string; staffId: string; displayName: string } | null | undefined;
+let _credsLastChecked = 0;
+
+function getGovChatCreds(): { accessToken: string; userId: string; staffId: string; displayName: string } | null {
+  const now = Date.now();
+  // Re-read from disk at most every 30 seconds
+  if (_cachedCreds !== undefined && now - _credsLastChecked < 30000) return _cachedCreds;
+  _credsLastChecked = now;
   try {
-    if (!fs.existsSync(GOVCHAT_CRED_FILE)) return;
+    if (!fs.existsSync(GOVCHAT_CRED_FILE)) { _cachedCreds = null; return null; }
     const encrypted = fs.readFileSync(GOVCHAT_CRED_FILE, 'utf8');
-    if (!encrypted) return;
+    if (!encrypted) { _cachedCreds = null; return null; }
     const creds = JSON.parse(decryptCredential(encrypted));
-    if (!creds?.accessToken) return;
-
-    const domain = new URL(url).hostname;
-    // Set httpOnly cookie — accessible to the server but not page JS (secure)
-    session.cookies.set({
-      url: `https://${domain}`,
-      name: 'os_browser_token',
-      value: creds.accessToken,
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/',
-      expirationDate: Math.floor(Date.now() / 1000) + 86400 * 7, // 7 days
-    }).catch(() => {});
-
-    // Also set user info as a non-httpOnly cookie so the landing page JS can read it
-    const userInfo = JSON.stringify({
+    if (!creds?.accessToken) { _cachedCreds = null; return null; }
+    _cachedCreds = {
+      accessToken: creds.accessToken,
       userId: creds.userId || '',
       staffId: creds.staffId || '',
       displayName: creds.displayName || '',
-    });
-    session.cookies.set({
-      url: `https://${domain}`,
-      name: 'os_browser_user',
-      value: encodeURIComponent(userInfo),
-      httpOnly: false,
-      secure: true,
-      sameSite: 'lax',
-      path: '/',
-      expirationDate: Math.floor(Date.now() / 1000) + 86400 * 7,
-    }).catch(() => {});
+    };
+    return _cachedCreds;
   } catch {
-    // Silent — no credentials = no auto-login, which is fine
+    _cachedCreds = null;
+    return null;
   }
 }
 
+/** Call once at startup to set cookies for askozzy.work on the default session.
+ *  Uses session.webRequest to ensure cookies are set BEFORE any page loads. */
+function setupAskOzzyAutoLogin(mainWindow: BrowserWindow): void {
+  const ses = mainWindow.webContents.session;
+
+  // Set cookies proactively for askozzy.work domains
+  function setCookiesNow(): void {
+    const creds = getGovChatCreds();
+    if (!creds) return;
+
+    const domains = ['https://askozzy.work', 'https://osbrowser.askozzy.work', 'https://m.osbrowser.askozzy.work'];
+    for (const baseUrl of domains) {
+      ses.cookies.set({
+        url: baseUrl,
+        name: 'os_browser_token',
+        value: creds.accessToken,
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        path: '/',
+        expirationDate: Math.floor(Date.now() / 1000) + 86400 * 7,
+      }).catch(() => {});
+
+      const userInfo = JSON.stringify({
+        userId: creds.userId,
+        staffId: creds.staffId,
+        displayName: creds.displayName,
+      });
+      ses.cookies.set({
+        url: baseUrl,
+        name: 'os_browser_user',
+        value: encodeURIComponent(userInfo),
+        httpOnly: false,
+        secure: true,
+        sameSite: 'lax',
+        path: '/',
+        expirationDate: Math.floor(Date.now() / 1000) + 86400 * 7,
+      }).catch(() => {});
+    }
+  }
+
+  // Set cookies immediately at startup
+  setCookiesNow();
+
+  // Also refresh cookies every 5 minutes (in case user logs into GovChat mid-session)
+  setInterval(setCookiesNow, 5 * 60 * 1000);
+}
+
 export function registerTabHandlers(mainWindow: BrowserWindow): void {
+  // ── Auto-login: set askozzy.work cookies from stored GovChat credentials ──
+  setupAskOzzyAutoLogin(mainWindow);
+
   // ── Create TabManager ────────────────────────────────────────────────
   // Debounce state broadcasts to prevent flooding the renderer during bulk operations
   let broadcastTimer: NodeJS.Timeout | null = null;
@@ -696,16 +733,6 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     }
     // Note: Cross-domain navigation is allowed — this is a web browser.
     // Ad redirect hijacking is already blocked by the isAdPopupUrl check above.
-
-    // ── Auto-login to askozzy.work ─────────────────────────────────────
-    // If navigating to askozzy.work and user has GovChat credentials,
-    // inject the session token as a cookie BEFORE the page loads.
-    try {
-      const host = new URL(url).hostname;
-      if (host === 'askozzy.work' || host.endsWith('.askozzy.work') || host === 'osbrowser.askozzy.work') {
-        injectAskOzzySession(wc.session, url);
-      }
-    } catch {}
   });
 
   // Handle target="_blank" links, window.open(), and middle-click
