@@ -312,9 +312,8 @@ export function KenteStatusBar() {
           flexShrink: 0,
         }}
       >
-        {/* Notification Bell */}
-        <NotificationBell />
-        {right.length > 0 && <Divider />}
+        {/* Notification Bell moved to TitleBar */}
+        {right.length > 0 && false && <Divider />}
 
         {right.map((f, i) => {
           const StatusComp = f.surfaces.statusBar!.component;

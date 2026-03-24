@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sun, Moon, Minus, Square, X } from 'lucide-react';
+import { Sun, Moon, Minus, Square, X, Bell, Trash2 } from 'lucide-react';
 import { useSettingsStore } from '@/store/settings';
+import { useNotificationStore, type AppNotification } from '@/store/notifications';
+import { useTabsStore } from '@/store/tabs';
 
 declare global {
   interface Window {
@@ -94,7 +96,10 @@ export function TitleBar() {
         className="flex items-center h-full"
         style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
       >
-        {/* Theme toggle — more prominent */}
+        {/* Notification bell + dropdown */}
+        <TitleBarNotifications />
+
+        {/* Theme toggle */}
         <button
           onClick={toggleTheme}
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-full hover:bg-surface-2 transition-all duration-150 mr-1"
@@ -143,6 +148,242 @@ export function TitleBar() {
         </button>
       </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Notification Bell + Dropdown (TitleBar) ─────────────────────── */
+
+function formatRelativeTime(timestamp: number): string {
+  const diff = Math.max(0, Date.now() - timestamp);
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 5) return 'just now';
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function defaultIcon(type: string): string {
+  switch (type) {
+    case 'success': return '\u2705';
+    case 'info': return '\u2139\uFE0F';
+    case 'warning': return '\u26A0\uFE0F';
+    case 'error': return '\u274C';
+    case 'chat': return '\uD83D\uDCAC';
+    case 'call': return '\uD83D\uDCDE';
+    default: return '\uD83D\uDD14';
+  }
+}
+
+function TitleBarNotifications() {
+  const notifications = useNotificationStore(s => s.notifications);
+  const unreadCount = useNotificationStore(s => s.notifications.filter(n => !n.read).length);
+  const markAsRead = useNotificationStore(s => s.markAsRead);
+  const clearAll = useNotificationStore(s => s.clearAll);
+
+  const [open, setOpen] = useState(false);
+  const bellRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        panelRef.current && !panelRef.current.contains(e.target as Node) &&
+        bellRef.current && !bellRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open]);
+
+  const handleNotificationClick = (n: AppNotification) => {
+    markAsRead(n.id);
+    if (n.actionRoute) {
+      if (n.actionRoute === 'govchat') {
+        window.dispatchEvent(new CustomEvent('os-browser:messaging'));
+      } else if (n.actionRoute.startsWith('os-browser://') || n.actionRoute.startsWith('http')) {
+        useTabsStore.getState().createTab(n.actionRoute);
+      }
+    }
+    setOpen(false);
+  };
+
+  // Calculate dropdown position from bell
+  const getDropdownStyle = (): React.CSSProperties => {
+    if (!bellRef.current) return {};
+    const rect = bellRef.current.getBoundingClientRect();
+    return {
+      position: 'fixed',
+      top: rect.bottom + 6,
+      right: Math.max(8, window.innerWidth - rect.right - 120),
+      width: 360,
+      maxHeight: 'min(460px, calc(100vh - 120px))',
+    };
+  };
+
+  return (
+    <div className="relative flex items-center mr-1">
+      {/* Bell button */}
+      <button
+        ref={bellRef}
+        onClick={() => setOpen(prev => !prev)}
+        className="relative flex items-center justify-center w-8 h-8 rounded-full hover:bg-surface-2 transition-all duration-150"
+        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+        title="Notifications"
+      >
+        <Bell size={14} className="text-text-secondary" />
+        {unreadCount > 0 && (
+          <span
+            className="absolute flex items-center justify-center"
+            style={{
+              top: 2, right: 2,
+              minWidth: 15, height: 15, borderRadius: 8,
+              background: '#CE1126', color: '#fff',
+              fontSize: 9, fontWeight: 700,
+              padding: '0 3px', lineHeight: 1,
+            }}
+          >
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {/* Dropdown panel — opens DOWNWARD from the bell */}
+      {open && (
+        <div
+          ref={panelRef}
+          style={{
+            ...getDropdownStyle(),
+            background: 'var(--color-surface-1)',
+            border: '1px solid var(--color-border-2)',
+            borderRadius: 14,
+            boxShadow: '0 12px 40px rgba(0,0,0,.3), 0 4px 12px rgba(0,0,0,.15)',
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            animation: 'notifDropIn 150ms ease-out',
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '14px 16px 12px',
+              borderBottom: '1px solid var(--color-border-2)',
+            }}
+          >
+            <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-text-primary)' }}>
+              Notifications{unreadCount > 0 ? ` (${unreadCount})` : ''}
+            </span>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {notifications.length > 0 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); clearAll(); }}
+                  className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-surface-2 transition-colors"
+                  style={{ fontSize: 11, color: 'var(--color-text-muted)' }}
+                  title="Clear all notifications"
+                >
+                  <Trash2 size={11} />
+                  Clear
+                </button>
+              )}
+              <button
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-center w-6 h-6 rounded-md hover:bg-surface-2 transition-colors"
+                title="Close"
+              >
+                <X size={13} className="text-text-muted" />
+              </button>
+            </div>
+          </div>
+
+          {/* List */}
+          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+            {notifications.length === 0 ? (
+              <div style={{
+                padding: '40px 16px', textAlign: 'center',
+                color: 'var(--color-text-muted)', fontSize: 13,
+              }}>
+                <Bell size={28} style={{ margin: '0 auto 10px', opacity: 0.3 }} />
+                <p>No notifications</p>
+              </div>
+            ) : (
+              notifications.map((n) => (
+                <button
+                  key={n.id}
+                  onClick={() => handleNotificationClick(n)}
+                  className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-surface-2 transition-colors duration-100"
+                  style={{ borderBottom: '1px solid var(--color-border-1)' }}
+                >
+                  {/* Icon */}
+                  <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>
+                    {n.icon || defaultIcon(n.type)}
+                  </span>
+
+                  {/* Content */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontWeight: n.read ? 400 : 600,
+                      color: 'var(--color-text-primary)',
+                      fontSize: 12.5, lineHeight: 1.35,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {n.title}
+                    </div>
+                    <div style={{
+                      color: 'var(--color-text-secondary)',
+                      fontSize: 11.5, lineHeight: 1.35, marginTop: 2,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {n.message}
+                    </div>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 5,
+                      marginTop: 4, fontSize: 10, color: 'var(--color-text-muted)',
+                    }}>
+                      {n.source && <span>{n.source}</span>}
+                      {n.source && <span style={{ opacity: 0.4 }}>&middot;</span>}
+                      <span>{formatRelativeTime(n.timestamp)}</span>
+                    </div>
+                  </div>
+
+                  {/* Unread dot */}
+                  {!n.read && (
+                    <span style={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: '#3B82F6', flexShrink: 0, marginTop: 6,
+                    }} />
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes notifDropIn {
+          from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
     </div>
   );
 }
