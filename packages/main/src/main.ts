@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, MenuItem, clipboard, screen, dialog, Notification, nativeImage, ipcMain } from 'electron';
+import { app, BrowserWindow, Menu, MenuItem, clipboard, screen, dialog, Notification, nativeImage, ipcMain, desktopCapturer, session } from 'electron';
 import path from 'path';
 import { initDatabase, getDatabase, closeDatabase, runMigrations } from './db/database';
 import { seedDatabase } from './db/seed';
@@ -8,10 +8,64 @@ import { stopConnectivityMonitor } from './net/connectivity';
 import { stopTabSuspension } from './services/tab-suspension';
 import { AdBlockService, setAdBlockService } from './services/adblock-engine';
 import { updateTrayTooltip } from './services/tray';
+import { initProfileManager, getActiveProfileId, getProfileDataDir } from './services/profile-manager';
+import { registerProfileHandlers } from './ipc/profiles';
 
 let mainWindow: BrowserWindow | null = null;
 const adBlockService = new AdBlockService();
 setAdBlockService(adBlockService);
+
+// Track URL passed via protocol (e.g. user clicks a link when OS Browser is default)
+let pendingProtocolUrl: string | null = null;
+
+// Single instance lock — if a second instance is opened with a URL, forward it to the first
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (_event, argv) => {
+    // On Windows, the URL is the last argument
+    const url = argv.find(a => a.startsWith('http://') || a.startsWith('https://'));
+    if (url && mainWindow) {
+      // createTabFromMain creates the tab in DB + WebContentsView and sends tabs:refresh
+      const { createTabFromMain } = require('./ipc/tabs');
+      if (typeof createTabFromMain === 'function') {
+        createTabFromMain(mainWindow, url);
+      }
+    }
+    // Focus the existing window
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[App] Unhandled promise rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[App] Uncaught exception:', err);
+});
+
+// On Windows, protocol URLs come as command line arguments
+if (process.platform === 'win32') {
+  const url = process.argv.find(a => a.startsWith('http://') || a.startsWith('https://'));
+  if (url) pendingProtocolUrl = url;
+}
+
+// On macOS, protocol URLs come via open-url event
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  if (mainWindow) {
+    const { createTabFromMain } = require('./ipc/tabs');
+    if (typeof createTabFromMain === 'function') {
+      createTabFromMain(mainWindow, url);
+    }
+  } else {
+    pendingProtocolUrl = url;
+  }
+});
 
 function getWindowState() {
   const db = getDatabase();
@@ -40,21 +94,33 @@ function createWindow() {
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width: screenW, height: screenH } = primaryDisplay.workAreaSize;
 
-  // Smart default sizing based on screen resolution:
-  // - Use 85% of screen width/height for a balanced initial window
-  // - Minimum 1024x600 for usability
-  // - Cap at screen size minus some margin
-  const defaultWidth = Math.max(1024, Math.min(Math.round(screenW * 0.85), screenW - 80));
-  const defaultHeight = Math.max(600, Math.min(Math.round(screenH * 0.85), screenH - 60));
-  // Center on screen if no saved position
+  // Check if onboarding is still pending — if so, use Chrome-style centered window
+  let isFirstLaunch = true;
+  try {
+    const db = getDatabase();
+    const profile = db.prepare("SELECT onboarding_completed FROM user_profile WHERE id = 1").get() as any;
+    isFirstLaunch = !profile || !profile.onboarding_completed;
+  } catch {
+    // Table/column may not exist yet on very first run — treat as first launch
+  }
+
+  // Chrome-style default: 1342×901, clamped to screen if smaller
+  const defaultWidth = Math.min(1342, screenW - 80);
+  const defaultHeight = Math.min(901, screenH - 60);
   const defaultX = Math.round((screenW - defaultWidth) / 2);
   const defaultY = Math.round((screenH - defaultHeight) / 2);
 
+  // On first launch, always use the centered defaults regardless of saved state
+  const useWidth = isFirstLaunch ? defaultWidth : (state?.width ?? defaultWidth);
+  const useHeight = isFirstLaunch ? defaultHeight : (state?.height ?? defaultHeight);
+  const useX = isFirstLaunch ? defaultX : (state?.x ?? defaultX);
+  const useY = isFirstLaunch ? defaultY : (state?.y ?? defaultY);
+
   mainWindow = new BrowserWindow({
-    x: state?.x ?? defaultX,
-    y: state?.y ?? defaultY,
-    width: state?.width ?? defaultWidth,
-    height: state?.height ?? defaultHeight,
+    x: useX,
+    y: useY,
+    width: useWidth,
+    height: useHeight,
     minWidth: 800,
     minHeight: 500,
     frame: false,
@@ -69,7 +135,8 @@ function createWindow() {
     },
   });
 
-  if (state?.is_maximized) {
+  // Only restore maximized state after onboarding is done
+  if (!isFirstLaunch && state?.is_maximized) {
     mainWindow.maximize();
   }
 
@@ -190,7 +257,16 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
-  await initDatabase();
+  // Initialize profile system (handles migration of existing data)
+  initProfileManager();
+
+  // Register profile IPC handlers before window creation
+  registerProfileHandlers();
+
+  // Initialize database scoped to the active profile's directory
+  const activeId = getActiveProfileId();
+  const profileDir = activeId ? getProfileDataDir(activeId) : undefined;
+  await initDatabase(profileDir);
   runMigrations();
   const db = getDatabase();
   seedDatabase(db);
@@ -203,6 +279,133 @@ app.whenReady().then(async () => {
   }
 
   createWindow();
+
+  // If the app was opened via a protocol URL, load it once the window is ready
+  if (pendingProtocolUrl && mainWindow) {
+    const urlToLoad = pendingProtocolUrl;
+    pendingProtocolUrl = null;
+    mainWindow.webContents.once('did-finish-load', () => {
+      const { createTabFromMain } = require('./ipc/tabs');
+      if (typeof createTabFromMain === 'function' && mainWindow) {
+        createTabFromMain(mainWindow, urlToLoad);
+      }
+    });
+  }
+
+  // ── Referrer Policy Enforcement ──────────────────────────────────────
+  // Strip full referrer for cross-origin requests, keep origin-only
+  try {
+    const OAUTH_REFERRER_EXEMPT = [
+      'accounts.google.com', 'login.microsoftonline.com', 'login.live.com',
+      'appleid.apple.com', 'github.com', 'auth0.com', 'facebook.com',
+      'api.twitter.com', 'discord.com', 'slack.com',
+    ];
+    session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+      const headers = { ...details.requestHeaders };
+      const refHeader = headers['Referer'] || headers['referer'];
+      if (refHeader) {
+        try {
+          const ref = new URL(refHeader);
+          const req = new URL(details.url);
+          if (ref.hostname !== req.hostname) {
+            // Don't strip referrer for OAuth flows — they need it for CSRF validation
+            const isOAuth = OAUTH_REFERRER_EXEMPT.some(h => req.hostname === h || req.hostname.endsWith('.' + h));
+            if (!isOAuth) {
+              headers['Referer'] = ref.origin + '/';
+              if (headers['referer']) headers['referer'] = ref.origin + '/';
+            }
+          }
+        } catch { /* URL parsing failed — leave as-is */ }
+      }
+      callback({ requestHeaders: headers });
+    });
+  } catch (err) {
+    console.error('[Privacy] Referrer policy setup failed:', err);
+  }
+
+  // ── Cross-Origin-Opener-Policy relaxation for OAuth popups ──────────
+  // COOP headers block popup ↔ opener communication (window.closed, postMessage)
+  // which breaks Google Sign-In, Microsoft login, and other OAuth flows.
+  // Strip COOP (and COEP which can also block cross-origin auth) from responses.
+  try {
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      const headers = details.responseHeaders || {};
+      // Remove all case variations of COOP/COEP headers
+      // Electron may return headers in various casings
+      const keysToRemove = Object.keys(headers).filter(k => {
+        const lower = k.toLowerCase();
+        return lower === 'cross-origin-opener-policy' ||
+               lower === 'cross-origin-opener-policy-report-only' ||
+               lower === 'cross-origin-embedder-policy' ||
+               lower === 'cross-origin-embedder-policy-report-only';
+      });
+      for (const key of keysToRemove) {
+        delete headers[key];
+      }
+      callback({ responseHeaders: headers });
+    });
+  } catch (err) {
+    console.error('[Auth] COOP relaxation setup failed:', err);
+  }
+
+  // ── Permission Handlers (OAuth FedCM, media, notifications, etc.) ──
+  // Grant permissions that web pages need for login flows and media access.
+  // Electron blocks FedCM (identity-credentials-get) by default which breaks
+  // Google Sign-In on sites like claude.ai. We allow it here.
+  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+    const ALLOWED_PERMISSIONS = [
+      'media',              // Camera/microphone
+      'notifications',      // Desktop notifications
+      'clipboard-read',     // Clipboard access
+      'clipboard-sanitized-write',
+      'fullscreen',         // Fullscreen API
+      'pointerLock',        // Pointer lock for games
+      'idle-detection',     // Idle detection API
+      'identity-credentials-get', // FedCM — Google Sign-In, Microsoft login, etc.
+    ];
+    if (ALLOWED_PERMISSIONS.includes(permission)) {
+      callback(true);
+    } else {
+      callback(false);
+    }
+  });
+
+  session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
+    const ALLOWED_PERMISSIONS = [
+      'media', 'notifications', 'clipboard-read', 'clipboard-sanitized-write',
+      'fullscreen', 'pointerLock', 'idle-detection', 'identity-credentials-get',
+    ];
+    return ALLOWED_PERMISSIONS.includes(permission);
+  });
+
+  // ── Screen Capture support ──────────────────────────────────────────
+  // Grant display media permission so the renderer can use getUserMedia
+  // with a desktopCapturer source ID (sandbox blocks getDisplayMedia directly)
+  session.defaultSession.setDisplayMediaRequestHandler((_request, callback) => {
+    desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
+      if (sources.length > 0) {
+        callback({ video: sources[0] });
+      } else {
+        callback({});
+      }
+    });
+  }, { useSystemPicker: true });
+
+  // IPC handler to get available capture sources for a picker UI
+  try {
+    ipcMain.handle('recorder:get-sources', async () => {
+      const sources = await desktopCapturer.getSources({
+        types: ['window', 'screen'],
+        thumbnailSize: { width: 320, height: 180 },
+      });
+      return sources.map(s => ({
+        id: s.id,
+        name: s.name,
+        thumbnail: s.thumbnail.toDataURL(),
+        appIcon: s.appIcon?.toDataURL() || null,
+      }));
+    });
+  } catch { /* already registered */ }
 
   // Desktop notification handler — registered once outside createWindow to avoid duplicates
   try {
@@ -257,6 +460,8 @@ app.whenReady().then(async () => {
 });
 
 app.on('window-all-closed', () => {
+  const { shutdownChangeDetector } = require('./services/change-detector');
+  shutdownChangeDetector();
   closeDatabase();
   app.quit();
 });

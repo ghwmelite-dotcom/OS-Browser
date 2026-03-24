@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">OS Browser Mini</string>
+    <string name="title_activity_main">OS Browser Mini</string>
+    <string name="package_name">work.askozzy.osbrowser.mini</string>
+    <string name="custom_url_scheme">work.askozzy.osbrowser.mini</string>
+</resources>

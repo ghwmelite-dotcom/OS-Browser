@@ -3,6 +3,11 @@ import { ShieldCheck } from 'lucide-react';
 import { FeatureRegistry, StatusBarIndicatorProps } from '../registry';
 import { useTabsStore } from '@/store/tabs';
 
+// Lazy-load sidebar panel
+const DumsorPanel = React.lazy(() =>
+  import('@/components/DumsorGuard/DumsorPanel').then(m => ({ default: m.DumsorPanel }))
+);
+
 const saveSessionNow = () => {
   // Trigger the browser's session save mechanism
   try {
@@ -40,19 +45,14 @@ const openSettings = () => {
 };
 
 // ── Status Bar Indicator ────────────────────────────────────────────
-const DumsorGuardIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onClick }) => {
-  return React.createElement('button', {
-    onClick,
+const DumsorGuardIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor }) => {
+  return React.createElement('span', {
     style: {
       display: 'flex',
       alignItems: 'center',
       gap: '4px',
-      padding: '2px 8px',
       fontSize: '11px',
       color: 'var(--color-text-primary)',
-      background: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
       fontFamily: 'inherit',
       whiteSpace: 'nowrap' as const,
     },
@@ -79,6 +79,11 @@ const dumsorGuardFeature = {
       position: 'left' as const,
       order: 1,
     },
+    sidebar: {
+      panelComponent: DumsorPanel,
+      order: 6,
+      defaultPanelWidth: 340,
+    },
     commandBar: [
       {
         id: 'dumsor-guard:save-now',
@@ -103,6 +108,18 @@ const dumsorGuardFeature = {
         description: 'Recover tabs and state from the last saved session',
         keywords: ['restore', 'session', 'recover', 'previous', 'tabs', 'undo', 'crash'],
         action: () => restoreSession(),
+        group: 'Dumsor Guard',
+      },
+      {
+        id: 'dumsor-guard:toggle-power-saver',
+        label: 'Toggle Power Saver',
+        description: 'Enable or disable power saver mode to reduce CPU usage during dumsor',
+        keywords: ['power', 'saver', 'battery', 'dumsor', 'energy', 'toggle', 'cpu'],
+        action: async () => {
+          try {
+            await (window as any).osBrowser.power.toggleSaver();
+          } catch { /* Power monitor may not be ready */ }
+        },
         group: 'Dumsor Guard',
       },
     ],

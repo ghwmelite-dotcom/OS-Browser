@@ -67,7 +67,7 @@ export function StatsPage() {
         </div>
 
         <p className="text-center text-[10px] text-text-muted mt-6">
-          Powered by OHCS — Ghana's AI-Powered Browser
+          Designed & Developed by Osborn Hodges | Powered by RSIMD(OHCS)
         </p>
       </div>
     </div>

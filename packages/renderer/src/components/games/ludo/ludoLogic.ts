@@ -368,10 +368,17 @@ export function makeMove(state: LudoState, tokenIndex: number): LudoState {
   }
 
   // Determine next turn
-  if (next.mustRollAgain) {
+  // Bonus roll: rolling a 6 OR capturing an opponent grants an extra turn
+  if (next.mustRollAgain || captureOccurred) {
     next.diceRolled = false;
     next.diceValue = null;
-    next.message += ` Rolled a 6 - roll again!`;
+    if (captureOccurred && !next.mustRollAgain) {
+      next.consecutiveSixes = 0; // capture bonus doesn't count toward consecutive sixes
+      next.message += ` Capture bonus - roll again!`;
+    } else {
+      next.message += ` Rolled a 6 - roll again!`;
+    }
+    next.mustRollAgain = false; // Reset — the bonus has been granted
   } else {
     next.consecutiveSixes = 0;
     advancePlayer(next);

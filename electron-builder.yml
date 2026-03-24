@@ -8,6 +8,8 @@ files:
   - packages/preload/dist/**/*
   - packages/renderer/dist/**/*
   - packages/shared/dist/**/*
+  - packages/shared/package.json
+  - node_modules/@os-browser/**/*
   - node_modules/@ghostery/**/*
   - node_modules/cross-fetch/**/*
   - node_modules/node-fetch/**/*
@@ -59,6 +61,16 @@ win:
     - target: nsis
       arch: [x64]
   icon: assets/icon.ico
+  protocols:
+    - name: "OS Browser URL"
+      schemes: ["http", "https"]
+  fileAssociations:
+    - ext: html
+      name: "HTML Document"
+      role: Viewer
+    - ext: htm
+      name: "HTM Document"
+      role: Viewer
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

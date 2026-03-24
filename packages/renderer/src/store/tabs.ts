@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { useWorkspaceStore } from './workspaces';
+import { useNavigationStore } from './navigation';
 
 interface Tab {
   id: string;
@@ -44,6 +46,13 @@ export const useTabsStore = create<TabsState>((set, get) => ({
     }));
     // Switch to the new tab in the main process (hides old WebContentsView, shows new content)
     await window.osBrowser.tabs.switch(tab.id);
+    // Update navigation store so OmniBar shows the new tab's URL (or empty for newtab)
+    useNavigationStore.getState().setUrl(tab.url || '');
+    useNavigationStore.getState().setLoading(false);
+    // Add the new tab to the active workspace
+    try {
+      useWorkspaceStore.getState().addTabToWorkspace(tab.id);
+    } catch {}
   },
 
   closeTab: async (id) => {
@@ -52,6 +61,10 @@ export const useTabsStore = create<TabsState>((set, get) => ({
     if (!closing) return;
 
     await window.osBrowser.tabs.close(id);
+    // Remove the tab from its workspace
+    try {
+      useWorkspaceStore.getState().removeTabFromWorkspace(id);
+    } catch {}
 
     const remaining = tabs.filter(t => t.id !== id);
     let newActiveId = get().activeTabId;
@@ -78,6 +91,12 @@ export const useTabsStore = create<TabsState>((set, get) => ({
   switchTab: async (id) => {
     await window.osBrowser.tabs.switch(id);
     set({ activeTabId: id });
+
+    // Update navigation store with the new tab's URL so the OmniBar reflects it
+    const tab = get().tabs.find(t => t.id === id);
+    const url = tab?.url || '';
+    useNavigationStore.getState().setUrl(url);
+    useNavigationStore.getState().setLoading(false);
   },
 
   updateTab: (id, data) => {

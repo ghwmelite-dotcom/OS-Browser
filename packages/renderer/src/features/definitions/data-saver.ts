@@ -8,19 +8,14 @@ const openDataDashboard = () => useTabsStore.getState().createTab('os-browser://
 const toggleLiteMode = () => useDataSaverStore.getState().toggleLiteMode();
 
 // ── Status Bar Indicator ────────────────────────────────────────────
-const DataSaverIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onClick }) => {
-  return React.createElement('button', {
-    onClick,
+const DataSaverIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor }) => {
+  return React.createElement('span', {
     style: {
       display: 'flex',
       alignItems: 'center',
       gap: '4px',
-      padding: '2px 8px',
       fontSize: '11px',
       color: 'var(--color-text-primary)',
-      background: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
       fontFamily: 'inherit',
       whiteSpace: 'nowrap' as const,
     },

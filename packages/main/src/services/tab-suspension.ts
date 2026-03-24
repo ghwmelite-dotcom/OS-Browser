@@ -1,6 +1,6 @@
 import { BrowserWindow, WebContentsView } from 'electron';
 import { getDatabase } from '../db/database';
-import { TAB_SUSPEND_AFTER_MS, MAX_CONCURRENT_TABS } from '@os-browser/shared';
+import { TAB_SUSPEND_AFTER_MS, MAX_CONCURRENT_TABS } from '../../../shared/dist';
 
 let interval: NodeJS.Timeout | null = null;
 let tabViewsRef: Map<string, WebContentsView> | null = null;

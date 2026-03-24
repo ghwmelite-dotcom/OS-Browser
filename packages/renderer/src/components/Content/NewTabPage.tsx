@@ -838,7 +838,7 @@ export function NewTabPage() {
           <div className="flex items-center justify-center gap-4 text-xs text-text-muted">
             <span className="flex items-center gap-1.5">
               <Zap size={10} className="text-text-muted" />
-              Powered by OHCS
+              Designed & Developed by Osborn Hodges | Powered by RSIMD(OHCS)
             </span>
             {totalAdsBlocked > 0 && (
               <>

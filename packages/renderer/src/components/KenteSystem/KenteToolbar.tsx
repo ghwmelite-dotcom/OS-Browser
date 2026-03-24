@@ -74,10 +74,11 @@ function ToolbarButton({
     setDropdownPosition(spaceBelow < 200 ? 'above' : 'below');
   }, [showDropdown]);
 
-  // Click the icon → execute the primary action
-  // Click the chevron → toggle dropdown
+  // Click the icon → close dropdown if open, then execute the primary action
+  // Small delay ensures web views are visible before capture (for screenshot)
   const handleIconClick = () => {
-    config.onClick();
+    if (showDropdown) setShowDropdown(false);
+    setTimeout(() => config.onClick(), 100);
   };
 
   const handleChevronClick = (e: React.MouseEvent) => {
@@ -202,8 +203,11 @@ function ToolbarButton({
               key={item.id}
               item={item}
               onSelect={() => {
-                item.onClick();
+                // Close dropdown first and restore web views before executing
+                // This is critical for screenshot actions which need the page visible
                 setShowDropdown(false);
+                // Small delay to let web views become visible before capture
+                setTimeout(() => item.onClick(), 150);
               }}
             />
           ))}

@@ -23,7 +23,7 @@ import { FloatingAIBar } from './components/FloatingAIBar';
 import { SplitScreenToolbar, SplitScreenContent, SplitScreenPicker } from './components/SplitScreen';
 import { CurrencyTools } from './components/CurrencyTools';
 import { TwiDictionary } from './components/TwiDictionary';
-import { ReadingMode } from './components/ReadingMode';
+// ReadingMode replaced by ReadingModePanel (lazy loaded below)
 import { DownloadBar } from './components/DownloadBar';
 import { Onboarding } from './components/Onboarding';
 import { OfflineBanner } from './components/NetworkManager/OfflineBanner';
@@ -42,6 +42,96 @@ import { KenteCommandBar } from './components/KenteSystem/KenteCommandBar';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import type { PWAInstallData } from './components/PWAInstallPrompt';
 import { ToastNotification } from './components/Notifications/ToastNotification';
+import { useWellbeingStore } from './store/wellbeing';
+// WorkspaceSwitcher is now integrated into TabBar
+import { useTabIntelligenceStore } from './store/tab-intelligence';
+import { useWorkspaceStore } from './store/workspaces';
+import { TabSearchModal } from './components/Tabs/TabSearchModal';
+import { useNotificationStore } from './store/notifications';
+import { useProfileStore } from './store/profiles';
+import { useVaultStore } from './store/vault';
+import { ProfileLauncher } from './components/Profiles/ProfileLauncher';
+import { MiniConverter } from './components/Exchange/MiniConverter';
+import { useExchangeStore } from './store/exchange';
+import { useDownloadStore } from './store/downloads';
+
+const ImportBanner = React.lazy(() => import('./components/BrowserImport/ImportBanner'));
+import { RegionSelector } from './components/Screenshots/RegionSelector';
+import { ScreenshotPreview } from './components/Screenshots/ScreenshotPreview';
+const RecorderControls = React.lazy(() => import('./components/ScreenRecorder/RecorderControls'));
+const AnnotationOverlay = React.lazy(() => import('./components/ScreenRecorder/AnnotationOverlay'));
+const PostRecordingToast = React.lazy(() => import('./components/ScreenRecorder/PostRecordingToast'));
+const ReadingModePanel = React.lazy(() => import('./components/ReadingMode/ReadingModePanel'));
+
+/** Non-intrusive banner prompting user to set OS Browser as default */
+function DefaultBrowserBanner({ onClose }: { onClose: () => void }) {
+  const [setting, setSetting] = useState(false);
+
+  const handleSetDefault = async () => {
+    setSetting(true);
+    try {
+      await (window as any).osBrowser?.app?.setDefaultBrowser?.();
+      setTimeout(onClose, 1500);
+    } catch {
+      setSetting(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', top: 56, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 9999, display: 'flex', alignItems: 'center', gap: 12,
+      padding: '10px 20px', borderRadius: 12,
+      background: 'var(--color-surface-1)', border: '1px solid var(--color-border-1)',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.18)', maxWidth: 520,
+      animation: 'fadeUp 0.3s ease-out',
+    }}>
+      <div style={{
+        width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+        background: 'linear-gradient(135deg, #D4A017, #F2C94C)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 16,
+      }}>
+        🌐
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', margin: 0 }}>
+          Set OS Browser as your default?
+        </p>
+        <p style={{ fontSize: 11, color: 'var(--color-text-muted)', margin: '2px 0 0' }}>
+          Open web links directly in OS Browser
+        </p>
+      </div>
+      <button
+        onClick={handleSetDefault}
+        disabled={setting}
+        style={{
+          padding: '6px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
+          background: 'var(--color-accent)', color: '#fff', fontSize: 12,
+          fontWeight: 600, whiteSpace: 'nowrap', opacity: setting ? 0.6 : 1,
+        }}
+      >
+        {setting ? 'Opening...' : 'Set Default'}
+      </button>
+      <button
+        onClick={onClose}
+        style={{
+          background: 'none', border: 'none', cursor: 'pointer', padding: 4,
+          color: 'var(--color-text-muted)', fontSize: 16, lineHeight: 1,
+        }}
+        aria-label="Dismiss"
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
+function TabSearchOverlay() {
+  const showTabSearch = useTabIntelligenceStore(s => s.showTabSearch);
+  if (!showTabSearch) return null;
+  return <TabSearchModal onClose={() => useTabIntelligenceStore.getState().toggleTabSearch()} />;
+}
 
 export function App() {
   const { loadTabs, createTab } = useTabsStore();
@@ -50,6 +140,54 @@ export function App() {
   const { loadStats } = useStatsStore();
   const { isOpen, activePanel } = useSidebarStore();
 
+  const { isLaunching, isLocked, setLaunching } = useProfileStore();
+  const [profileReady, setProfileReady] = useState(false);
+
+  // On mount, check if there's an active profile already
+  useEffect(() => {
+    (async () => {
+      try {
+        const active = await window.osBrowser.profiles.getActive();
+        if (active) {
+          // Active profile exists — skip launcher
+          useProfileStore.getState().loadActiveProfile();
+          setProfileReady(true);
+          setLaunching(false);
+        } else {
+          // No active profile — show launcher
+          setLaunching(true);
+        }
+      } catch {
+        // profiles bridge might not exist in older builds — skip
+        setProfileReady(true);
+        setLaunching(false);
+      }
+    })();
+  }, []);
+
+  // Sync notification unread count to profile system (for launcher badges)
+  useEffect(() => {
+    const syncUnread = async () => {
+      try {
+        const active = await window.osBrowser.profiles.getActive();
+        if (!active) return;
+        // Count unread from localStorage notifications
+        const raw = localStorage.getItem('os-browser-notifications');
+        if (raw) {
+          const notifications = JSON.parse(raw);
+          const unread = Array.isArray(notifications) ? notifications.filter((n: any) => !n.read).length : 0;
+          await window.osBrowser.profiles.updateUnread(active.id, unread);
+        }
+      } catch {}
+    };
+    // Sync every 30 seconds and on visibility change
+    const interval = setInterval(syncUnread, 30000);
+    const handleVisibility = () => { if (document.hidden) syncUnread(); };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => { clearInterval(interval); document.removeEventListener('visibilitychange', handleVisibility); };
+  }, []);
+
+  // ALL useState hooks MUST be declared before any conditional return
   const [showHistory, setShowHistory] = useState(false);
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -67,6 +205,29 @@ export function App() {
   const [showMobileMoney, setShowMobileMoney] = useState(false);
   const [pwaData, setPwaData] = useState<PWAInstallData | null>(null);
   const [pwaInstallableData, setPwaInstallableData] = useState<PWAInstallData | null>(null);
+  const [showDefaultBrowserPrompt, setShowDefaultBrowserPrompt] = useState(false);
+  const [showImportBanner, setShowImportBanner] = useState(false);
+  const [showRegionSelector, setShowRegionSelector] = useState(false);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+
+  const handleProfileReady = async () => {
+    setProfileReady(true);
+    setLaunching(false);
+    useProfileStore.getState().loadActiveProfile();
+    // Sync profile name to the old profile store (localStorage) so Settings page picks it up
+    try {
+      const active = await window.osBrowser.profiles.getActive();
+      if (active?.name) {
+        const existing = JSON.parse(localStorage.getItem('os_browser_profile') || '{}');
+        localStorage.setItem('os_browser_profile', JSON.stringify({
+          ...existing,
+          displayName: active.name,
+        }));
+      }
+    } catch {}
+    // Force reload the app data for the new profile
+    window.location.reload();
+  };
 
   // Wrap sidebar panel setters to hide/show WebContentsViews
   const setShowCurrencyTools = (v: boolean | ((prev: boolean) => boolean)) => {
@@ -185,6 +346,8 @@ export function App() {
         }
 
         await loadStats();
+
+        // Default browser check moved to separate useEffect
       } catch (err) {
         console.error('Init error:', err);
       }
@@ -218,6 +381,15 @@ export function App() {
             canGoBack: data.canGoBack,
             canGoForward: data.canGoForward,
           });
+          // Track site for Digital Wellbeing
+          try {
+            const url = data.url as string;
+            if (url && !url.startsWith('os-browser://') && !url.startsWith('about:')) {
+              useWellbeingStore.getState().setSite(new URL(url).hostname);
+            } else {
+              useWellbeingStore.getState().setSite(null);
+            }
+          } catch {}
         }
       }));
       cleanups.push(window.osBrowser.tabs.onTitleUpdated((data: any) => {
@@ -226,12 +398,143 @@ export function App() {
       cleanups.push(window.osBrowser.tabs.onFaviconUpdated((data: any) => {
         useTabsStore.getState().updateTab(data.id, { favicon_path: data.favicon });
       }));
+      // Listen for tabs created by the main process (right-click "Open in New Tab", window.open)
+      cleanups.push(window.osBrowser.tabs.onTabsRefresh(async (data: any) => {
+        await useTabsStore.getState().loadTabs();
+        // Add the new tab to the active workspace so it's visible
+        if (data?.newTabId) {
+          try {
+            useWorkspaceStore.getState().addTabToWorkspace(data.newTabId);
+          } catch {}
+        }
+        // Update navigation store so ContentArea shows the WebContentsView
+        // instead of rendering an internal page on top of it
+        if (data?.url) {
+          useNavigationStore.getState().setUrl(data.url);
+        }
+        // Track for wellbeing
+        try {
+          if (data?.url && !data.url.startsWith('os-browser://')) {
+            useWellbeingStore.getState().setSite(new URL(data.url).hostname);
+          }
+        } catch {}
+      }));
     } catch {}
+
+    // Digital Wellbeing — tick every second to track browsing time
+    const wellbeingInterval = setInterval(() => {
+      useWellbeingStore.getState().tick();
+    }, 1000);
+
+    // Tab Search shortcut: Ctrl+Shift+A
+    const handleTabSearchKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+        e.preventDefault();
+        useTabIntelligenceStore.getState().toggleTabSearch();
+      }
+    };
+    window.addEventListener('keydown', handleTabSearchKey);
+
+    // Workspace switching: Ctrl+Alt+1 through Ctrl+Alt+9
+    const handleWorkspaceKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.altKey && !e.shiftKey && e.key >= '1' && e.key <= '9') {
+        const index = parseInt(e.key) - 1;
+        const wsState = useWorkspaceStore.getState();
+        if (index < wsState.workspaces.length) {
+          e.preventDefault();
+          wsState.switchWorkspace(wsState.workspaces[index].id);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleWorkspaceKey);
+
+    // Snoozed tabs — check every 30 seconds and reopen woken tabs
+    const snoozeInterval = setInterval(() => {
+      const woken = useTabIntelligenceStore.getState().checkSnoozedTabs();
+      for (const tab of woken) {
+        useTabsStore.getState().createTab(tab.url);
+      }
+    }, 30000);
+
+    // Downloads — initialize listeners so downloads are tracked from the start
+    let downloadCleanup: (() => void) | undefined;
+    try {
+      downloadCleanup = useDownloadStore.getState().init();
+    } catch {}
+
+    // Vault — initialize store and listen for auto-capture events
+    let vaultCleanup: (() => void) | undefined;
+    try {
+      vaultCleanup = useVaultStore.getState().init();
+    } catch {}
+
+    // Screen Recorder — load saved recordings
+    try {
+      import('./store/recorder').then(({ useRecorderStore }) => {
+        useRecorderStore.getState().loadRecordings();
+      }).catch(() => {});
+    } catch {}
+
+    // Vault — show toast when auto-capture happens on gov sites
+    let vaultAutoCleanup: (() => void) | undefined;
+    try {
+      if (window.osBrowser?.vault?.onCaptured) {
+        vaultAutoCleanup = window.osBrowser.vault.onCaptured((data: any) => {
+          useNotificationStore.getState().addNotification({
+            type: 'info',
+            title: 'Interaction Captured',
+            message: `Page captured for your records: ${data?.title || data?.url || 'Unknown page'}`,
+            source: 'vault',
+            icon: 'shield',
+          });
+        });
+      }
+    } catch {}
+
+    // Exchange Rate Overlay — listen for toggle events from the store
+    const handleExchangeOverlay = async (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const tabId = useTabsStore.getState().activeTabId;
+      if (!tabId) return;
+      const url = useNavigationStore.getState().currentUrl;
+      if (!url || url.startsWith('os-browser://')) return;
+
+      try {
+        if (detail?.enabled) {
+          const { rates, fetchRates } = useExchangeStore.getState();
+          if (Object.keys(rates).length === 0) await fetchRates();
+          const currentRates = useExchangeStore.getState().rates;
+          await (window as any).osBrowser?.exchange?.injectOverlay(tabId, currentRates);
+        } else {
+          await (window as any).osBrowser?.exchange?.removeOverlay(tabId);
+        }
+      } catch {}
+    };
+    window.addEventListener('exchange:overlay-toggle', handleExchangeOverlay);
+
+    // Screenshot events — region selector trigger and capture result
+    const handleStartRegion = () => setShowRegionSelector(true);
+    const handleScreenshotCaptured = (e: any) => {
+      const dataUrl = (e as CustomEvent).detail?.dataUrl;
+      if (dataUrl) setScreenshotPreview(dataUrl);
+    };
+    window.addEventListener('screenshot:start-region', handleStartRegion);
+    window.addEventListener('screenshot:captured', handleScreenshotCaptured);
 
     return () => {
       cleanup?.();
       networkCleanup?.();
       cleanups.forEach(c => c());
+      clearInterval(wellbeingInterval);
+      window.removeEventListener('keydown', handleTabSearchKey);
+      window.removeEventListener('keydown', handleWorkspaceKey);
+      clearInterval(snoozeInterval);
+      downloadCleanup?.();
+      vaultCleanup?.();
+      vaultAutoCleanup?.();
+      window.removeEventListener('exchange:overlay-toggle', handleExchangeOverlay);
+      window.removeEventListener('screenshot:start-region', handleStartRegion);
+      window.removeEventListener('screenshot:captured', handleScreenshotCaptured);
     };
   }, []);
 
@@ -258,11 +561,23 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    const handleReadingMode = () => {
+    const handleReadingMode = async () => {
       const tabs = useTabsStore.getState().tabs;
-      const active = tabs.find(t => t.id === useTabsStore.getState().activeTabId);
-      if (active && !active.url?.startsWith('os-browser://')) {
-        setReadingMode({ active: true, content: 'Reading mode extracts content from the current page. This feature is being enhanced.', title: active.title || '', url: active.url || '' });
+      const activeId = useTabsStore.getState().activeTabId;
+      const active = tabs.find(t => t.id === activeId);
+      if (active && !active.url?.startsWith('os-browser://') && activeId) {
+        // Show immediately with loading state, then fetch real content
+        setReadingMode({ active: true, content: '', title: active.title || '', url: active.url || '' });
+        try {
+          const result = await (window as any).osBrowser.tabs.getContent(activeId);
+          if (result && result.content) {
+            setReadingMode({ active: true, content: result.content, title: result.title || active.title || '', url: active.url || '' });
+          } else {
+            setReadingMode({ active: true, content: 'Could not extract content from this page. Reading mode works best with articles and text-heavy pages.', title: active.title || '', url: active.url || '' });
+          }
+        } catch {
+          setReadingMode({ active: true, content: 'Could not extract content from this page. Reading mode works best with articles and text-heavy pages.', title: active.title || '', url: active.url || '' });
+        }
       }
     };
     window.addEventListener('os-browser:reading-mode', handleReadingMode);
@@ -381,7 +696,57 @@ export function App() {
     return () => window.removeEventListener('pwa:show-install-prompt', handler);
   }, []);
 
+  // Auto-update event listeners — show toast notifications for update status
+  useEffect(() => {
+    const cleanups: (() => void)[] = [];
+    try {
+      const app = (window as any).osBrowser?.app;
+      if (app?.onUpdateAvailable) {
+        cleanups.push(app.onUpdateAvailable((info: any) => {
+          useNotificationStore.getState().addNotification({
+            type: 'info',
+            title: 'Update Available',
+            message: `OS Browser v${info?.version || 'new'} is downloading...`,
+            source: 'auto-update',
+          });
+        }));
+      }
+      if (app?.onUpdateDownloaded) {
+        cleanups.push(app.onUpdateDownloaded((info: any) => {
+          useNotificationStore.getState().addNotification({
+            type: 'success',
+            title: 'Update Ready',
+            message: `v${info?.version || 'new'} will install on restart`,
+            source: 'auto-update',
+          });
+        }));
+      }
+      if (app?.onUpdateError) {
+        cleanups.push(app.onUpdateError((_msg: string) => {
+          // Silently log update errors — don't spam the user
+          console.warn('[AutoUpdate] Error:', _msg);
+        }));
+      }
+    } catch { /* auto-update bridge not available */ }
+    return () => cleanups.forEach(c => c());
+  }, []);
+
+  // Prompt to set OS Browser as default — shows once per install, only after onboarding
+  useEffect(() => {
+    if (!profileReady || showOnboarding) return;
+    if (localStorage.getItem('default-browser-prompted')) return;
+    const timer = setTimeout(() => setShowDefaultBrowserPrompt(true), 4000);
+    return () => clearTimeout(timer);
+  }, [profileReady, showOnboarding]);
+
+  // Profile launcher covers everything when launching/locked
+  const showProfileLauncher = (isLaunching || isLocked) && !profileReady;
+
   return (
+    <>
+    {showProfileLauncher ? (
+      <ProfileLauncher onProfileReady={handleProfileReady} />
+    ) : (
     <div className="h-screen w-screen flex flex-col bg-bg">
       <TitleBar />
       <TabBar />
@@ -454,13 +819,16 @@ export function App() {
 
       {showSplitPicker && <SplitScreenPicker onClose={() => setShowSplitPicker(false)} />}
 
-      <ReadingMode
-        isActive={readingMode.active}
-        content={readingMode.content}
-        title={readingMode.title}
-        url={readingMode.url}
-        onClose={() => setReadingMode({ active: false, content: '', title: '', url: '' })}
-      />
+      {readingMode.active && (
+        <React.Suspense fallback={null}>
+          <ReadingModePanel
+            content={readingMode.content}
+            title={readingMode.title}
+            url={readingMode.url}
+            onClose={() => setReadingMode({ active: false, content: '', title: '', url: '' })}
+          />
+        </React.Suspense>
+      )}
 
       <KenteCommandBar isOpen={showCommandPalette} onClose={() => setShowCommandPalette(false)} />
 
@@ -483,8 +851,74 @@ export function App() {
       {/* PWA Install Prompt */}
       {pwaData && <PWAInstallPrompt data={pwaData} onClose={() => setPwaData(null)} />}
 
-      {/* Toast Notifications — always visible, top-right overlay */}
-      <ToastNotification />
+      {/* Default Browser Prompt */}
+      {showDefaultBrowserPrompt && (
+        <DefaultBrowserBanner onClose={() => {
+          setShowDefaultBrowserPrompt(false);
+          localStorage.setItem('default-browser-prompted', '1');
+          // Show import banner after a short delay if not already shown
+          if (!localStorage.getItem('browser-import-prompted')) {
+            setTimeout(() => setShowImportBanner(true), 2000);
+          }
+        }} />
+      )}
+
+      {/* Browser Import Banner */}
+      {showImportBanner && (
+        <React.Suspense fallback={null}>
+          <ImportBanner onClose={() => {
+            setShowImportBanner(false);
+            localStorage.setItem('browser-import-prompted', '1');
+          }} />
+        </React.Suspense>
+      )}
+
+      {/* Exchange Rate Mini Converter — floating above status bar */}
+      <MiniConverter />
+
+      {/* Tab Search Modal — Ctrl+Shift+A */}
+      <TabSearchOverlay />
+
+      {/* Screenshot overlays */}
+      {showRegionSelector && (
+        <RegionSelector
+          onSelect={async (rect) => {
+            setShowRegionSelector(false);
+            try {
+              const res = await (window as any).osBrowser.screenshot.captureRegion(rect);
+              if (res?.success && res.dataUrl) {
+                try {
+                  const blob = await (await fetch(res.dataUrl)).blob();
+                  await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                } catch {}
+                setScreenshotPreview(res.dataUrl);
+              }
+            } catch {}
+          }}
+          onCancel={() => setShowRegionSelector(false)}
+        />
+      )}
+      {screenshotPreview && (
+        <ScreenshotPreview
+          dataUrl={screenshotPreview}
+          onSave={async () => {
+            await (window as any).osBrowser.screenshot.save(screenshotPreview);
+          }}
+          onDismiss={() => setScreenshotPreview(null)}
+        />
+      )}
+
+      {/* Screen Recorder overlays — floating controls + annotation canvas + post-recording toast */}
+      <React.Suspense fallback={null}>
+        <RecorderControls />
+        <AnnotationOverlay />
+        <PostRecordingToast />
+      </React.Suspense>
     </div>
+    )}
+
+    {/* Toast notifications always render regardless of profile state */}
+    <ToastNotification />
+    </>
   );
 }

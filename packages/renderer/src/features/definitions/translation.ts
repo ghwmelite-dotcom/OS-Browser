@@ -10,20 +10,20 @@ const translateTo = (lang: string) => {
   window.dispatchEvent(new CustomEvent('os-browser:translate-to', { detail: { language: lang } }));
 };
 
+// Lazy-load the Translation panel for the sidebar
+const LazyTranslationPanel = React.lazy(() =>
+  import('@/components/Translation/TranslationPanel').then(m => ({ default: m.TranslationPanel }))
+);
+
 // ── Status Bar Indicator ────────────────────────────────────────────
-const TranslationIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onClick }) => {
-  return React.createElement('button', {
-    onClick,
+const TranslationIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor }) => {
+  return React.createElement('span', {
     style: {
       display: 'flex',
       alignItems: 'center',
       gap: '4px',
-      padding: '2px 8px',
       fontSize: '11px',
       color: 'var(--color-text-primary)',
-      background: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
       fontFamily: 'inherit',
       whiteSpace: 'nowrap' as const,
     },
@@ -48,6 +48,11 @@ const translationFeature = {
       component: TranslationIndicator,
       position: 'right' as const,
       order: 2,
+    },
+    sidebar: {
+      panelComponent: LazyTranslationPanel,
+      order: 3,
+      defaultPanelWidth: 400,
     },
     toolbar: {
       icon: Globe,

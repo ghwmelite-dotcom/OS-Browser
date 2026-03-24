@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { PanelLeftClose } from 'lucide-react';
 import type { FeatureDefinition } from '@/features/registry';
 
@@ -15,18 +15,30 @@ interface ExpandedPanelProps {
  * Content: scrollable area rendering the feature's panelComponent.
  * Animation: slide-in from left, 250ms ease-out.
  */
-export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
+export function ExpandedPanel({ feature, width, onClose: onCloseOrig }: ExpandedPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
+  const [contentVisible, setContentVisible] = useState(false);
   const [currentWidth, setCurrentWidth] = useState(width);
   const [isResizing, setIsResizing] = useState(false);
 
-  // Trigger slide-in animation on mount
+  // Trigger slide-in animation on mount, content fades in with 50ms delay
   useEffect(() => {
     requestAnimationFrame(() => {
       setVisible(true);
+      // Content fades in with a slight delay after the panel slides in
+      const timer = setTimeout(() => setContentVisible(true), 50);
+      return () => clearTimeout(timer);
     });
   }, []);
+
+  // Animated close: slide out then call the real close handler
+  const onClose = useCallback(() => {
+    setContentVisible(false);
+    setVisible(false);
+    // Wait for the slide-out transition to finish (150ms) before unmounting
+    setTimeout(() => onCloseOrig(), 160);
+  }, [onCloseOrig]);
 
   // Update width when feature changes
   useEffect(() => {
@@ -77,10 +89,12 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
         flexShrink: 0,
         overflow: 'hidden',
         position: 'relative',
-        // Slide-in animation
+        // Slide-in animation: 200ms ease-out in, 150ms ease-in out
         transform: visible ? 'translateX(0)' : 'translateX(-100%)',
         opacity: visible ? 1 : 0,
-        transition: 'transform 250ms ease-out, opacity 200ms ease-out',
+        transition: visible
+          ? 'transform 200ms ease-out, opacity 180ms ease-out'
+          : 'transform 150ms ease-in, opacity 120ms ease-in',
       }}
     >
       {/* Panel Header */}
@@ -160,7 +174,7 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
         </button>
       </div>
 
-      {/* Panel Content — scrollable container */}
+      {/* Panel Content — scrollable container with delayed fade-in */}
       <div
         className="kente-panel-scroll"
         style={{
@@ -170,14 +184,23 @@ export function ExpandedPanel({ feature, width, onClose }: ExpandedPanelProps) {
           overflowY: 'auto',
           overflowX: 'hidden',
           wordBreak: 'break-word',
+          opacity: contentVisible ? 1 : 0,
+          transform: contentVisible ? 'translateY(0)' : 'translateY(6px)',
+          transition: 'opacity 200ms ease-out, transform 200ms ease-out',
         }}
       >
         {PanelContent ? (
-          <PanelContent
-            width={currentWidth}
-            stripColor={feature.stripColor}
-            onClose={onClose}
-          />
+          <React.Suspense fallback={
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100px', color: 'var(--color-text-muted)', fontSize: 12 }}>
+              Loading...
+            </div>
+          }>
+            <PanelContent
+              width={currentWidth}
+              stripColor={feature.stripColor}
+              onClose={onClose}
+            />
+          </React.Suspense>
         ) : (
           <div
             style={{

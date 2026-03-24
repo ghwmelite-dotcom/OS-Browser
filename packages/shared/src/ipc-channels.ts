@@ -52,4 +52,6 @@ export const IPC = {
   WINDOW_FULLSCREEN: 'window:fullscreen',
   APP_GET_VERSION: 'app:version',
   APP_CHECK_UPDATE: 'app:check-update',
+  APP_SET_DEFAULT_BROWSER: 'app:set-default-browser',
+  APP_IS_DEFAULT_BROWSER: 'app:is-default-browser',
 } as const;

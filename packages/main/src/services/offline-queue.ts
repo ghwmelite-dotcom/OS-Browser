@@ -2,7 +2,7 @@ import { BrowserWindow } from 'electron';
 import { getDatabase } from '../db/database';
 import { getConnectivityStatus } from '../net/connectivity';
 import { aiRequest } from '../net/cloudflare';
-import { IPC } from '@os-browser/shared';
+import { IPC } from '../../../shared/dist';
 
 let mainWindowRef: BrowserWindow | null = null;
 let processing = false;
@@ -41,8 +41,12 @@ export async function processQueue(): Promise<void> {
       "SELECT * FROM offline_queue WHERE status = 'queued' ORDER BY priority ASC, created_at ASC LIMIT 10"
     ).all() as any[];
 
+    const total = items.length;
+    let processed = 0;
     for (const item of items) {
       if (getConnectivityStatus() === 'offline') break;
+      processed++;
+      console.log('[Queue] Processing batch: ' + processed + '/' + total);
 
       db.prepare("UPDATE offline_queue SET status = 'processing' WHERE id = ?").run(item.id);
 

@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { IPC } from '@os-browser/shared';
+import { IPC } from '../../../shared/dist';
 import { getDatabase } from '../db/database';
 
 export function registerSettingsHandlers(): void {
@@ -9,6 +9,7 @@ export function registerSettingsHandlers(): void {
   });
 
   ipcMain.handle(IPC.SETTINGS_UPDATE, (_event, data: Record<string, any>) => {
+    if (!data || typeof data !== 'object') return;
     const db = getDatabase();
     const allowed = [
       'display_name', 'email', 'avatar_path', 'avatar_color', 'default_model',
@@ -20,7 +21,13 @@ export function registerSettingsHandlers(): void {
     const fields = Object.keys(data).filter(k => allowed.includes(k));
     if (fields.length === 0) return;
 
-    const sets = fields.map(f => `${f} = ?`).join(', ');
+    // Validate string values — reject oversized inputs
+    for (const field of fields) {
+      const value = data[field];
+      if (typeof value === 'string' && value.length > 4096) return;
+    }
+
+    const sets = fields.map(f => `\`${f}\` = ?`).join(', ');
     const values = fields.map(f => data[f]);
 
     db.prepare(`UPDATE user_profile SET ${sets} WHERE id = 1`).run(...values);

@@ -39,8 +39,8 @@ export const GameCenterLayout: React.FC<GameCenterLayoutProps> = ({ onSelectGame
   const [category, setCategory] = useState<string>('All');
   const stats = useGameStore((s) => s.stats);
 
-  // Preview mode: games locked for public users unless dev unlock is set
-  const isUnlocked = typeof localStorage !== 'undefined' && localStorage.getItem('govplay_dev_unlock') === 'true';
+  // Games are now publicly available
+  const isUnlocked = true;
 
   const filtered = useMemo(() => {
     let list = GAMES;

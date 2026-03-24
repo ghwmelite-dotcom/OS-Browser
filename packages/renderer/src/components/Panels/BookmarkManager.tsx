@@ -11,7 +11,17 @@ export function BookmarkManager({ onClose }: { onClose: () => void }) {
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolder, setShowNewFolder] = useState(false);
 
-  useEffect(() => { loadBookmarks(); }, []);
+  useEffect(() => {
+    loadBookmarks();
+    // Refresh on bookmark-changed (e.g. after import)
+    const handler = () => loadBookmarks();
+    window.addEventListener('bookmark-changed', handler);
+    const cleanup = (window as any).osBrowser?.bookmarks?.onRefresh?.(handler);
+    return () => {
+      window.removeEventListener('bookmark-changed', handler);
+      cleanup?.();
+    };
+  }, []);
 
   const handleCreateFolder = () => {
     if (!newFolderName.trim()) return;

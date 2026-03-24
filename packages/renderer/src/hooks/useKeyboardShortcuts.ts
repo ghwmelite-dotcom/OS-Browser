@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useTabsStore } from '@/store/tabs';
 import { useNavigationStore } from '@/store/navigation';
 import { useSidebarStore } from '@/store/sidebar';
+import { useSplitScreenStore } from '@/store/splitscreen';
 
 export function useKeyboardShortcuts(callbacks: {
   onToggleHistory?: () => void;
@@ -12,13 +13,14 @@ export function useKeyboardShortcuts(callbacks: {
   onBookmarkPage?: () => void;
 }) {
   const { createTab, closeTab, activeTabId, switchTab, tabs, reopenLastClosed } = useTabsStore();
-  const { reload, stop, isLoading } = useNavigationStore();
+  const { reload, stop, isLoading, currentUrl } = useNavigationStore();
   const { toggleSidebar, openPanel, closePanel, activePanel } = useSidebarStore();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const ctrl = e.ctrlKey || e.metaKey;
       const shift = e.shiftKey;
+      const alt = e.altKey;
       const key = e.key.toLowerCase();
 
       // Ctrl+T — New tab
@@ -81,9 +83,40 @@ export function useKeyboardShortcuts(callbacks: {
       else if (key === 'escape') { closePanel(); }
       // F11 — Fullscreen
       else if (key === 'f11') { e.preventDefault(); window.osBrowser?.fullscreen(); }
+      // Alt+P — Picture-in-Picture toggle
+      else if (alt && key === 'p' && !ctrl && !shift) {
+        e.preventDefault();
+        if (activeTabId && currentUrl && !currentUrl.startsWith('os-browser://')) {
+          (window as any).osBrowser?.tabs?.pip?.(activeTabId);
+        }
+      }
+      // Ctrl+Shift+ArrowLeft — Snap current tab to left split pane
+      else if (ctrl && shift && e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const splitState = useSplitScreenStore.getState();
+        if (splitState.isActive && activeTabId) {
+          // Already in split — swap current tab into left pane
+          useSplitScreenStore.setState({ leftTabId: activeTabId });
+        } else if (activeTabId) {
+          // Not in split — find first other tab and activate split with current on left
+          const otherTab = tabs.find(t => t.id !== activeTabId && t.url !== 'os-browser://newtab');
+          if (otherTab) splitState.activate(activeTabId, otherTab.id);
+        }
+      }
+      // Ctrl+Shift+ArrowRight — Snap current tab to right split pane
+      else if (ctrl && shift && e.key === 'ArrowRight') {
+        e.preventDefault();
+        const splitState = useSplitScreenStore.getState();
+        if (splitState.isActive && activeTabId) {
+          useSplitScreenStore.setState({ rightTabId: activeTabId });
+        } else if (activeTabId) {
+          const otherTab = tabs.find(t => t.id !== activeTabId && t.url !== 'os-browser://newtab');
+          if (otherTab) splitState.activate(otherTab.id, activeTabId);
+        }
+      }
     };
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [activeTabId, tabs, isLoading, activePanel]);
+  }, [activeTabId, tabs, isLoading, activePanel, currentUrl, createTab, closeTab, switchTab, reopenLastClosed, reload, stop, toggleSidebar, openPanel, closePanel, callbacks.onToggleHistory, callbacks.onToggleBookmarks, callbacks.onToggleSettings, callbacks.onToggleCommandPalette, callbacks.onToggleSplitScreen, callbacks.onBookmarkPage]);
 }

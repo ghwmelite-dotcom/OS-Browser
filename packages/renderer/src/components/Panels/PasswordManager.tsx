@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { usePasswordStore, SavedPassword } from '@/store/passwords';
 import { Key, Search, Eye, EyeOff, Copy, Plus, Trash2, Edit3, Globe, RefreshCw, X, Check, Shield } from 'lucide-react';
 
+const TOTPManager = React.lazy(() => import('@/components/Passwords/TOTPManager'));
+
 function extractDomain(url: string): string {
   try {
     return new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
@@ -304,6 +306,11 @@ function PasswordCard({ entry }: { entry: SavedPassword }) {
             )}
           </button>
         </div>
+
+        {/* TOTP 2FA Section */}
+        <React.Suspense fallback={null}>
+          <TOTPManager credentialId={entry.id} />
+        </React.Suspense>
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'var(--color-border-1)' }}>

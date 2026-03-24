@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OS Browser — Kente Chrome Mockup v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: #f5efe3;
+    color: #1a1408;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 20px 60px;
+  }
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .page-header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #8B6914, #D4A017, #CE1126, #D4A017, #006B3F);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: headerShift 6s ease infinite;
+    margin-bottom: 6px;
+  }
+  .page-header p {
+    font-size: 14px;
+    color: #8a7e6c;
+    letter-spacing: 0.04em;
+  }
+
+  @keyframes headerShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /*  BROWSER WINDOW                                            */
+  /* ═══════════════════════════════════════════════════════════ */
+  .browser-window {
+    width: 1140px;
+    max-width: 96vw;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow:
+      0 1px 0 rgba(212, 160, 23, 0.15),
+      0 4px 16px rgba(140, 100, 20, 0.08),
+      0 20px 60px rgba(80, 50, 10, 0.12),
+      0 0 0 1px rgba(200, 180, 140, 0.3);
+    position: relative;
+  }
+
+  /* ── KENTE TOP CROWN — the woven band ── */
+  .kente-crown {
+    height: 3px;
+    background:
+      repeating-linear-gradient(90deg,
+        #CE1126 0px, #CE1126 18px,
+        #D4A017 18px, #D4A017 30px,
+        #006B3F 30px, #006B3F 44px,
+        #FCD116 44px, #FCD116 52px,
+        #CE1126 52px, #CE1126 62px,
+        #000000 62px, #000000 66px,
+        #D4A017 66px, #D4A017 80px,
+        #006B3F 80px, #006B3F 96px,
+        #CE1126 96px, #CE1126 108px,
+        #FCD116 108px, #FCD116 120px
+      );
+    position: relative;
+    z-index: 10;
+  }
+
+  /* ── TITLE BAR ── */
+  .title-bar {
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    background: linear-gradient(180deg, #fef9ee 0%, #fdf5e4 100%);
+    position: relative;
+  }
+  /* Subtle Kente weave texture overlay */
+  .title-bar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(90deg,
+        transparent 0px,
+        transparent 58px,
+        rgba(212, 160, 23, 0.03) 58px,
+        rgba(212, 160, 23, 0.03) 60px
+      ),
+      repeating-linear-gradient(0deg,
+        transparent 0px,
+        transparent 16px,
+        rgba(206, 17, 38, 0.015) 16px,
+        rgba(206, 17, 38, 0.015) 17px
+      );
+    pointer-events: none;
+  }
+
+  .app-name {
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #CE1126;
+    letter-spacing: -0.01em;
+  }
+
+  .title-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .theme-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #8a7e6c;
+    border: 1px solid #e0d5c0;
+    background: rgba(255,253,248,0.8);
+    padding: 2px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .theme-pill:hover { border-color: #D4A017; color: #D4A017; }
+
+  .window-controls {
+    display: flex;
+  }
+  .window-controls button {
+    width: 46px;
+    height: 34px;
+    border: none;
+    background: transparent;
+    color: #8a7e6c;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .window-controls button:hover { background: rgba(212,160,23,0.08); color: #5c4a20; }
+  .window-controls button:last-child:hover { background: #CE1126; color: #fff; }
+
+  /* ── TAB BAR ── */
+  .tab-bar {
+    height: 38px;
+    display: flex;
+    align-items: flex-end;
+    padding: 0 10px;
+    background: linear-gradient(180deg, #fdf5e4 0%, #faf0d8 100%);
+    position: relative;
+  }
+
+  /* Kente thread separator */
+  .tab-bar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      #CE1126 0%, #CE1126 3%,
+      #e8d5a8 3%, #e8d5a8 12%,
+      #D4A017 12%, #D4A017 15%,
+      #e8d5a8 15%, #e8d5a8 28%,
+      #006B3F 28%, #006B3F 31%,
+      #e8d5a8 31%, #e8d5a8 45%,
+      #D4A017 45%, #D4A017 48%,
+      #e8d5a8 48%, #e8d5a8 60%,
+      #CE1126 60%, #CE1126 63%,
+      #e8d5a8 63%, #e8d5a8 75%,
+      #006B3F 75%, #006B3F 78%,
+      #e8d5a8 78%, #e8d5a8 90%,
+      #D4A017 90%, #D4A017 93%,
+      #e8d5a8 93%, #e8d5a8 100%
+    );
+    opacity: 0.6;
+  }
+
+  .tab {
+    height: 32px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #6b5d48;
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    max-width: 200px;
+    position: relative;
+    border: 1px solid transparent;
+    border-bottom: none;
+  }
+  .tab:hover {
+    background: rgba(255,253,248,0.7);
+    color: #3d3020;
+  }
+  .tab.active {
+    background: #fffdf8;
+    color: #1a1408;
+    font-weight: 600;
+    border-color: #e0d5c0;
+    box-shadow: 0 -1px 4px rgba(140,100,20,0.04);
+  }
+  /* Gold + green accent under active tab */
+  .tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #D4A017, #b8860b, #D4A017);
+    border-radius: 2px 2px 0 0;
+  }
+
+  .tab .favicon {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 800;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .tab .close-btn {
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: transparent;
+    color: #b0a48e;
+    font-size: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.15s;
+  }
+  .tab:hover .close-btn { opacity: 1; }
+  .tab .close-btn:hover { background: rgba(206,17,38,0.08); color: #CE1126; }
+
+  .new-tab-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px dashed #d1c4a8;
+    background: transparent;
+    color: #b0a48e;
+    font-size: 17px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 4px;
+    transition: all 0.2s;
+  }
+  .new-tab-btn:hover {
+    background: rgba(212,160,23,0.06);
+    border-color: #D4A017;
+    color: #D4A017;
+  }
+
+  /* ── NAVIGATION BAR ── */
+  .nav-bar {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 0 10px;
+    background: #fffdf8;
+  }
+
+  .nav-btn {
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: transparent;
+    color: #6b5d48;
+    font-size: 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .nav-btn:hover {
+    background: #f5f0e5;
+    color: #3d3020;
+  }
+  .nav-btn.disabled { color: #d1c4a8; pointer-events: none; }
+
+  .omni-bar {
+    flex: 1;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    background: #f8f2e5;
+    border: 1.5px solid #e8dcc6;
+    border-radius: 22px;
+    font-size: 13px;
+    color: #1a1408;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .omni-bar:hover { border-color: #D4A017; }
+  .omni-bar:focus-within {
+    border-color: #D4A017;
+    box-shadow: 0 0 0 3px rgba(212,160,23,0.12), 0 2px 8px rgba(140,100,20,0.06);
+  }
+  /* Gold shimmer accent on left edge */
+  .omni-bar::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 20%;
+    bottom: 20%;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: linear-gradient(180deg, #D4A017, #CE1126, #006B3F);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .omni-bar:focus-within::before { opacity: 0.6; }
+
+  .omni-bar .search-icon { color: #b0a48e; font-size: 13px; flex-shrink: 0; }
+  .omni-bar .url-text { flex: 1; color: #6b5d48; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .omni-bar .lock-icon { color: #006B3F; font-size: 11px; flex-shrink: 0; }
+  .omni-bar .star { color: #d1c4a8; cursor: pointer; transition: all 0.2s; font-size: 15px; }
+  .omni-bar .star:hover { color: #D4A017; transform: scale(1.15); }
+
+  .toolbar-actions {
+    display: flex;
+    gap: 1px;
+    margin-left: 4px;
+  }
+
+  .toolbar-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: #8a7e6c;
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .toolbar-btn:hover { background: #f5f0e5; color: #3d3020; }
+  .toolbar-btn .dropdown-arrow {
+    font-size: 7px;
+    position: absolute;
+    bottom: 5px;
+    right: 4px;
+    color: #b0a48e;
+  }
+
+  .avatar-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid #D4A017;
+    background: linear-gradient(135deg, #CE1126, #D4A017, #006B3F);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+    color: #fff;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: 4px;
+    box-shadow: 0 2px 6px rgba(212,160,23,0.2);
+    transition: all 0.2s;
+  }
+  .avatar-btn:hover { transform: scale(1.08); box-shadow: 0 3px 10px rgba(212,160,23,0.3); }
+
+  .menu-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: #6b5d48;
+    font-size: 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    letter-spacing: -2px;
+    margin-left: 2px;
+  }
+  .menu-btn:hover { background: #f5f0e5; }
+
+  /* ── BOOKMARKS BAR ── */
+  .bookmarks-bar {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #b0a48e;
+    background: #fffdf8;
+    border-bottom: 1px solid #ede6d8;
+  }
+  .bookmarks-bar span {
+    font-style: italic;
+  }
+
+  /* ── MAIN CONTENT AREA ── */
+  .content-area {
+    display: flex;
+    height: 460px;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    gap: 3px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    /* THE KENTE SIDEBAR — warm layered gradient */
+    background:
+      linear-gradient(180deg,
+        rgba(206, 17, 38, 0.06) 0%,
+        rgba(255, 250, 235, 0.98) 6%,
+        rgba(212, 160, 23, 0.04) 18%,
+        rgba(255, 253, 248, 1) 30%,
+        rgba(0, 107, 63, 0.04) 45%,
+        rgba(255, 253, 248, 1) 55%,
+        rgba(212, 160, 23, 0.04) 68%,
+        rgba(255, 253, 248, 1) 78%,
+        rgba(206, 17, 38, 0.04) 90%,
+        rgba(255, 250, 235, 0.98) 100%
+      );
+    border-right: 1px solid #ede6d8;
+  }
+
+  /* Kente thread accent — right edge */
+  .sidebar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -1px;
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(180deg,
+      #CE1126 0%, #CE1126 8%,
+      transparent 8%, transparent 14%,
+      #D4A017 14%, #D4A017 22%,
+      transparent 22%, transparent 30%,
+      #006B3F 30%, #006B3F 38%,
+      transparent 38%, transparent 46%,
+      #D4A017 46%, #D4A017 54%,
+      transparent 54%, transparent 62%,
+      #CE1126 62%, #CE1126 70%,
+      transparent 70%, transparent 78%,
+      #006B3F 78%, #006B3F 86%,
+      transparent 86%, transparent 92%,
+      #D4A017 92%, #D4A017 100%
+    );
+    opacity: 0.25;
+    z-index: 2;
+  }
+
+  .sidebar-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: #8a7e6c;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .sidebar-icon:hover {
+    background: rgba(212,160,23,0.08);
+    color: #5c4a20;
+    transform: scale(1.05);
+  }
+  .sidebar-icon.active {
+    color: #D4A017;
+    background: rgba(212,160,23,0.1);
+  }
+  /* Active indicator — gold bar */
+  .sidebar-icon.active::before {
+    content: '';
+    position: absolute;
+    left: -7px;
+    width: 3px;
+    height: 18px;
+    background: linear-gradient(180deg, #D4A017, #b8860b);
+    border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 6px rgba(212,160,23,0.3);
+  }
+
+  .sidebar-icon .badge {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    min-width: 14px;
+    height: 14px;
+    background: #CE1126;
+    border-radius: 7px;
+    border: 1.5px solid #fffdf8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 700;
+    color: #fff;
+    padding: 0 3px;
+  }
+
+  .sidebar-divider {
+    width: 22px;
+    height: 1px;
+    margin: 3px 0;
+    background: linear-gradient(90deg, transparent, #e0d5c0, transparent);
+  }
+
+  .sidebar-spacer { flex: 1; }
+
+  .sidebar-icon.settings {
+    color: #b0a48e;
+    font-size: 14px;
+  }
+  .sidebar-icon.settings:hover { color: #6b5d48; }
+
+  /* ── PAGE CONTENT ── */
+  .page-content {
+    flex: 1;
+    background: #fffdf8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Warm atmospheric glow */
+  .page-content::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -5%, rgba(212,160,23,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 40% at 0% 50%, rgba(206,17,38,0.03) 0%, transparent 40%),
+      radial-gradient(ellipse 50% 40% at 100% 80%, rgba(0,107,63,0.03) 0%, transparent 40%);
+    pointer-events: none;
+  }
+
+  .page-greeting {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1408;
+    position: relative;
+  }
+  .page-greeting span {
+    background: linear-gradient(135deg, #b8860b, #D4A017, #e8c040);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .page-date {
+    font-size: 13px;
+    color: #8a7e6c;
+  }
+  .page-subtitle {
+    font-size: 13px;
+    color: #6b5d48;
+  }
+
+  .page-search {
+    width: 55%;
+    max-width: 480px;
+    height: 46px;
+    border-radius: 24px;
+    background: #f8f2e5;
+    border: 1.5px solid #e8dcc6;
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    gap: 10px;
+    color: #b0a48e;
+    font-size: 14px;
+    margin-top: 6px;
+    transition: all 0.25s;
+    position: relative;
+  }
+  .page-search:hover { border-color: #D4A017; }
+
+  /* ── KENTE STATUS BAR ── */
+  .status-bar {
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #8a7e6c;
+    background: linear-gradient(180deg, #fffdf8 0%, #faf5ea 100%);
+    border-top: 1px solid #ede6d8;
+    position: relative;
+  }
+  /* Bottom Kente thread */
+  .status-bar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background:
+      repeating-linear-gradient(90deg,
+        #CE1126 0px, #CE1126 18px,
+        #D4A017 18px, #D4A017 30px,
+        #006B3F 30px, #006B3F 44px,
+        #FCD116 44px, #FCD116 52px,
+        #CE1126 52px, #CE1126 62px,
+        #000000 62px, #000000 66px,
+        #D4A017 66px, #D4A017 80px,
+        #006B3F 80px, #006B3F 96px,
+        #CE1126 96px, #CE1126 108px,
+        #FCD116 108px, #FCD116 120px
+      );
+    opacity: 0.35;
+  }
+
+  .status-left, .status-right {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .status-separator {
+    width: 1px;
+    height: 12px;
+    background: #e0d5c0;
+  }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /*  DESIGN ANNOTATIONS                                        */
+  /* ═══════════════════════════════════════════════════════════ */
+  .annotations {
+    margin-top: 48px;
+    max-width: 1140px;
+    width: 96vw;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+  .annotation-card {
+    background: #fffdf8;
+    border: 1px solid #e8dcc6;
+    border-radius: 14px;
+    padding: 22px;
+    box-shadow: 0 2px 8px rgba(140,100,20,0.04);
+  }
+  .annotation-card h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #b8860b;
+    margin-bottom: 8px;
+  }
+  .annotation-card p {
+    font-size: 12px;
+    color: #6b5d48;
+    line-height: 1.7;
+  }
+  .color-strip {
+    display: flex;
+    gap: 3px;
+    margin-top: 14px;
+  }
+  .color-strip div {
+    height: 6px;
+    border-radius: 3px;
+    flex: 1;
+  }
+
+  @media (max-width: 768px) {
+    .annotations { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Golden Weave</h1>
+  <p>OS Browser Light Mode — Kente-inspired chrome</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- BROWSER WINDOW                                              -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="browser-window">
+
+  <!-- Kente Crown — woven band at the very top -->
+  <div class="kente-crown"></div>
+
+  <!-- Title Bar -->
+  <div class="title-bar">
+    <span class="app-name">OS Browser</span>
+    <div class="title-right">
+      <div class="theme-pill">☽ Light</div>
+      <div class="window-controls">
+        <button>—</button>
+        <button>☐</button>
+        <button>✕</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <div class="tab active">
+      <div class="favicon" style="background:linear-gradient(135deg,#CE1126,#D4A017,#006B3F);">
+        <span style="font-size:7px;">OS</span>
+      </div>
+      <span style="color:#1a1408;">New Tab</span>
+      <button class="close-btn">✕</button>
+    </div>
+    <div class="tab">
+      <div class="favicon" style="background:#4285f4;">G</div>
+      <span>Google</span>
+      <button class="close-btn">✕</button>
+    </div>
+    <div class="tab">
+      <div class="favicon" style="background:#006B3F;">🏛</div>
+      <span>Ghana.gov.gh</span>
+      <button class="close-btn">✕</button>
+    </div>
+    <div class="tab">
+      <div class="favicon" style="background:#CE1126;">S</div>
+      <span>StreameX</span>
+      <button class="close-btn">✕</button>
+    </div>
+    <button class="new-tab-btn">+</button>
+  </div>
+
+  <!-- Navigation Bar -->
+  <div class="nav-bar">
+    <button class="nav-btn disabled">←</button>
+    <button class="nav-btn disabled">→</button>
+    <button class="nav-btn">✕</button>
+    <button class="nav-btn">↻</button>
+
+    <div class="omni-bar">
+      <span class="search-icon">🔍</span>
+      <span class="url-text">Search or enter URL...</span>
+      <span class="star">☆</span>
+    </div>
+
+    <div class="toolbar-actions">
+      <button class="toolbar-btn">📸<span class="dropdown-arrow">▾</span></button>
+      <button class="toolbar-btn">⬇<span class="dropdown-arrow">▾</span></button>
+      <button class="toolbar-btn">🎬<span class="dropdown-arrow">▾</span></button>
+      <button class="toolbar-btn">🌐<span class="dropdown-arrow">▾</span></button>
+      <button class="toolbar-btn">⚡</button>
+      <button class="toolbar-btn">↗</button>
+      <button class="toolbar-btn">🛡</button>
+      <button class="toolbar-btn">✨</button>
+    </div>
+
+    <div class="avatar-btn">OH</div>
+    <button class="menu-btn">⋮</button>
+  </div>
+
+  <!-- Bookmarks Bar -->
+  <div class="bookmarks-bar">
+    <span>Add bookmarks for quick access — click ☆ in the address bar</span>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="content-area">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <button class="sidebar-icon active" title="GovChat">
+        💬
+        <div class="badge">1</div>
+      </button>
+      <button class="sidebar-icon" title="GovPlay">🎮</button>
+      <div class="sidebar-divider"></div>
+      <button class="sidebar-icon" title="Gov Portals">🏛</button>
+      <button class="sidebar-icon" title="Ask Ozzy">✨</button>
+      <div class="sidebar-divider"></div>
+      <button class="sidebar-icon" title="Translation">🌍</button>
+      <button class="sidebar-icon" title="Reading Mode">📖</button>
+      <button class="sidebar-icon" title="Downloads">⬇️</button>
+      <div class="sidebar-divider"></div>
+      <button class="sidebar-icon" title="Data Saver">📊</button>
+      <button class="sidebar-icon" title="MoMo">💰</button>
+      <div class="sidebar-divider"></div>
+      <button class="sidebar-icon" title="Dumsor Guard">⚡</button>
+      <button class="sidebar-icon" title="Password Manager">🔐</button>
+      <button class="sidebar-icon" title="Wellbeing">💚</button>
+      <div class="sidebar-spacer"></div>
+      <button class="sidebar-icon settings" title="Settings">⚙</button>
+    </div>
+
+    <!-- Page Content -->
+    <div class="page-content">
+      <p class="page-greeting">Good afternoon, <span>Osborn</span></p>
+      <p class="page-subtitle">You're doing great today.</p>
+      <p class="page-date">Friday 20 March 2026</p>
+      <div class="page-search">
+        <span>🔍</span>
+        <span>Search or enter URL...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="status-left">
+      <span class="status-item"><span class="status-dot" style="background:#006B3F;"></span> Protected</span>
+      <span class="status-separator"></span>
+      <span class="status-item">📊 GH₵0.00</span>
+      <span class="status-separator"></span>
+      <span class="status-item">📶 Online</span>
+    </div>
+    <div class="status-right">
+      <span class="status-item">🔔</span>
+      <span class="status-separator"></span>
+      <span class="status-item">💬 0</span>
+      <span class="status-separator"></span>
+      <span class="status-item">🌍 EN</span>
+      <span class="status-separator"></span>
+      <span class="status-item">⏱ 5m</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- DESIGN ANNOTATIONS                                          -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="annotations">
+  <div class="annotation-card">
+    <h3>Kente Crown & Floor</h3>
+    <p>A 3px woven Kente band crowns the top of the window — alternating red, gold, green, black segments replicating an actual Kente cloth edge. Mirrored at the bottom of the status bar at lower opacity. These bookend the entire chrome like the borders of a Kente strip.</p>
+    <div class="color-strip">
+      <div style="background:#CE1126;"></div>
+      <div style="background:#D4A017;"></div>
+      <div style="background:#006B3F;"></div>
+      <div style="background:#FCD116;"></div>
+      <div style="background:#CE1126;"></div>
+      <div style="background:#000;"></div>
+      <div style="background:#D4A017;"></div>
+      <div style="background:#006B3F;"></div>
+    </div>
+  </div>
+
+  <div class="annotation-card">
+    <h3>Warm Ivory Base</h3>
+    <p>Instead of cold Chrome white (#fff), the light mode uses warm ivory (#fffdf8) with golden-tinted surfaces (#f8f2e5). The header gradient deepens to #faf0d8 — like parchment warmed by Kente gold. High contrast on all text for readability.</p>
+    <div class="color-strip">
+      <div style="background:#fffdf8;border:1px solid #e8dcc6;"></div>
+      <div style="background:#fdf5e4;"></div>
+      <div style="background:#faf0d8;"></div>
+      <div style="background:#f8f2e5;"></div>
+      <div style="background:#f5f0e5;"></div>
+    </div>
+  </div>
+
+  <div class="annotation-card">
+    <h3>Sidebar Thread Edge</h3>
+    <p>The sidebar's right border is a 2px vertical Kente thread — alternating dashes of red, gold, green at 25% opacity. Subtle enough to feel woven, not painted. The sidebar background has faint warm color zones flowing top to bottom.</p>
+    <div class="color-strip">
+      <div style="background:rgba(206,17,38,0.3);"></div>
+      <div style="background:rgba(212,160,23,0.3);"></div>
+      <div style="background:rgba(0,107,63,0.3);"></div>
+      <div style="background:rgba(212,160,23,0.3);"></div>
+      <div style="background:rgba(206,17,38,0.3);"></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

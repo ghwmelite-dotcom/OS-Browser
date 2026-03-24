@@ -1286,3 +1286,125 @@ govchatRoutes.get('/calls/incoming', async (c) => {
 
   return c.json({ call: null });
 });
+
+// ===========================================================================
+// FOOTBALL LIVE SCORES — proxied from API-Football (RapidAPI)
+// ===========================================================================
+
+const FOOTBALL_API_HOST = 'v3.football.api-sports.io';
+const FOOTBALL_API_KEY = '5940ad08a6026fb4f094d701e2cfce2b';
+
+// Country flag emoji lookup
+const FLAG_MAP: Record<string, string> = {
+  'Ghana': '\uD83C\uDDEC\uD83C\uDDED', 'Nigeria': '\uD83C\uDDF3\uD83C\uDDEC',
+  'Ivory Coast': '\uD83C\uDDE8\uD83C\uDDEE', 'Cameroon': '\uD83C\uDDE8\uD83C\uDDF2',
+  'Senegal': '\uD83C\uDDF8\uD83C\uDDF3', 'Egypt': '\uD83C\uDDEA\uD83C\uDDEC',
+  'South Africa': '\uD83C\uDDFF\uD83C\uDDE6', 'Morocco': '\uD83C\uDDF2\uD83C\uDDE6',
+  'Algeria': '\uD83C\uDDE9\uD83C\uDDFF', 'Tunisia': '\uD83C\uDDF9\uD83C\uDDF3',
+  'England': '\uD83C\uDFF4\uDB40\uDC67\uDB40\uDC62\uDB40\uDC65\uDB40\uDC6E\uDB40\uDC67\uDB40\uDC7F',
+  'Spain': '\uD83C\uDDEA\uD83C\uDDF8', 'Germany': '\uD83C\uDDE9\uD83C\uDDEA',
+  'France': '\uD83C\uDDEB\uD83C\uDDF7', 'Italy': '\uD83C\uDDEE\uD83C\uDDF9',
+  'Portugal': '\uD83C\uDDF5\uD83C\uDDF9', 'Netherlands': '\uD83C\uDDF3\uD83C\uDDF1',
+  'Brazil': '\uD83C\uDDE7\uD83C\uDDF7', 'Argentina': '\uD83C\uDDE6\uD83C\uDDF7',
+};
+
+function getFlag(teamName: string, country?: string): string {
+  if (country && FLAG_MAP[country]) return FLAG_MAP[country];
+  for (const [name, flag] of Object.entries(FLAG_MAP)) {
+    if (teamName.includes(name)) return flag;
+  }
+  return '\u26BD'; // fallback: football emoji
+}
+
+interface APIFixture {
+  fixture: { id: number; status: { short: string; elapsed: number | null } };
+  league: { name: string; country: string };
+  teams: { home: { name: string }; away: { name: string } };
+  goals: { home: number | null; away: number | null };
+  events?: Array<{
+    type: string; detail: string;
+    team: { name: string };
+    player: { name: string };
+    time: { elapsed: number };
+  }>;
+}
+
+function mapFixture(f: APIFixture, includeEvents = false): Record<string, unknown> {
+  const statusMap: Record<string, string> = {
+    '1H': 'live', '2H': 'live', 'HT': 'live', 'ET': 'live', 'P': 'live',
+    'FT': 'ft', 'AET': 'ft', 'PEN': 'ft',
+    'NS': 'upcoming', 'TBD': 'upcoming', 'PST': 'upcoming',
+  };
+  const status = statusMap[f.fixture.status.short] || 'upcoming';
+
+  const events: Array<Record<string, unknown>> = [];
+  if (includeEvents && f.events) {
+    for (const e of f.events) {
+      if (e.type === 'Goal') {
+        events.push({
+          type: 'goal',
+          team: e.team.name === f.teams.home.name ? 'home' : 'away',
+          player: e.player.name,
+          minute: e.time.elapsed,
+        });
+      }
+    }
+  }
+
+  return {
+    homeTeam: f.teams.home.name,
+    awayTeam: f.teams.away.name,
+    homeScore: f.goals.home ?? 0,
+    awayScore: f.goals.away ?? 0,
+    minute: f.fixture.status.elapsed ?? 0,
+    status,
+    competition: f.league.name,
+    homeFlag: getFlag(f.teams.home.name, f.league.country),
+    awayFlag: getFlag(f.teams.away.name, f.league.country),
+    events,
+  };
+}
+
+// Priority league IDs: Ghana Premier League (332), AFCON (6), Premier League (39),
+// Champions League (2), La Liga (140), Serie A (135), Bundesliga (78)
+const PRIORITY_LEAGUES = [332, 6, 39, 2, 140, 135, 78];
+
+// GET /football/live — current live matches
+govchatRoutes.get('/football/live', async (c) => {
+  try {
+    const res = await fetch(`https://${FOOTBALL_API_HOST}/fixtures?live=all`, {
+      headers: { 'x-apisports-key': FOOTBALL_API_KEY },
+    });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    const data = await res.json() as { response: APIFixture[] };
+
+    // Sort: priority leagues first
+    const sorted = (data.response || []).sort((a, b) => {
+      const aIdx = PRIORITY_LEAGUES.indexOf(a.league?.name === 'Ghana Premier League' ? 332 : -1);
+      const bIdx = PRIORITY_LEAGUES.indexOf(b.league?.name === 'Ghana Premier League' ? 332 : -1);
+      return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+    });
+
+    const matches = sorted.slice(0, 20).map(f => mapFixture(f, true));
+    return c.json({ matches }, 200, { 'Cache-Control': 'public, max-age=60' });
+  } catch (err) {
+    return c.json({ matches: [], error: 'Failed to fetch live scores' }, 200);
+  }
+});
+
+// GET /football/recent — results from today
+govchatRoutes.get('/football/recent', async (c) => {
+  try {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const res = await fetch(`https://${FOOTBALL_API_HOST}/fixtures?date=${today}&status=FT-AET-PEN`, {
+      headers: { 'x-apisports-key': FOOTBALL_API_KEY },
+    });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    const data = await res.json() as { response: APIFixture[] };
+
+    const matches = (data.response || []).slice(0, 20).map(f => mapFixture(f, true));
+    return c.json({ matches }, 200, { 'Cache-Control': 'public, max-age=300' });
+  } catch (err) {
+    return c.json({ matches: [], error: 'Failed to fetch recent results' }, 200);
+  }
+});

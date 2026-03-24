@@ -104,6 +104,14 @@ export function registerBookmarkImportHandlers(mainWindow: BrowserWindow): void 
 
     importAll();
 
+    // Notify all renderer windows to refresh bookmarks
+    try {
+      const { BrowserWindow } = require('electron');
+      for (const win of BrowserWindow.getAllWindows()) {
+        win.webContents.send('bookmarks:refresh');
+      }
+    } catch {}
+
     return { imported: bookmarks.length, folders: folderCache.size };
   });
 }

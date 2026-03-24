@@ -1,5 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron';
-import { IPC } from '@os-browser/shared';
+import { IPC } from '../../../shared/dist';
 import { getDatabase } from '../db/database';
 import { aiRequest } from '../net/cloudflare';
 import { getConnectivityStatus } from '../net/connectivity';
@@ -39,7 +39,8 @@ export function registerAIHandlers(mainWindow: BrowserWindow): void {
 
       return result;
     } catch (err: any) {
-      return { content: `Error: ${err.message}`, model, error: true };
+      console.error('[AI:chat] Request failed:', err.message);
+      return { content: 'Unable to process your request. Please try again.', model, error: true };
     }
   });
 
@@ -67,7 +68,8 @@ export function registerAIHandlers(mainWindow: BrowserWindow): void {
 
       return result;
     } catch (err: any) {
-      return { summary: `Error: ${err.message}`, error: true };
+      console.error('[AI:summarize] Request failed:', err.message);
+      return { summary: 'Unable to summarize this page. Please try again.', error: true };
     }
   });
 
@@ -97,11 +99,15 @@ export function registerAIHandlers(mainWindow: BrowserWindow): void {
 
       return result;
     } catch (err: any) {
-      return { translated_text: `Error: ${err.message}`, error: true };
+      console.error('[AI:translate] Request failed:', err.message);
+      return { translated_text: 'Unable to translate. Please try again.', error: true };
     }
   });
 
   ipcMain.handle(IPC.AI_SEARCH, async (_event, query: string) => {
+    if (typeof query !== 'string' || query.length > 2000) {
+      return { answer: 'Invalid query', query: '', error: true };
+    }
     if (getConnectivityStatus() === 'offline') {
       return { answer: 'You are offline. Search requires an internet connection.', query, error: true };
     }
@@ -109,7 +115,8 @@ export function registerAIHandlers(mainWindow: BrowserWindow): void {
     try {
       return await aiRequest('search', { query });
     } catch (err: any) {
-      return { answer: `Error: ${err.message}`, query, error: true };
+      console.error('[AI:search] Request failed:', err.message);
+      return { answer: 'Unable to search. Please try again.', query, error: true };
     }
   });
 
@@ -120,6 +127,9 @@ export function registerAIHandlers(mainWindow: BrowserWindow): void {
   });
 
   ipcMain.handle(IPC.CONVERSATION_CREATE, (_event, data: any) => {
+    if (!data || typeof data !== 'object') return null;
+    if (data.title && (typeof data.title !== 'string' || data.title.length > 512)) return null;
+    if (data.page_url && (typeof data.page_url !== 'string' || data.page_url.length > 4096)) return null;
     const db = getDatabase();
     const result = db.prepare(
       'INSERT INTO conversations (title, model, page_url) VALUES (?, ?, ?)'
@@ -128,16 +138,22 @@ export function registerAIHandlers(mainWindow: BrowserWindow): void {
   });
 
   ipcMain.handle(IPC.CONVERSATION_DELETE, (_event, id: number) => {
+    if (typeof id !== 'number' || id < 1) return;
     const db = getDatabase();
     db.prepare('DELETE FROM conversations WHERE id = ?').run(id);
   });
 
   ipcMain.handle(IPC.CONVERSATION_MESSAGES, (_event, id: number) => {
+    if (typeof id !== 'number' || id < 1) return [];
     const db = getDatabase();
     return db.prepare('SELECT * FROM chat_messages WHERE conversation_id = ? ORDER BY created_at').all(id);
   });
 
   ipcMain.handle(IPC.CONVERSATION_ADD_MESSAGE, (_event, data: any) => {
+    if (!data || typeof data !== 'object') return null;
+    if (typeof data.conversation_id !== 'number' || data.conversation_id < 1) return null;
+    if (typeof data.role !== 'string' || !['user', 'assistant', 'system'].includes(data.role)) return null;
+    if (typeof data.content !== 'string' || data.content.length > 100000) return null;
     const db = getDatabase();
     const result = db.prepare(
       'INSERT INTO chat_messages (conversation_id, role, content, model, page_context, tokens_used) VALUES (?, ?, ?, ?, ?, ?)'

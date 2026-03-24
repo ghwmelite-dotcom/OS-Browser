@@ -42,9 +42,10 @@ export function HelpPage() {
     { keys: 'F11', action: 'Fullscreen' },
     { keys: 'Escape', action: 'Close panel' },
     { keys: 'Ctrl+Shift+M', action: 'GovChat Messenger' },
+    { keys: 'Ctrl+Shift+A', action: 'Search tabs' },
   ];
 
-  const features = [
+  const features: Array<{ icon?: any; emoji?: string; name: string; desc: string }> = [
     { icon: MessageSquare, name: 'AI Assistant', desc: 'Chat with 6 AI models. Summarize pages, translate to Twi, draft letters.' },
     { icon: Shield, name: 'Ad Blocking', desc: 'Network-level blocking removes ads and trackers. Auto-whitelists government sites.' },
     { icon: Globe, name: 'Government Portals', desc: 'Quick access to GIFMIS, CAGD, GRA, SSNIT, OHCS, E-SPAR and more.' },
@@ -57,6 +58,16 @@ export function HelpPage() {
     { icon: Gamepad2, name: 'GovPlay Game Center', desc: '12 built-in games including Oware, Chess, Ludo, Sudoku, and more. Play offline anytime.' },
     { icon: Video, name: 'Video & Audio Calls', desc: 'Crystal-clear 1:1 video and audio calls built right into GovChat conversations.' },
     { icon: Users, name: 'People Directory', desc: 'Find colleagues by name, department, or ministry. Start conversations instantly.' },
+    { emoji: '\u2B07\uFE0F', name: 'Download Manager', desc: 'Pause, resume, and retry downloads with speed tracking and data cost estimates.' },
+    { emoji: '\uD83D\uDCC2', name: 'Workspaces', desc: 'Isolated browsing environments \u2014 Government, Personal, Custom \u2014 each with separate sessions.' },
+    { emoji: '\uD83D\uDD0D', name: 'Smart Tabs', desc: 'Fuzzy tab search (Ctrl+Shift+A), auto-grouping, tab snooze, and duplicate detection.' },
+    { emoji: '\uD83D\uDC9A', name: 'Digital Wellbeing', desc: 'Track browsing time, get break reminders, view per-site usage stats.' },
+    { emoji: '\uD83D\uDD10', name: 'TOTP 2FA', desc: 'Built-in two-factor authentication code generator with breach monitoring.' },
+    { emoji: '\uD83C\uDFAC', name: 'Screen Recorder', desc: 'Record tabs or windows as video. Annotate screenshots with arrows, text, and blur.' },
+    { emoji: '\uD83D\uDCD6', name: 'Reading Mode + TTS', desc: 'Distraction-free reading with text-to-speech in 9 languages including African languages.' },
+    { emoji: '\u2728', name: 'AI Page Actions', desc: '10 one-click AI actions: summarize, extract data, draft emails, translate, and more.' },
+    { emoji: '\uD83D\uDCCA', name: 'Data Cost Tracker', desc: 'Real-time bandwidth tracking per site with GH\u20B5 cost estimates and budget alerts.' },
+    { emoji: '\uD83D\uDD0B', name: 'DumsorGuard+', desc: 'Battery detection, auto power saver, 5-snapshot session recovery history.' },
   ];
 
   return (
@@ -79,7 +90,7 @@ export function HelpPage() {
             {features.map(f => (
               <div key={f.name} className="flex items-start gap-4 p-4 rounded-xl border" style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}>
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--color-surface-2)' }}>
-                  <f.icon size={18} style={{ color: 'var(--color-accent)' }} />
+                  {f.icon ? <f.icon size={18} style={{ color: 'var(--color-accent)' }} /> : <span className="text-[18px]">{f.emoji}</span>}
                 </div>
                 <div>
                   <p className="text-[14px] font-semibold text-text-primary">{f.name}</p>
@@ -223,6 +234,161 @@ export function HelpPage() {
               <div>
                 <p className="font-semibold text-text-primary mb-1">Online status</p>
                 <p className="text-text-muted">Green dot = online, grey dot = offline.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Download Manager */}
+        <div className="mb-8">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-accent)' }}>Download Manager</h2>
+          <div className="rounded-xl border p-5" style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--color-surface-2)' }}>
+                <span className="text-[18px]">{'\u2B07\uFE0F'}</span>
+              </div>
+              <p className="text-[13px] text-text-primary font-semibold">Pause, resume, and manage all your downloads</p>
+            </div>
+            <div className="space-y-3 text-[12px] text-text-secondary">
+              <div>
+                <p className="font-semibold text-text-primary mb-1">How to access</p>
+                <p>Downloads appear in the sidebar panel — click the download icon. Downloads are auto-triggered when you start a download.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Features</p>
+                <ul className="list-disc list-inside space-y-1 text-text-muted">
+                  <li>Pause and resume active downloads</li>
+                  <li>Retry failed downloads</li>
+                  <li>Clear completed downloads</li>
+                  <li>Real-time speed and ETA display</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Workspaces */}
+        <div className="mb-8">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-accent)' }}>Workspaces</h2>
+          <div className="rounded-xl border p-5" style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--color-surface-2)' }}>
+                <span className="text-[18px]">{'\uD83D\uDCC2'}</span>
+              </div>
+              <p className="text-[13px] text-text-primary font-semibold">Isolated browsing environments for different contexts</p>
+            </div>
+            <div className="space-y-3 text-[12px] text-text-secondary">
+              <div>
+                <p className="font-semibold text-text-primary mb-1">How to access</p>
+                <p>Workspace pills appear above the tab bar, or open via Command Palette (<kbd className="text-[11px] font-mono px-1.5 py-0.5 rounded" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>Ctrl+K</kbd>).</p>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Features</p>
+                <ul className="list-disc list-inside space-y-1 text-text-muted">
+                  <li>Create custom workspaces</li>
+                  <li>Switch with <kbd className="text-[11px] font-mono px-1.5 py-0.5 rounded" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>Ctrl+1/2/3</kbd></li>
+                  <li>Isolated cookies and sessions per workspace</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Default workspaces</p>
+                <p className="text-text-muted">General, Government, Personal</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Screen Recorder */}
+        <div className="mb-8">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-accent)' }}>Screen Recorder</h2>
+          <div className="rounded-xl border p-5" style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--color-surface-2)' }}>
+                <span className="text-[18px]">{'\uD83C\uDFAC'}</span>
+              </div>
+              <p className="text-[13px] text-text-primary font-semibold">Record tabs or windows as video with annotation tools</p>
+            </div>
+            <div className="space-y-3 text-[12px] text-text-secondary">
+              <div>
+                <p className="font-semibold text-text-primary mb-1">How to access</p>
+                <p>Command Palette → "Record Tab" or "Record Window"</p>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Features</p>
+                <ul className="list-disc list-inside space-y-1 text-text-muted">
+                  <li>WebM video recording</li>
+                  <li>Floating controls with pause and stop</li>
+                  <li>Annotation overlay with 5 tools</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Export</p>
+                <p className="text-text-muted">Downloads as a .webm file</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Reading Mode + TTS */}
+        <div className="mb-8">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-accent)' }}>Reading Mode + Text-to-Speech</h2>
+          <div className="rounded-xl border p-5" style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--color-surface-2)' }}>
+                <span className="text-[18px]">{'\uD83D\uDCD6'}</span>
+              </div>
+              <p className="text-[13px] text-text-primary font-semibold">Distraction-free reading with text-to-speech</p>
+            </div>
+            <div className="space-y-3 text-[12px] text-text-secondary">
+              <div>
+                <p className="font-semibold text-text-primary mb-1">How to access</p>
+                <p>Command Palette → "Reading Mode" or via the toolbar</p>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Features</p>
+                <ul className="list-disc list-inside space-y-1 text-text-muted">
+                  <li>4 themes: Light, Dark, Sepia, OLED</li>
+                  <li>Adjustable fonts and text size</li>
+                  <li>Text-to-speech with 9 languages</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Supported languages</p>
+                <p className="text-text-muted">English, French, Spanish, German, Portuguese, Swahili, Hausa, Yoruba</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* AI Page Actions */}
+        <div className="mb-8">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--color-accent)' }}>AI Page Actions</h2>
+          <div className="rounded-xl border p-5" style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--color-surface-2)' }}>
+                <span className="text-[18px]">{'\u2728'}</span>
+              </div>
+              <p className="text-[13px] text-text-primary font-semibold">10 one-click AI actions on any page</p>
+            </div>
+            <div className="space-y-3 text-[12px] text-text-secondary">
+              <div>
+                <p className="font-semibold text-text-primary mb-1">How to access</p>
+                <p>Floating AI bar → "Actions" button (wand icon)</p>
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary mb-1">Available actions</p>
+                <ul className="list-disc list-inside space-y-1 text-text-muted">
+                  <li>Summarize</li>
+                  <li>Extract Contacts</li>
+                  <li>Extract Dates</li>
+                  <li>Explain Simply</li>
+                  <li>Extract Tables</li>
+                  <li>Draft Email</li>
+                  <li>Key Facts</li>
+                  <li>Compare</li>
+                  <li>Translate + Summarize</li>
+                  <li>Action Items</li>
+                </ul>
               </div>
             </div>
           </div>

@@ -13,6 +13,14 @@ import './definitions/mobile-money';
 import './definitions/screenshot';
 import './definitions/network-manager';
 import './definitions/govplay';
+import './definitions/wellbeing';
+import './definitions/downloads';
+import './definitions/workspaces';
+import './definitions/screen-recorder';
+import './definitions/ussd-codebook';
+import './definitions/vault';
+import './definitions/exchange-rate';
+import './definitions/change-detector';
 
 // ── Re-exports ──────────────────────────────────────────────────────
 import { FeatureRegistry as _Registry } from './registry';

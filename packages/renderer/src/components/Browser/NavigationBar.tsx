@@ -1,11 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, User, Share, MonitorDown, Shield, ShieldCheck, ShieldOff } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { ArrowLeft, ArrowRight, RotateCw, X as XIcon, User, Share, MonitorDown, Shield, ShieldCheck, ShieldOff, PictureInPicture2, ArrowDownToLine, Check } from 'lucide-react';
+import { ShieldCheck as VaultShield } from 'lucide-react';
+import { useDownloadStore } from '@/store/downloads';
 import { useNavigationStore } from '@/store/navigation';
 import { useTabsStore } from '@/store/tabs';
 import { useSettingsStore } from '@/store/settings';
+import { useRecorderStore } from '@/store/recorder';
 import { OmniBar } from './OmniBar';
 import { BrowserMenu } from './BrowserMenu';
 import { KenteToolbar } from '../KenteSystem/KenteToolbar';
+import { useVaultStore } from '@/store/vault';
+import { isGovCaptureDomain } from '@/data/gov-sites-allowlist';
 
 // Auto-generated avatar colors based on name hash
 const AVATAR_COLORS = [
@@ -84,6 +89,54 @@ function NavButton({
   );
 }
 
+// Vault capture button — shows green shield on gov sites, neutral otherwise
+function VaultCaptureButton({ currentUrl }: { currentUrl: string }) {
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const isGovSite = isGovCaptureDomain(currentUrl);
+  const totalCaptures = useVaultStore(s => s.totalCaptures);
+
+  const handleCapture = async () => {
+    if (isCapturing) return;
+    setIsCapturing(true);
+    (window as any).osBrowser?.showWebViews?.();
+    await new Promise(r => setTimeout(r, 300));
+    try {
+      await useVaultStore.getState().captureCurrentPage('manual');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+    } catch {}
+    setIsCapturing(false);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={handleCapture}
+        disabled={isCapturing}
+        className="w-[32px] h-[32px] flex items-center justify-center rounded-full hover:bg-surface-2 transition-all duration-100 focus:outline-none focus:ring-2 focus:ring-ghana-gold/40 relative disabled:opacity-50"
+        aria-label="Vault Capture" title="Capture page to Vault"
+      >
+        <VaultShield
+          size={16}
+          strokeWidth={1.8}
+          style={{ color: isGovSite ? '#10B981' : 'var(--color-text-muted)' }}
+        />
+        {isGovSite && (
+          <span className="absolute -top-0.5 -right-0.5 w-[8px] h-[8px] rounded-full"
+            style={{ background: '#10B981', boxShadow: '0 0 4px rgba(16, 185, 129, 0.6)' }} />
+        )}
+      </button>
+      {showToast && (
+        <div className="absolute top-[36px] left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg text-[10px] font-medium whitespace-nowrap z-50 shadow-lg"
+          style={{ background: '#10B981', color: '#fff' }}>
+          Page captured
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface NavigationBarProps {
   onOpenHistory: () => void;
   onOpenBookmarks: () => void;
@@ -96,6 +149,7 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
   const { goBack, goForward, reload, stop } = useNavigationStore();
   const { activeTabId } = useTabsStore();
   const { settings } = useSettingsStore();
+  const isRecordingActive = useRecorderStore((s) => s.isRecording);
 
   // Track any open dropdown — hide WebContentsViews when ANY dropdown is open
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -193,7 +247,8 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
 
 
   return (
-    <div className="h-[44px] bg-surface-1 border-b border-border-1/50 flex items-center pl-3 pr-2 shrink-0 relative z-[50]">
+    <div className="h-[44px] border-b border-border-1/50 flex items-center pl-3 pr-2 shrink-0 relative z-[50]"
+      style={{ background: 'var(--color-surface-1)' }}>
       {/* ── Left: Nav buttons ── */}
       <div className="flex items-center gap-1 mr-3">
         <NavButton
@@ -226,26 +281,42 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
         {/* Kente Toolbar — contextual page actions (Screenshot, Save Offline, Translate, Lite Mode) */}
         <KenteToolbar />
 
-        {/* Share — with copy feedback */}
-        <div className="relative">
+        {/* Recording indicator — red badge when recording is active */}
+        {isRecordingActive && (
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full" style={{ background: 'rgba(239,68,68,0.1)' }}>
+            <span className="w-2 h-2 rounded-full inline-block" style={{
+              background: '#EF4444',
+              animation: 'pulse-nav-rec 1.2s ease-in-out infinite',
+            }} />
+            <span className="text-[10px] font-semibold" style={{ color: '#EF4444' }}>REC</span>
+            <style>{`
+              @keyframes pulse-nav-rec {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.3; }
+              }
+            `}</style>
+          </div>
+        )}
+
+        {/* Downloads — always visible, replaces share/copy link */}
+        <DownloadNavIndicator />
+
+        {/* PiP — Picture-in-Picture (only on real URLs) */}
+        {currentUrl && !currentUrl.startsWith('os-browser://') && (
           <NavButton
             onClick={() => {
-              if (currentUrl && currentUrl !== 'os-browser://newtab') {
-                navigator.clipboard?.writeText(currentUrl);
-                setShowCopied(true);
-                setTimeout(() => setShowCopied(false), 1500);
-              }
+              const tabId = useTabsStore.getState().activeTabId;
+              if (tabId) (window as any).osBrowser?.tabs?.pip?.(tabId);
             }}
-            icon={<Share size={15} strokeWidth={1.8} className="text-text-secondary" />}
-            label="Copy link"
+            icon={<PictureInPicture2 size={15} strokeWidth={1.8} className="text-text-secondary" />}
+            label="Picture in Picture (Alt+P)"
           />
-          {showCopied && (
-            <div className="absolute top-[36px] left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg text-[10px] font-medium whitespace-nowrap z-50 shadow-lg"
-              style={{ background: 'var(--color-accent)', color: '#fff' }}>
-              Link copied!
-            </div>
-          )}
-        </div>
+        )}
+
+        {/* Vault — Interaction capture */}
+        {currentUrl && !currentUrl.startsWith('os-browser://') && (
+          <VaultCaptureButton currentUrl={currentUrl} />
+        )}
 
         {/* Shield — Ad Blocker status */}
         <div className="relative">
@@ -377,8 +448,8 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
             className="w-[32px] h-[32px] flex items-center justify-center rounded-full hover:bg-surface-2 transition-all duration-100 focus:outline-none focus:ring-2 focus:ring-ghana-gold/40"
             aria-label="Account" title="Account"
           >
-            {settings?.email ? (
-              <ProfileAvatar name={settings.display_name || 'U'} avatarPath={settings.avatar_path} avatarColor={(settings as any).avatar_color} size={26} />
+            {settings?.display_name && settings.display_name !== 'User' ? (
+              <ProfileAvatar name={settings.display_name} avatarPath={settings.avatar_path} avatarColor={(settings as any).avatar_color} size={26} />
             ) : (
               <User size={16} strokeWidth={1.8} className="text-text-secondary" />
             )}
@@ -392,7 +463,7 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                 className="absolute top-[36px] right-0 w-[340px] rounded-2xl border shadow-2xl z-[100] overflow-hidden"
                 style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)', maxHeight: 'calc(100vh - 100px)' }}
               >
-                {settings?.email ? (
+                {settings?.display_name && settings.display_name !== 'User' ? (
                   /* ── Signed in view ── */
                   <>
                     {/* Large profile header */}
@@ -417,6 +488,11 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                               ctx.drawImage(img, sx, sy, s, s, 0, 0, 128, 128);
                               const smallDataUrl = canvas.toDataURL('image/jpeg', 0.8);
                               await useSettingsStore.getState().updateSettings({ avatar_path: smallDataUrl });
+                              // Sync avatar to profile system (for launcher screen)
+                              try {
+                                const active = await window.osBrowser.profiles.getActive();
+                                if (active) await window.osBrowser.profiles.updateAvatar(active.id, smallDataUrl);
+                              } catch {}
                             };
                             img.src = URL.createObjectURL(file);
                           } catch {}
@@ -514,6 +590,11 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                         <button onClick={async () => {
                             if (!profileName.trim()) return;
                             await useSettingsStore.getState().updateSettings({ display_name: profileName.trim(), email: profileEmail.trim() || null });
+                            // Sync name to profile system (for launcher screen)
+                            try {
+                              const active = await window.osBrowser.profiles.getActive();
+                              if (active) await window.osBrowser.profiles.updateName(active.id, profileName.trim());
+                            } catch {}
                             setProfileView('main');
                           }}
                           disabled={!profileName.trim()}
@@ -668,6 +749,182 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
         />
       </div>
     </div>
+  );
+}
+
+// ── Download Nav Indicator (Chrome-style) ──────────────────────────────
+function DownloadNavIndicator() {
+  const { downloads } = useDownloadStore();
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [recentComplete, setRecentComplete] = useState<string | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [dropPos, setDropPos] = useState({ top: 0, right: 0 });
+  const prevCompletedRef = useRef<Set<string>>(new Set());
+
+  const activeDownloads = downloads.filter(d => d.state === 'downloading' || d.state === 'progressing');
+  const completedDownloads = downloads.filter(d => d.state === 'completed');
+  const hasActive = activeDownloads.length > 0;
+  const hasAny = downloads.length > 0;
+
+  // Calculate overall progress for active downloads
+  const overallProgress = activeDownloads.length > 0
+    ? activeDownloads.reduce((sum, d) => sum + (d.totalBytes > 0 ? d.receivedBytes / d.totalBytes : 0), 0) / activeDownloads.length
+    : 0;
+
+  // Detect newly completed downloads → show desktop notification
+  useEffect(() => {
+    const currentCompleted = new Set(completedDownloads.map(d => d.id));
+    for (const id of currentCompleted) {
+      if (!prevCompletedRef.current.has(id)) {
+        const dl = downloads.find(d => d.id === id);
+        if (dl) {
+          setRecentComplete(dl.filename);
+          setTimeout(() => setRecentComplete(null), 4000);
+          // Desktop notification
+          try {
+            (window as any).osBrowser?.notification?.show?.({
+              title: 'Download Complete',
+              body: dl.filename,
+              type: 'success',
+            });
+          } catch {}
+        }
+      }
+    }
+    prevCompletedRef.current = currentCompleted;
+  }, [completedDownloads.length]);
+
+  // Position dropdown
+  useEffect(() => {
+    if (showDropdown && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setDropPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
+      (window as any).osBrowser?.hideWebViews?.();
+    } else if (!showDropdown) {
+      (window as any).osBrowser?.showWebViews?.();
+    }
+  }, [showDropdown]);
+
+  const formatBytes = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1048576).toFixed(1)} MB`;
+  };
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        onClick={() => setShowDropdown(!showDropdown)}
+        className="relative w-[32px] h-[32px] flex items-center justify-center rounded-full hover:bg-surface-2 transition-all duration-150"
+        title={hasActive ? `Downloading ${activeDownloads.length} file(s)` : 'Downloads'}
+        style={{ color: hasActive ? '#D4A017' : 'var(--color-text-secondary)' }}
+      >
+        <ArrowDownToLine size={16} strokeWidth={2} />
+
+        {/* Progress ring for active downloads */}
+        {hasActive && (
+          <svg className="absolute inset-0" width="32" height="32" viewBox="0 0 32 32"
+            style={{ transform: 'rotate(-90deg)' }}>
+            <circle cx="16" cy="16" r="13" fill="none" stroke="rgba(212,160,23,0.15)" strokeWidth="2" />
+            <circle cx="16" cy="16" r="13" fill="none" stroke="#D4A017" strokeWidth="2"
+              strokeDasharray={`${overallProgress * 81.7} 81.7`}
+              strokeLinecap="round"
+              style={{ transition: 'stroke-dasharray 300ms ease' }} />
+          </svg>
+        )}
+
+        {/* Completed checkmark badge */}
+        {!hasActive && recentComplete && (
+          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center"
+            style={{ background: '#10B981', border: '1.5px solid var(--color-surface-1)' }}>
+            <Check size={8} strokeWidth={3} color="#fff" />
+          </div>
+        )}
+
+        {/* Active count badge */}
+        {hasActive && activeDownloads.length > 0 && (
+          <div className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] rounded-full flex items-center justify-center px-0.5"
+            style={{ background: '#D4A017', border: '1.5px solid var(--color-surface-1)', fontSize: 8, fontWeight: 700, color: '#1a1a1a' }}>
+            {activeDownloads.length}
+          </div>
+        )}
+      </button>
+
+      {/* Download dropdown */}
+      {showDropdown && (
+        <>
+          <div className="fixed inset-0 z-[199]" onClick={() => setShowDropdown(false)} />
+          <div
+            className="fixed z-[200] w-[320px] max-h-[400px] rounded-xl border overflow-hidden flex flex-col"
+            style={{
+              top: dropPos.top, right: dropPos.right,
+              background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+              animation: 'pwa-slide-in 0.2s ease-out',
+            }}
+          >
+            <div className="px-4 py-3 flex items-center justify-between shrink-0"
+              style={{ borderBottom: '1px solid var(--color-border-1)' }}>
+              <span className="text-[13px] font-semibold text-text-primary">Downloads</span>
+              {completedDownloads.length > 0 && (
+                <button onClick={() => { useDownloadStore.getState().clearCompleted(); }}
+                  className="text-[11px] font-medium hover:underline" style={{ color: 'var(--color-accent)' }}>
+                  Clear completed
+                </button>
+              )}
+            </div>
+
+            <div className="overflow-y-auto flex-1">
+              {downloads.length === 0 ? (
+                <div className="px-4 py-8 text-center text-[12px] text-text-muted">No downloads</div>
+              ) : (
+                downloads.map(dl => {
+                  const isActive = dl.state === 'downloading' || dl.state === 'progressing';
+                  const isComplete = dl.state === 'completed';
+                  const isFailed = dl.state === 'failed' || dl.state === 'cancelled';
+                  const progress = dl.totalBytes > 0 ? dl.receivedBytes / dl.totalBytes : 0;
+
+                  return (
+                    <div key={dl.id} className="px-4 py-2.5 flex items-center gap-3 hover:bg-surface-2/50 transition-colors"
+                      style={{ borderBottom: '1px solid var(--color-border-1)' }}>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                        style={{
+                          background: isComplete ? 'rgba(16,185,129,0.1)' : isFailed ? 'rgba(239,68,68,0.1)' : 'rgba(212,160,23,0.1)',
+                        }}>
+                        {isComplete ? <Check size={14} style={{ color: '#10B981' }} /> :
+                         isFailed ? <XIcon size={14} style={{ color: '#EF4444' }} /> :
+                         <ArrowDownToLine size={14} style={{ color: '#D4A017' }} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-medium text-text-primary truncate">{dl.filename}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {isActive && (
+                            <>
+                              <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-border-1)' }}>
+                                <div className="h-full rounded-full transition-all duration-300"
+                                  style={{ width: `${progress * 100}%`, background: '#D4A017' }} />
+                              </div>
+                              <span className="text-[10px] text-text-muted shrink-0">{Math.round(progress * 100)}%</span>
+                            </>
+                          )}
+                          {isComplete && (
+                            <span className="text-[10px] text-text-muted">{formatBytes(dl.totalBytes)}</span>
+                          )}
+                          {isFailed && (
+                            <span className="text-[10px]" style={{ color: '#EF4444' }}>Failed</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </>
   );
 }
 

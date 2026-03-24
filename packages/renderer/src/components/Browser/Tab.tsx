@@ -10,6 +10,8 @@ interface TabProps {
   isPinned: boolean;
   isLoading?: boolean;
   index?: number;
+  tabCount?: number;
+  containerWidth?: number;
   onSwitch: () => void;
   onClose: () => void;
 }
@@ -30,21 +32,46 @@ function getTabColor(index: number) {
   return TAB_COLORS[index % TAB_COLORS.length];
 }
 
-export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, index = 0, onSwitch, onClose }: TabProps) {
+// Chrome-style tab width: fills available space, shrinks as tabs increase, min 60px
+const MIN_TAB_WIDTH = 60;
+const MAX_TAB_WIDTH = 280;
+const PINNED_TAB_WIDTH = 52;
+const NEW_TAB_BTN_WIDTH = 36;
+
+function calcTabWidth(tabCount: number, pinnedCount: number, containerWidth: number): number {
+  const unpinnedCount = tabCount - pinnedCount;
+  if (unpinnedCount <= 0) return MAX_TAB_WIDTH;
+  const availableWidth = containerWidth - (pinnedCount * PINNED_TAB_WIDTH) - NEW_TAB_BTN_WIDTH;
+  const width = Math.floor(availableWidth / unpinnedCount);
+  return Math.max(MIN_TAB_WIDTH, Math.min(MAX_TAB_WIDTH, width));
+}
+
+export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, index = 0, tabCount = 1, containerWidth = 800, onSwitch, onClose }: TabProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const [previewPos, setPreviewPos] = useState<{ top: number; left: number } | null>(null);
   const tabRef = useRef<HTMLDivElement>(null);
   const color = useMemo(() => getTabColor(index), [index]);
+  const dynamicWidth = useMemo(() => isPinned ? PINNED_TAB_WIDTH : calcTabWidth(tabCount, 0, containerWidth), [tabCount, containerWidth, isPinned]);
+  const isCompact = dynamicWidth < 100;
+
+  const handleClose = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => onClose(), 150);
+  };
 
   // Smooth mount animation
   useEffect(() => {
     const el = tabRef.current;
     if (!el) return;
-    el.style.maxWidth = '0px';
+    el.style.width = '0px';
     el.style.opacity = '0';
     requestAnimationFrame(() => {
-      el.style.transition = 'max-width 250ms ease-out, opacity 200ms ease-out';
-      el.style.maxWidth = isPinned ? '52px' : '280px';
+      el.style.transition = 'width 250ms ease-out, opacity 200ms ease-out';
+      el.style.width = `${dynamicWidth}px`;
       el.style.opacity = '1';
     });
   }, []);
@@ -55,21 +82,31 @@ export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, in
       onClick={onSwitch}
       onMouseEnter={() => {
         setIsHovered(true);
-        const timer = setTimeout(() => setShowPreview(true), 600);
+        const timer = setTimeout(() => {
+          if (tabRef.current) {
+            const rect = tabRef.current.getBoundingClientRect();
+            setPreviewPos({ top: rect.bottom + 4, left: rect.left + rect.width / 2 });
+          }
+          setShowPreview(true);
+        }, 600);
         (tabRef.current as any).__hoverTimer = timer;
       }}
       onMouseLeave={() => {
         setIsHovered(false);
         setShowPreview(false);
+        setPreviewPos(null);
         clearTimeout((tabRef.current as any)?.__hoverTimer);
       }}
       className={`
         group relative flex items-center h-[34px] cursor-pointer overflow-hidden
-        transition-all duration-150 ease-out rounded-t-lg mx-[1px]
-        ${isPinned ? 'w-[52px] justify-center px-1' : 'min-w-[160px] flex-1 px-3 gap-2.5'}
+        transition-all duration-200 ease-out rounded-t-lg mx-[1px]
+        ${isPinned ? 'justify-center px-1' : isCompact ? 'px-1.5 gap-1' : 'px-3 gap-2.5'}
+        ${isClosing ? 'tab-closing' : ''}
       `}
       style={{
-        maxWidth: isPinned ? '52px' : '280px',
+        width: `${dynamicWidth}px`,
+        minWidth: isPinned ? `${PINNED_TAB_WIDTH}px` : `${MIN_TAB_WIDTH}px`,
+        maxWidth: `${MAX_TAB_WIDTH}px`,
         background: isActive ? color.bg : isHovered ? 'var(--color-surface-2)' : 'transparent',
         borderTop: isActive ? `2px solid ${color.accent}` : '2px solid transparent',
         borderLeft: isActive ? `1px solid ${color.border}` : '1px solid transparent',
@@ -103,8 +140,8 @@ export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, in
         )}
       </div>
 
-      {/* Title — wider, clearly readable */}
-      {!isPinned && (
+      {/* Title — hidden when tab is too compact */}
+      {!isPinned && !isCompact && (
         <div className="flex-1 min-w-0 relative overflow-hidden">
           <span
             className={`
@@ -128,16 +165,19 @@ export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, in
         </div>
       )}
 
-      {/* Close button */}
+      {/* Close button — always visible normally, hover-only when compact */}
       {!isPinned && (
         <button
-          onClick={(e) => { e.stopPropagation(); onClose(); }}
+          onClick={handleClose}
           className={`
             w-[20px] h-[20px] flex items-center justify-center rounded shrink-0
             transition-all duration-100
             hover:bg-[rgba(255,255,255,0.1)] active:bg-[rgba(255,255,255,0.15)]
             focus:outline-none
-            ${isHovered || isActive ? 'opacity-60 hover:opacity-100' : 'opacity-0'}
+            ${isCompact
+              ? (isHovered ? 'opacity-80' : 'opacity-0 w-0 overflow-hidden')
+              : (isHovered || isActive ? 'opacity-60 hover:opacity-100' : 'opacity-0')
+            }
           `}
           aria-label={`Close ${title}`}
           tabIndex={isHovered || isActive ? 0 : -1}
@@ -146,15 +186,31 @@ export function Tab({ id, title, favicon, url, isActive, isPinned, isLoading, in
         </button>
       )}
 
-      {/* Tab preview tooltip */}
-      {showPreview && !isPinned && (
-        <div className="absolute top-full left-0 mt-1 z-[60] pointer-events-none"
-          style={{ minWidth: '200px', maxWidth: '300px' }}>
-          <div className="rounded-lg border px-3 py-2 shadow-lg text-left"
-            style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}>
-            <p className="text-[12px] font-medium text-text-primary truncate">{title}</p>
+      {/* Tab preview tooltip — fixed position, centered below tab */}
+      {showPreview && !isPinned && previewPos && (
+        <div
+          className="fixed z-[9999] pointer-events-none"
+          style={{
+            top: previewPos.top,
+            left: previewPos.left,
+            transform: 'translateX(-50%)',
+            maxWidth: '300px',
+            minWidth: '180px',
+          }}
+        >
+          <div
+            className="rounded-lg border px-3 py-2.5 text-left"
+            style={{
+              background: 'var(--color-surface-1)',
+              borderColor: 'var(--color-border-1)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
+            }}
+          >
+            <p className="text-[12px] font-medium text-text-primary leading-snug" style={{ wordBreak: 'break-word' }}>{title}</p>
             {url && url !== 'os-browser://newtab' && (
-              <p className="text-[10px] text-text-muted truncate mt-0.5">{url}</p>
+              <p className="text-[11px] text-text-muted mt-1 truncate">
+                {url.length > 60 ? url.slice(0, 60) + '...' : url}
+              </p>
             )}
           </div>
         </div>

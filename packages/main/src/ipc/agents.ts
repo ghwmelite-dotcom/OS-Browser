@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { IPC } from '@os-browser/shared';
+import { IPC } from '../../../shared/dist';
 import { getDatabase } from '../db/database';
 import { aiRequest } from '../net/cloudflare';
 import { getConnectivityStatus } from '../net/connectivity';
@@ -11,6 +11,10 @@ export function registerAgentHandlers(): void {
   });
 
   ipcMain.handle(IPC.AGENT_CREATE, (_event, data: any) => {
+    if (!data || typeof data.name !== 'string' || typeof data.system_prompt !== 'string') return null;
+    if (data.name.length > 256 || data.system_prompt.length > 10000) return null;
+    if (data.description && typeof data.description === 'string' && data.description.length > 2048) return null;
+    if (data.model && typeof data.model === 'string' && data.model.length > 256) return null;
     const db = getDatabase();
     const result = db.prepare(
       'INSERT INTO user_agents (name, description, system_prompt, model) VALUES (?, ?, ?, ?)'
@@ -19,6 +23,7 @@ export function registerAgentHandlers(): void {
   });
 
   ipcMain.handle(IPC.AGENT_UPDATE, (_event, id: number, data: any) => {
+    if (typeof id !== 'number' || id < 1 || !data || typeof data !== 'object') return;
     const db = getDatabase();
     const allowed = ['name', 'description', 'system_prompt', 'model', 'triggers', 'is_active'];
     const fields = Object.keys(data).filter(k => allowed.includes(k));
@@ -29,11 +34,14 @@ export function registerAgentHandlers(): void {
   });
 
   ipcMain.handle(IPC.AGENT_DELETE, (_event, id: number) => {
+    if (typeof id !== 'number' || id < 1) return;
     const db = getDatabase();
     db.prepare('DELETE FROM user_agents WHERE id = ?').run(id);
   });
 
   ipcMain.handle(IPC.AGENT_EXECUTE, async (_event, id: number, input: string) => {
+    if (typeof id !== 'number' || id < 1) return { content: 'Invalid agent ID', error: true };
+    if (typeof input !== 'string' || input.length > 10000) return { content: 'Input too long', error: true };
     const db = getDatabase();
     const agent = db.prepare('SELECT * FROM user_agents WHERE id = ?').get(id) as any;
     if (!agent) return { content: 'Agent not found', error: true };
@@ -51,7 +59,8 @@ export function registerAgentHandlers(): void {
       });
       return result;
     } catch (err: any) {
-      return { content: `Error: ${err.message}`, error: true };
+      console.error('[Agent:execute] Request failed:', err.message);
+      return { content: 'Unable to execute agent. Please try again.', error: true };
     }
   });
 }
