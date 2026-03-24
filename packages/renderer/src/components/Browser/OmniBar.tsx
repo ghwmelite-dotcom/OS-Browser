@@ -157,18 +157,116 @@ export function OmniBar() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    const ctrl = e.ctrlKey || e.metaKey;
+    const shift = e.shiftKey;
+    const alt = e.altKey;
+
+    if (alt && e.key === 'Enter') {
+      // Alt+Enter — open current input in a NEW tab (keep current tab)
+      e.preventDefault();
+      const raw = inputValue.trim();
+      if (raw && activeTabId) {
+        let url = raw;
+        if (!raw.includes('://') && raw.includes('.') && !raw.includes(' ')) {
+          url = `https://${raw}`;
+        } else if (!raw.includes('://') && !raw.includes('.')) {
+          const searchEngines: Record<string, string> = {
+            google: 'https://www.google.com/search?q=',
+            duckduckgo: 'https://duckduckgo.com/?q=',
+            bing: 'https://www.bing.com/search?q=',
+            osbrowser: 'https://www.google.com/search?q=',
+          };
+          const searchUrl = searchEngines[(settings as any)?.search_engine || 'google'] || searchEngines.google;
+          url = `${searchUrl}${encodeURIComponent(raw)}`;
+        }
+        useTabsStore.getState().createTab(url);
+        setSuggestions([]);
+        setIsFocused(false);
+        inputRef.current?.blur();
+      }
+      return;
+    }
+
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setSelectedIndex(prev => Math.min(prev + 1, suggestions.length - 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setSelectedIndex(prev => Math.max(prev - 1, -1));
-    } else if (e.key === 'Enter' && selectedIndex >= 0) {
+    } else if (e.key === 'Enter' && selectedIndex >= 0 && !ctrl && !shift) {
+      // Enter with suggestion selected — navigate to suggestion
       e.preventDefault();
       submitValue(suggestions[selectedIndex].url);
+    } else if (e.key === 'Enter' && ctrl && shift) {
+      // Ctrl+Shift+Enter — wrap input as www._____.org
+      e.preventDefault();
+      const raw = inputValue.trim();
+      if (raw && !raw.includes('://') && !raw.includes('.')) {
+        submitValue(`https://www.${raw}.org`);
+      } else {
+        submitValue(raw);
+      }
+    } else if (e.key === 'Enter' && ctrl && !shift) {
+      // Ctrl+Enter — wrap input as www._____.com and navigate
+      e.preventDefault();
+      const raw = inputValue.trim();
+      if (raw && !raw.includes('://') && !raw.includes('.')) {
+        submitValue(`https://www.${raw}.com`);
+      } else {
+        submitValue(raw);
+      }
+    } else if (e.key === 'Enter' && shift && !ctrl) {
+      // Shift+Enter — wrap input as www._____.net
+      e.preventDefault();
+      const raw = inputValue.trim();
+      if (raw && !raw.includes('://') && !raw.includes('.')) {
+        submitValue(`https://www.${raw}.net`);
+      } else {
+        submitValue(raw);
+      }
     } else if (e.key === 'Escape') {
+      // Escape — revert to current URL and blur
       setSuggestions([]);
+      setInputValue(currentUrl === 'os-browser://newtab' ? '' : simplifyUrl(currentUrl));
       inputRef.current?.blur();
+    } else if (e.key === 'a' && ctrl) {
+      // Ctrl+A — select all text in the address bar (native behavior, but ensure it works)
+      e.stopPropagation();
+    } else if (e.key === 'c' && ctrl) {
+      // Ctrl+C — copy selected text (allow native)
+      e.stopPropagation();
+    } else if (e.key === 'v' && ctrl) {
+      // Ctrl+V — paste and allow typing to continue (allow native)
+      e.stopPropagation();
+    } else if (e.key === 'x' && ctrl) {
+      // Ctrl+X — cut selected text (allow native)
+      e.stopPropagation();
+    } else if (e.key === 'z' && ctrl && !shift) {
+      // Ctrl+Z — undo (allow native)
+      e.stopPropagation();
+    } else if ((e.key === 'z' && ctrl && shift) || (e.key === 'y' && ctrl)) {
+      // Ctrl+Shift+Z or Ctrl+Y — redo (allow native)
+      e.stopPropagation();
+    } else if (e.key === 'Delete' && shift) {
+      // Shift+Delete — remove selected autocomplete suggestion
+      if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+        e.preventDefault();
+        const removed = suggestions[selectedIndex];
+        setSuggestions(prev => prev.filter((_, i) => i !== selectedIndex));
+        setSelectedIndex(prev => Math.min(prev, suggestions.length - 2));
+        // Delete from history if it's a history suggestion
+        if (removed.type === 'history') {
+          try { window.osBrowser.history.delete((removed as any).id); } catch {}
+        }
+      }
+    } else if (e.key === 'Tab' && !shift && suggestions.length > 0 && selectedIndex >= 0) {
+      // Tab — autocomplete with selected suggestion URL
+      e.preventDefault();
+      setInputValue(suggestions[selectedIndex].url);
+      setSuggestions([]);
+    } else if (e.key === 'Home' || e.key === 'End') {
+      // Home/End — allow cursor movement (stop propagation to prevent global shortcuts)
+      e.stopPropagation();
     }
   };
 

@@ -74,8 +74,8 @@ export function useKeyboardShortcuts(callbacks: {
       }
       // Ctrl+Shift+T — Reopen closed tab
       else if (ctrl && shift && key === 't') { e.preventDefault(); reopenLastClosed(); }
-      // Ctrl+L — Focus URL bar
-      else if (ctrl && key === 'l' && !shift) {
+      // Ctrl+L / Alt+D / F6 — Focus URL bar
+      else if ((ctrl && key === 'l' && !shift) || (alt && key === 'd' && !ctrl) || key === 'f6') {
         e.preventDefault();
         (document.querySelector('[aria-label="Address bar"]') as HTMLInputElement)?.focus();
       }
