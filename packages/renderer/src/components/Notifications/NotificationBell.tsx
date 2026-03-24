@@ -55,8 +55,8 @@ export function NotificationBell() {
           if (!open && bellRef.current) {
             const rect = bellRef.current.getBoundingClientRect();
             setDropdownPos({
-              top: rect.top - 8, // 8px gap above the bell
-              right: window.innerWidth - rect.right,
+              top: rect.top, // top edge of the bell
+              right: window.innerWidth - rect.right - rect.width / 2,
             });
           }
           setOpen((prev) => !prev);
@@ -102,23 +102,28 @@ export function NotificationBell() {
         )}
       </button>
 
-      {/* Dropdown panel */}
+      {/* Dropdown panel — opens upward from bell, bottom edge sits above status bar */}
       {open && (
         <div
           role="menu"
           style={{
             position: 'fixed',
-            bottom: window.innerHeight - dropdownPos.top,
-            right: dropdownPos.right,
-            width: 320,
-            maxHeight: Math.min(400, dropdownPos.top - 10),
+            // Panel bottom edge = 8px above the bell's top
+            bottom: window.innerHeight - dropdownPos.top + 8,
+            // Centered on the bell, clamped to viewport
+            right: Math.max(8, dropdownPos.right - 150),
+            width: 340,
+            // Grows upward, max height leaves room at top of screen
+            maxHeight: Math.min(420, dropdownPos.top - 80),
             overflowY: 'auto',
+            overflowX: 'hidden',
             background: 'var(--color-surface-1)',
             border: '1px solid var(--color-border-2)',
-            borderRadius: 10,
-            boxShadow: '0 -4px 24px rgba(0,0,0,.12), 0 2px 8px rgba(0,0,0,.08)',
+            borderRadius: 12,
+            boxShadow: '0 -8px 32px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.2)',
             zIndex: 9999,
             fontSize: 12,
+            animation: 'slideUpFadeIn 150ms ease-out',
           }}
         >
           {/* Header */}
@@ -127,11 +132,16 @@ export function NotificationBell() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '10px 12px 8px',
+              padding: '12px 14px 10px',
               borderBottom: '1px solid var(--color-border-2)',
               fontWeight: 600,
-              fontSize: 12,
+              fontSize: 13,
               color: 'var(--color-text-primary)',
+              position: 'sticky',
+              top: 0,
+              background: 'var(--color-surface-1)',
+              zIndex: 1,
+              borderRadius: '12px 12px 0 0',
             }}
           >
             <span>
@@ -181,13 +191,14 @@ export function NotificationBell() {
               ))}
               <div
                 style={{
-                  padding: '10px 12px',
+                  padding: '12px 14px',
                   textAlign: 'center',
                   color: 'var(--color-text-tertiary)',
                   fontSize: 11,
+                  borderTop: '1px solid var(--color-border-1)',
                 }}
               >
-                No more notifications
+                That's everything
               </div>
             </>
           )}
