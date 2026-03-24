@@ -5,6 +5,7 @@ import path from 'path';
 
 const ALGORITHM = 'aes-256-gcm';
 let _cachedKey: Buffer | null = null;
+let _keyTimeout: NodeJS.Timeout | null = null;
 
 const KEY_FILE = path.join(app.getPath('userData'), '.credential-key');
 
@@ -31,10 +32,15 @@ function getCredentialKey(): Buffer {
     _cachedKey = newKey;
   } else {
     // Fallback: deterministic key derived from machine info (less secure but consistent)
+    console.warn('[Security] safeStorage unavailable — using hostname-derived key. Credentials are less secure.');
     _cachedKey = crypto.createHash('sha256')
       .update('os-browser-credential-key-v1' + require('os').hostname())
       .digest();
   }
+
+  // Clear cached key after 30 minutes for security
+  if (_keyTimeout) clearTimeout(_keyTimeout);
+  _keyTimeout = setTimeout(() => { _cachedKey = null; }, 30 * 60 * 1000);
 
   return _cachedKey;
 }

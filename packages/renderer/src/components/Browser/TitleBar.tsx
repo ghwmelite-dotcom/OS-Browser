@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sun, Moon, Minus, Square, X } from 'lucide-react';
 import { useSettingsStore } from '@/store/settings';
 
@@ -12,6 +12,39 @@ declare global {
       [key: string]: any;
     };
   }
+}
+
+/** Animated OS Browser logo — Kente-inspired golden compass with subtle glow */
+function BrowserLogo() {
+  return (
+    <div className="relative w-6 h-6 flex items-center justify-center shrink-0" title="OS Browser">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+        className="browser-logo-spin">
+        {/* Outer ring */}
+        <circle cx="12" cy="12" r="10.5" stroke="url(#logoGrad)" strokeWidth="1.8" fill="none" />
+        {/* Inner compass cross */}
+        <path d="M12 3.5V8M12 16v4.5M3.5 12H8M16 12h4.5" stroke="url(#logoGrad)" strokeWidth="1.2" strokeLinecap="round" />
+        {/* Center globe lines */}
+        <ellipse cx="12" cy="12" rx="4.5" ry="10.5" stroke="url(#logoGrad2)" strokeWidth="0.8" opacity="0.5" />
+        <ellipse cx="12" cy="12" rx="10.5" ry="4.5" stroke="url(#logoGrad2)" strokeWidth="0.8" opacity="0.5" />
+        {/* Center dot */}
+        <circle cx="12" cy="12" r="2" fill="url(#logoGrad)" className="browser-logo-pulse" />
+        <defs>
+          <linearGradient id="logoGrad" x1="0" y1="0" x2="24" y2="24">
+            <stop offset="0%" stopColor="#D4A017" />
+            <stop offset="50%" stopColor="#F2C94C" />
+            <stop offset="100%" stopColor="#D4A017" />
+          </linearGradient>
+          <linearGradient id="logoGrad2" x1="0" y1="12" x2="24" y2="12">
+            <stop offset="0%" stopColor="#D4A017" />
+            <stop offset="100%" stopColor="#F2C94C" />
+          </linearGradient>
+        </defs>
+      </svg>
+      {/* Glow effect */}
+      <div className="absolute inset-0 rounded-full browser-logo-glow" />
+    </div>
+  );
 }
 
 export function TitleBar() {
@@ -31,12 +64,24 @@ export function TitleBar() {
 
   return (
     <div
-      className="h-8 bg-bg flex items-center justify-between shrink-0 select-none"
+      className="shrink-0 select-none flex flex-col"
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
-      {/* Left: App title */}
+      {/* Kente crown — woven band at the very top */}
+      <div style={{
+        height: 3,
+        background: 'var(--kente-crown)',
+        flexShrink: 0,
+        opacity: isDark ? 0.5 : 1,
+      }} />
+      <div
+        className="h-8 flex items-center justify-between"
+        style={{ background: 'var(--kente-header-bg)' }}
+      >
+      {/* Left: Animated browser logo + App title */}
       <div className="flex items-center gap-2 pl-3">
-        <span className="text-xs font-semibold tracking-wide" style={{ color: 'var(--color-accent)' }}>
+        <BrowserLogo />
+        <span className="text-xs font-semibold tracking-wide" style={{ color: 'var(--color-accent)', WebkitAppRegion: 'drag' } as React.CSSProperties}>
           OS Browser
         </span>
       </div>
@@ -96,6 +141,7 @@ export function TitleBar() {
         >
           <X size={14} className="text-text-secondary group-hover:text-white" />
         </button>
+      </div>
       </div>
     </div>
   );

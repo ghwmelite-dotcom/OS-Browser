@@ -6,6 +6,8 @@ import React, {
   useState,
 } from 'react';
 import {
+  Banknote,
+  BarChart2,
   ChevronDown,
   Lock,
   Mic,
@@ -13,12 +15,18 @@ import {
   SendHorizontal,
   Smile,
   Square,
+  Trophy,
   X,
 } from 'lucide-react';
 import { useGovChatStore } from '@/store/govchat';
 import { MatrixClientService } from '@/services/MatrixClientService';
 import type { ClassificationLevel, ReplyTo } from '@/types/govchat';
 import { CLASSIFICATION_COLORS } from '@/types/govchat';
+import { FootballPanel } from './FootballPanel';
+import type { FootballMatch } from './FootballScoreCard';
+import { PollCreatorPanel } from './PollCreatorPanel';
+import { MoMoPanel } from './MoMoPanel';
+import { StickerPicker } from './stickers/StickerPicker';
 
 /* ─────────── constants ─────────── */
 
@@ -57,6 +65,8 @@ export function MessageInput() {
   const sendMessage = useGovChatStore(s => s.sendMessage);
   const sendFileMessage = useGovChatStore(s => s.sendFileMessage);
   const sendVoiceNote = useGovChatStore(s => s.sendVoiceNote);
+  const sendFootballScore = useGovChatStore(s => s.sendFootballScore);
+  const sendSticker = useGovChatStore(s => s.sendSticker);
   const setReplyingTo = useGovChatStore(s => s.setReplyingTo);
 
   const activeRoom = useMemo(
@@ -75,6 +85,10 @@ export function MessageInput() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
+  const [showFootballPanel, setShowFootballPanel] = useState(false);
+  const [showPollCreator, setShowPollCreator] = useState(false);
+  const [showMoMoPanel, setShowMoMoPanel] = useState(false);
+  const [showStickerPicker, setShowStickerPicker] = useState(false);
 
   /* ── refs ── */
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -401,8 +415,26 @@ export function MessageInput() {
     [activeRoomId, recordingDuration, sendVoiceNote],
   );
 
+  const handleShareFootballMatch = useCallback(
+    (match: FootballMatch) => {
+      if (!activeRoomId) return;
+      sendFootballScore(activeRoomId, match as unknown as Record<string, unknown>);
+      setShowFootballPanel(false);
+    },
+    [activeRoomId, sendFootballScore],
+  );
+
+  const handleSendSticker = useCallback(
+    (packId: string, stickerId: string, altText: string) => {
+      if (!activeRoomId) return;
+      sendSticker(activeRoomId, packId, stickerId, altText);
+      setShowStickerPicker(false);
+    },
+    [activeRoomId, sendSticker],
+  );
+
   const handleEmojiClick = useCallback(() => {
-    console.log('[MessageInput] emoji picker — coming in Phase 3');
+    setShowStickerPicker(prev => !prev);
   }, []);
 
   /* ─────────── render ─────────── */
@@ -553,6 +585,37 @@ export function MessageInput() {
         </div>
       )}
 
+      {/* ── Poll creator panel ── */}
+      {showPollCreator && (
+        <PollCreatorPanel onClose={() => setShowPollCreator(false)} />
+      )}
+
+      {/* ── Football panel (slide-up) ── */}
+      {showFootballPanel && (
+        <div className="relative">
+          <FootballPanel
+            onClose={() => setShowFootballPanel(false)}
+            onShareMatch={handleShareFootballMatch}
+          />
+        </div>
+      )}
+
+      {/* ── MoMo panel ── */}
+      {showMoMoPanel && (
+        <div className="relative">
+          <MoMoPanel onClose={() => setShowMoMoPanel(false)} />
+        </div>
+      )}
+
+      {/* ── Sticker Picker (positioned above input) ── */}
+      <div className="relative">
+        <StickerPicker
+          isOpen={showStickerPicker}
+          onClose={() => setShowStickerPicker(false)}
+          onSendSticker={handleSendSticker}
+        />
+      </div>
+
       {/* ── Main input row ── */}
       <div className="flex items-end gap-1.5 px-2 py-2">
         {/* Left action buttons */}
@@ -588,6 +651,42 @@ export function MessageInput() {
               aria-label="Record voice note"
             >
               <Mic size={16} />
+            </button>
+
+            {/* Poll creator */}
+            <button
+              onClick={() => setShowPollCreator(prev => !prev)}
+              disabled={isDisabled}
+              className="p-1.5 rounded-md transition-colors"
+              style={{ color: showPollCreator ? '#D4A017' : 'var(--color-text-muted)' }}
+              title="Create poll"
+              aria-label="Create poll"
+            >
+              <BarChart2 size={16} />
+            </button>
+
+            {/* Football scores */}
+            <button
+              onClick={() => setShowFootballPanel(prev => !prev)}
+              disabled={isDisabled}
+              className="p-1.5 rounded-md transition-colors"
+              style={{ color: showFootballPanel ? '#D4A017' : 'var(--color-text-muted)' }}
+              title="Football scores"
+              aria-label="Football scores"
+            >
+              <Trophy size={16} />
+            </button>
+
+            {/* MoMo / mobile money */}
+            <button
+              onClick={() => setShowMoMoPanel(prev => !prev)}
+              disabled={isDisabled}
+              className="p-1.5 rounded-md transition-colors"
+              style={{ color: showMoMoPanel ? '#D4A017' : 'var(--color-text-muted)' }}
+              title="MoMo in Chat"
+              aria-label="MoMo mobile money"
+            >
+              <Banknote size={16} />
             </button>
           </div>
         )}

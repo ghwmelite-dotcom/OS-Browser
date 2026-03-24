@@ -6,6 +6,14 @@ import {
 import { useGovChatStore, CURRENT_USER_ID } from '@/store/govchat';
 import { CLASSIFICATION_COLORS, QUICK_REACTIONS } from '@/types/govchat';
 import type { GovChatMessage, MessageReaction } from '@/types/govchat';
+import { FootballScoreCard } from './FootballScoreCard';
+import type { FootballMatch } from './FootballScoreCard';
+import { PollCard, parsePollFromMessage, isPollVoteMessage } from './PollCard';
+import { MoMoRequestCard } from './MoMoRequestCard';
+import { MoMoReceiptCard } from './MoMoReceiptCard';
+import type { MoMoRequestContent } from './MoMoRequestCard';
+import type { MoMoReceiptContent } from './MoMoReceiptCard';
+import { StickerMessage } from './stickers/StickerMessage';
 
 /* ─────────── helpers ─────────── */
 
@@ -60,10 +68,19 @@ function StatusIcon({ status, isOwn }: { status: GovChatMessage['status']; isOwn
   return null;
 }
 
-/* ─────────── voice waveform ─────────── */
+/* ─────────── voice waveform with progress ─────────── */
 
-function VoiceWaveform({ waveform, isOwn }: { waveform: number[]; isOwn: boolean }) {
-  // Normalize to a fixed number of bars
+function VoiceWaveform({
+  waveform,
+  isOwn,
+  progress = 0,
+  onSeek,
+}: {
+  waveform: number[];
+  isOwn: boolean;
+  progress?: number;       // 0..1
+  onSeek?: (ratio: number) => void;
+}) {
   const barCount = 32;
   const normalized: number[] = [];
   const step = waveform.length / barCount;
@@ -72,20 +89,42 @@ function VoiceWaveform({ waveform, isOwn }: { waveform: number[]; isOwn: boolean
     normalized.push(waveform[Math.min(idx, waveform.length - 1)] ?? 0.3);
   }
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!onSeek || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      onSeek(ratio);
+    },
+    [onSeek],
+  );
+
+  const playedColor = isOwn ? 'rgba(255,255,255,0.85)' : '#D4A017';
+  const unplayedColor = isOwn ? 'rgba(255,255,255,0.3)' : 'rgba(212,160,23,0.3)';
+
   return (
-    <div className="flex items-end gap-[1.5px] h-[24px]">
-      {normalized.map((amp, i) => (
-        <div
-          key={i}
-          className="rounded-full"
-          style={{
-            width: 2.5,
-            height: Math.max(3, amp * 24),
-            background: isOwn ? 'rgba(255,255,255,0.5)' : 'var(--color-text-muted)',
-            transition: 'height 0.15s ease-out',
-          }}
-        />
-      ))}
+    <div
+      ref={containerRef}
+      className="flex items-end gap-[1.5px] h-[24px] flex-1 cursor-pointer"
+      onClick={handleClick}
+    >
+      {normalized.map((amp, i) => {
+        const barRatio = i / barCount;
+        return (
+          <div
+            key={i}
+            className="rounded-full"
+            style={{
+              width: 2.5,
+              height: Math.max(3, amp * 24),
+              background: barRatio <= progress ? playedColor : unplayedColor,
+              transition: 'background 0.15s ease, height 0.15s ease-out',
+            }}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -332,35 +371,159 @@ function FileAttachmentView({ file, isOwn }: { file: NonNullable<GovChatMessage[
   );
 }
 
+/* ─────────── speed cycle ─────────── */
+
+const SPEED_STEPS = [1, 1.5, 2, 0.5] as const;
+const LS_SPEED_KEY = 'govchat_voice_speed';
+
+function getStoredSpeed(): number {
+  try {
+    const v = localStorage.getItem(LS_SPEED_KEY);
+    if (v) {
+      const n = parseFloat(v);
+      if (SPEED_STEPS.includes(n as any)) return n;
+    }
+  } catch { /* noop */ }
+  return 1;
+}
+
 /* ─────────── voice note ─────────── */
 
 function VoiceNoteView({ voiceNote, isOwn }: { voiceNote: NonNullable<GovChatMessage['voiceNote']>; isOwn: boolean }) {
   const src = resolveMediaUrl(voiceNote.url);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [speed, setSpeed] = useState(getStoredSpeed);
+
+  // Sync playbackRate whenever speed or audio element changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = speed;
+    }
+  }, [speed]);
+
+  const togglePlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+    } else {
+      audio.playbackRate = speed;
+      audio.play().catch(() => {});
+    }
+  }, [playing, speed]);
+
+  const handleTimeUpdate = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || !audio.duration) return;
+    setCurrentTime(audio.currentTime);
+    setProgress(audio.currentTime / audio.duration);
+  }, []);
+
+  const handleEnded = useCallback(() => {
+    setPlaying(false);
+    setProgress(0);
+    setCurrentTime(0);
+  }, []);
+
+  const handleSeek = useCallback((ratio: number) => {
+    const audio = audioRef.current;
+    if (!audio || !audio.duration) return;
+    audio.currentTime = ratio * audio.duration;
+    setProgress(ratio);
+    setCurrentTime(audio.currentTime);
+  }, []);
+
+  const cycleSpeed = useCallback(() => {
+    setSpeed(prev => {
+      const idx = SPEED_STEPS.indexOf(prev as any);
+      const next = SPEED_STEPS[(idx + 1) % SPEED_STEPS.length];
+      try { localStorage.setItem(LS_SPEED_KEY, String(next)); } catch { /* noop */ }
+      if (audioRef.current) audioRef.current.playbackRate = next;
+      return next;
+    });
+  }, []);
+
+  const timeLabel = playing || currentTime > 0
+    ? `${formatDuration(currentTime)} / ${formatDuration(voiceNote.duration)}`
+    : formatDuration(voiceNote.duration);
 
   return (
-    <div style={{ marginBottom: 4, minWidth: 200 }}>
-      {/* Native audio element — browser handles all playback */}
+    <div style={{ marginBottom: 4, minWidth: 220, maxWidth: 300 }}>
+      {/* Hidden audio element */}
       <audio
-        controls
+        ref={audioRef}
         preload="auto"
         src={src}
-        style={{
-          width: '100%',
-          height: 32,
-          borderRadius: 8,
-          outline: 'none',
-          filter: isOwn ? 'invert(1) brightness(2)' : 'none',
-          opacity: 0.9,
-        }}
+        onTimeUpdate={handleTimeUpdate}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={handleEnded}
+        style={{ display: 'none' }}
       />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-        <VoiceWaveform waveform={voiceNote.waveform} isOwn={isOwn} />
-        <span
-          className="text-[9.5px] font-medium"
-          style={{ color: isOwn ? 'rgba(255,255,255,0.5)' : 'var(--color-text-muted)' }}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* Play / Pause button */}
+        <button
+          onClick={togglePlay}
+          className="shrink-0 flex items-center justify-center transition-transform active:scale-95"
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            background: '#D4A017',
+            border: 'none',
+            cursor: 'pointer',
+          }}
         >
-          {formatDuration(voiceNote.duration)}
-        </span>
+          {playing
+            ? <Pause size={14} style={{ color: '#fff' }} />
+            : <Play size={14} style={{ color: '#fff', marginLeft: 1 }} />
+          }
+        </button>
+
+        {/* Waveform progress */}
+        <VoiceWaveform
+          waveform={voiceNote.waveform}
+          isOwn={isOwn}
+          progress={progress}
+          onSeek={handleSeek}
+        />
+
+        {/* Speed pill */}
+        <button
+          onClick={cycleSpeed}
+          className="shrink-0 flex items-center justify-center transition-colors"
+          style={{
+            width: 28,
+            height: 20,
+            borderRadius: 10,
+            background: isOwn ? 'rgba(255,255,255,0.15)' : 'var(--color-surface-3, rgba(255,255,255,0.08))',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 10,
+            fontWeight: 600,
+            color: isOwn ? 'rgba(255,255,255,0.85)' : 'var(--color-text-muted)',
+            lineHeight: 1,
+          }}
+          title={`Playback speed: ${speed}x`}
+        >
+          {speed === 1 ? '1x' : `${speed}x`}
+        </button>
+      </div>
+
+      {/* Time display */}
+      <div
+        className="text-[9.5px] font-medium mt-1"
+        style={{
+          color: isOwn ? 'rgba(255,255,255,0.5)' : 'var(--color-text-muted)',
+          fontVariantNumeric: 'tabular-nums',
+          paddingLeft: 40,
+        }}
+      >
+        {timeLabel}
       </div>
     </div>
   );
@@ -426,6 +589,51 @@ export function MessageBubble({ message, isOwn, showSender }: MessageBubbleProps
   // System messages get special treatment
   if (message.type === 'system') {
     return <SystemMessage message={message} />;
+  }
+
+  // Hide poll vote messages (they're internal tracking events)
+  if (isPollVoteMessage(message.body)) {
+    return null;
+  }
+
+  // Check if this is a poll message
+  const pollData = parsePollFromMessage(message);
+
+  // Sticker messages — no bubble background, sticker floats on its own
+  if (message.type === 'sticker' && message.sticker) {
+    return (
+      <div
+        className={`flex ${isOwn ? 'justify-end' : 'justify-start'} px-3 mb-1 ${showSender ? 'mt-2' : ''}`}
+      >
+        {!isOwn && showSender && (
+          <div className="mr-2 mt-auto mb-1">
+            <SenderAvatar name={message.senderName} />
+          </div>
+        )}
+        {!isOwn && !showSender && <div className="w-7 mr-2 shrink-0" />}
+        <div className="max-w-[75%]">
+          {showSender && !isOwn && (
+            <p className="text-[10.5px] font-semibold mb-0.5 ml-1" style={{ color: '#D4A017' }}>
+              {message.senderName}
+            </p>
+          )}
+          <StickerMessage
+            packId={message.sticker.packId}
+            stickerId={message.sticker.stickerId}
+            altText={message.body}
+          />
+          <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+            <span
+              className="text-[9.5px]"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
+              {formatTime(message.timestamp)}
+            </span>
+            {isOwn && <StatusIcon status={message.status} isOwn={isOwn} />}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const handleReply = useCallback(() => {
@@ -500,8 +708,40 @@ export function MessageBubble({ message, isOwn, showSender }: MessageBubbleProps
             <VoiceNoteView voiceNote={message.voiceNote} isOwn={isOwn} />
           )}
 
-          {/* Message text */}
-          {message.type === 'text' && (
+          {/* Poll card */}
+          {pollData && (
+            <PollCard poll={pollData} roomId={message.roomId} isOwn={isOwn} />
+          )}
+
+          {/* Football score card */}
+          {message.footballMatch && (
+            <FootballScoreCard
+              match={message.footballMatch as unknown as FootballMatch}
+              senderName={message.senderName}
+              timestamp={message.timestamp}
+              isOwn={isOwn}
+            />
+          )}
+
+          {/* MoMo request card */}
+          {message.momoRequest && (
+            <MoMoRequestCard
+              content={message.momoRequest as unknown as MoMoRequestContent}
+              isOwn={isOwn}
+              roomId={message.roomId}
+            />
+          )}
+
+          {/* MoMo receipt card */}
+          {message.momoReceipt && (
+            <MoMoReceiptCard
+              content={message.momoReceipt as unknown as MoMoReceiptContent}
+              isOwn={isOwn}
+            />
+          )}
+
+          {/* Message text (skip if special card already renders the body) */}
+          {message.type === 'text' && !pollData && !message.footballMatch && !message.momoRequest && !message.momoReceipt && (
             <p className="text-[12.5px] leading-relaxed whitespace-pre-wrap break-words">
               {message.body}
             </p>

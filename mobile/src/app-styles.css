@@ -1,0 +1,39 @@
+:root {
+  --color-accent: #D4A017;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+input, button { font-family: inherit; }
+
+/* Hide scrollbars on tab strip */
+::-webkit-scrollbar { display: none; }
+
+/* Smooth transitions */
+iframe { transition: opacity 150ms ease; }
+
+/* Touch-friendly tap targets */
+button { min-height: 44px; min-width: 44px; }
+
+/* Safe area padding for notched phones */
+#root > div > div:first-child {
+  padding-top: var(--safe-area-top);
+}
+#root > div > div:last-child {
+  padding-bottom: var(--safe-area-bottom);
+}

@@ -14,7 +14,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
   const [direction, setDirection] = useState<'next' | 'prev'>('next');
-  const totalSteps = 9;
+  const totalSteps = 8; // was 9 — profile setup (old step 1) is now handled by ProfileLauncher
 
   const next = () => {
     if (step < totalSteps - 1) {
@@ -31,12 +31,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   };
 
   const finish = async () => {
-    if (profileName.trim()) {
-      await window.osBrowser.settings.update({
-        display_name: profileName.trim(),
-        email: profileEmail.trim() || null,
-      });
-    }
+    // Profile name is set during profile creation now (ProfileLauncher)
+    // Just complete onboarding
     onComplete();
   };
 
@@ -68,19 +64,19 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       case 0:
         return (
           <div className="text-center">
-            <div className="w-28 h-28 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+            <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-4 sm:mb-6"
               style={{ background: 'linear-gradient(135deg, #CE1126 0%, #FCD116 50%, #006B3F 100%)' }}>
-              <svg width="52" height="52" viewBox="0 0 512 512">
+              <svg className="w-10 h-10 sm:w-[52px] sm:h-[52px]" viewBox="0 0 512 512">
                 <path d="M256 90L370 140V270Q370 370 256 430Q142 370 142 270V140Z" fill="white" opacity=".95"/>
               </svg>
             </div>
             {/* Ghana flag stripe */}
-            <div className="flex h-1 rounded-full overflow-hidden mb-6 mx-auto max-w-[180px]">
+            <div className="flex h-1 rounded-full overflow-hidden mb-4 sm:mb-6 mx-auto max-w-[180px]">
               <div className="flex-1" style={{ background: '#CE1126' }} />
               <div className="flex-1" style={{ background: '#FCD116' }} />
               <div className="flex-1" style={{ background: '#006B3F' }} />
             </div>
-            <h2 className="text-[24px] font-bold text-text-primary mb-3">Welcome to OS Browser</h2>
+            <h2 className="text-[20px] sm:text-[24px] font-bold text-text-primary mb-3">Welcome to OS Browser</h2>
             <p className="text-[14px] text-text-secondary leading-relaxed max-w-[400px] mx-auto mb-2">
               Ghana's purpose-built desktop browser with 12 features designed for civil servants.
             </p>
@@ -91,57 +87,19 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           </div>
         );
 
-      // Step 1: Set Up Your Profile
+      // Step 1: Meet the Kente System (was step 2 — profile setup removed)
       case 1:
         return (
           <div className="text-center">
-            <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
-              style={{ background: 'linear-gradient(135deg, #CE1126 0%, #F43F5E 100%)' }}>
-              {profileName.trim() ? (
-                <span className="text-[28px] font-bold text-white">{getInitials(profileName)}</span>
-              ) : (
-                <User size={40} className="text-white" />
-              )}
-            </div>
-            <h2 className="text-[22px] font-bold text-text-primary mb-3">Set Up Your Profile</h2>
-            <div className="text-left max-w-[360px] mx-auto">
-              <p className="text-[13px] text-text-secondary text-center mb-5">
-                Personalise your browser experience. Your profile stays on your device.
-              </p>
-              <div className="mb-3">
-                <label className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1.5 block">Your Name</label>
-                <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)}
-                  placeholder="e.g. Kwame Mensah" autoFocus
-                  className="w-full px-3 py-2.5 rounded-lg text-[14px] outline-none border"
-                  style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }} />
-              </div>
-              <div className="mb-2">
-                <label className="text-[11px] font-medium text-text-muted uppercase tracking-wider mb-1.5 block">Email (optional)</label>
-                <input type="email" value={profileEmail} onChange={e => setProfileEmail(e.target.value)}
-                  placeholder="you@example.gov.gh"
-                  className="w-full px-3 py-2.5 rounded-lg text-[14px] outline-none border"
-                  style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)', color: 'var(--color-text-primary)' }} />
-              </div>
-              <p className="text-[10px] text-text-muted text-center mt-2">
-                Stored locally on your device. Never sent to any server.
-              </p>
-            </div>
-          </div>
-        );
-
-      // Step 2: Meet the Kente System
-      case 2:
-        return (
-          <div className="text-center">
-            <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+            <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-4 sm:mb-6"
               style={{ background: 'linear-gradient(135deg, #CE1126 0%, #FCD116 50%, #006B3F 100%)' }}>
               <Globe size={40} className="text-white" />
             </div>
-            <h2 className="text-[22px] font-bold text-text-primary mb-2">Meet the Kente System</h2>
+            <h2 className="text-[18px] sm:text-[22px] font-bold text-text-primary mb-2">Meet the Kente System</h2>
             <p className="text-[13px] text-text-muted mb-5 max-w-[380px] mx-auto">
               Every feature has a home. You'll find them all across 4 surfaces.
             </p>
-            <div className="grid grid-cols-2 gap-3 max-w-[400px] mx-auto text-left">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 max-w-[400px] mx-auto text-left">
               <div className="p-3 rounded-xl border" style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)' }}>
                 <div className="flex items-center gap-2 mb-1.5">
                   <Sidebar size={14} style={{ color: '#CE1126' }} />
@@ -174,31 +132,37 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           </div>
         );
 
-      // Step 3: Your Power Features
-      case 3:
+      // Step 2: Your Power Features
+      case 2:
         return (
           <div className="text-center">
-            <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+            <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-4 sm:mb-6"
               style={{ background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)' }}>
               <Shield size={40} className="text-white" />
             </div>
-            <h2 className="text-[22px] font-bold text-text-primary mb-2">Your Power Features</h2>
+            <h2 className="text-[18px] sm:text-[22px] font-bold text-text-primary mb-2">Your Power Features</h2>
             <p className="text-[13px] text-text-muted mb-5 max-w-[380px] mx-auto">
               12 features built for Ghana's civil servants. Here are the highlights.
             </p>
-            <div className="grid grid-cols-2 gap-2.5 max-w-[420px] mx-auto text-left">
-              {[
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 max-w-[420px] mx-auto text-left">
+              {([
                 { icon: Building2, label: 'Gov Services Hub', desc: '25+ government portals', color: '#CE1126' },
                 { icon: Lock, label: 'Encrypted Messenger', desc: '.gov.gh secure chat', color: '#0EA5E9' },
                 { icon: Languages, label: 'Translation', desc: '7 Ghanaian languages', color: '#006B3F' },
                 { icon: Download, label: 'Offline Library', desc: 'Save pages for offline', color: '#6366F1' },
                 { icon: Smartphone, label: 'Mobile Money', desc: 'Payment tracking', color: '#F59E0B' },
                 { icon: Battery, label: 'Dumsor Guard', desc: 'Power outage protection', color: '#10B981' },
-              ].map(({ icon: Icon, label, desc, color }) => (
+                { emoji: '\u2B07\uFE0F', label: 'Resumable Downloads', desc: 'Pause, resume & retry with cost tracking', color: '#7C3AED' },
+                { emoji: '\uD83D\uDCC2', label: 'Workspaces', desc: 'Isolated environments for work & personal', color: '#0891B2' },
+                { emoji: '\uD83C\uDFAC', label: 'Screen Recorder', desc: 'Record & annotate for IT support', color: '#DC2626' },
+                { emoji: '\uD83D\uDD10', label: 'TOTP Authenticator', desc: 'Built-in 2FA code generator', color: '#059669' },
+                { emoji: '\uD83D\uDCD6', label: 'Reading Mode + TTS', desc: 'Read aloud in 9 languages', color: '#D97706' },
+                { emoji: '\u2728', label: 'AI Page Actions', desc: '10 one-click AI actions on any page', color: '#8B5CF6' },
+              ] as Array<{ icon?: any; emoji?: string; label: string; desc: string; color: string }>).map(({ icon: Icon, emoji, label, desc, color }) => (
                 <div key={label} className="flex items-center gap-2.5 p-2.5 rounded-xl border"
                   style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border-1)' }}>
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: color }}>
-                    <Icon size={14} className="text-white" />
+                    {Icon ? <Icon size={14} className="text-white" /> : <span className="text-[14px]">{emoji}</span>}
                   </div>
                   <div>
                     <div className="text-[11px] font-semibold text-text-primary">{label}</div>
@@ -210,15 +174,15 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           </div>
         );
 
-      // Step 4: GovChat — Secure Messaging
-      case 4:
+      // Step 3: GovChat — Secure Messaging
+      case 3:
         return (
           <div className="text-center">
-            <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+            <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-4 sm:mb-6"
               style={{ background: 'linear-gradient(135deg, #D4A017 0%, #006B3F 100%)' }}>
               <Shield size={40} className="text-white" />
             </div>
-            <h2 className="text-[22px] font-bold text-text-primary mb-2">GovChat — Secure Messaging</h2>
+            <h2 className="text-[18px] sm:text-[22px] font-bold text-text-primary mb-2">GovChat — Secure Messaging</h2>
             <p className="text-[13px] text-text-muted mb-5 max-w-[380px] mx-auto">
               Chat with government colleagues using end-to-end encryption. Share files, send voice notes, make video calls. Your conversations are protected with military-grade encryption.
             </p>
@@ -242,19 +206,19 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           </div>
         );
 
-      // Step 5: GovPlay — Take a Break
-      case 5:
+      // Step 4: GovPlay — Take a Break
+      case 4:
         return (
           <div className="text-center">
-            <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+            <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-4 sm:mb-6"
               style={{ background: 'linear-gradient(135deg, #FF4081 0%, #E91E63 100%)' }}>
               <Gamepad2 size={40} className="text-white" />
             </div>
-            <h2 className="text-[22px] font-bold text-text-primary mb-2">GovPlay — Take a Break</h2>
+            <h2 className="text-[18px] sm:text-[22px] font-bold text-text-primary mb-2">GovPlay — Take a Break</h2>
             <p className="text-[13px] text-text-muted mb-5 max-w-[380px] mx-auto">
               12 built-in games including Oware (Ghana's national board game), Chess, Ludo, Sudoku, and more. Play offline anytime — sharpen your mind during breaks.
             </p>
-            <div className="grid grid-cols-3 gap-2 max-w-[360px] mx-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 max-w-[360px] mx-auto">
               {['Oware', 'Chess', 'Checkers', 'Ludo', 'Sudoku', '2048', 'Minesweeper', 'Solitaire', 'Snake', 'Word Scramble', 'Ghana Trivia', 'Typing Test'].map(game => (
                 <div key={game} className="px-2 py-1.5 rounded-lg text-[10px] font-medium text-text-primary text-center"
                   style={{ background: 'var(--color-surface-2)' }}>
@@ -265,15 +229,15 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           </div>
         );
 
-      // Step 6: Video & Audio Calls
-      case 6:
+      // Step 5: Video & Audio Calls
+      case 5:
         return (
           <div className="text-center">
-            <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+            <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-4 sm:mb-6"
               style={{ background: 'linear-gradient(135deg, #1565C0 0%, #42A5F5 100%)' }}>
               <Video size={40} className="text-white" />
             </div>
-            <h2 className="text-[22px] font-bold text-text-primary mb-2">Video & Audio Calls</h2>
+            <h2 className="text-[18px] sm:text-[22px] font-bold text-text-primary mb-2">Video & Audio Calls</h2>
             <p className="text-[13px] text-text-muted mb-5 max-w-[380px] mx-auto">
               Make crystal-clear 1:1 video and audio calls right from your chat conversations. No third-party apps needed — it's all built in.
             </p>
@@ -296,15 +260,15 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           </div>
         );
 
-      // Step 7: Quick Tips
-      case 7:
+      // Step 6: Quick Tips
+      case 6:
         return (
           <div className="text-center">
-            <div className="w-24 h-24 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+            <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-4 sm:mb-6"
               style={{ background: 'linear-gradient(135deg, #006B3F 0%, #10B981 100%)' }}>
               <Keyboard size={40} className="text-white" />
             </div>
-            <h2 className="text-[22px] font-bold text-text-primary mb-2">Quick Tips</h2>
+            <h2 className="text-[18px] sm:text-[22px] font-bold text-text-primary mb-2">Quick Tips</h2>
             <p className="text-[13px] text-text-muted mb-5 max-w-[380px] mx-auto">
               A few things to help you get the most out of OS Browser.
             </p>
@@ -328,21 +292,21 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           </div>
         );
 
-      // Step 8: Ready to Go
-      case 8:
+      // Step 7: Ready to Go
+      case 7:
         return (
           <div className="text-center">
-            <div className="w-28 h-28 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6"
+            <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-4 sm:mb-6"
               style={{ background: 'linear-gradient(135deg, #CE1126 0%, #FCD116 50%, #006B3F 100%)' }}>
-              <span className="text-[48px]">{'\u{1F1EC}\u{1F1ED}'}</span>
+              <span className="text-[36px] sm:text-[48px]">{'\u{1F1EC}\u{1F1ED}'}</span>
             </div>
             {/* Ghana flag stripe */}
-            <div className="flex h-1 rounded-full overflow-hidden mb-6 mx-auto max-w-[180px]">
+            <div className="flex h-1 rounded-full overflow-hidden mb-4 sm:mb-6 mx-auto max-w-[180px]">
               <div className="flex-1" style={{ background: '#CE1126' }} />
               <div className="flex-1" style={{ background: '#FCD116' }} />
               <div className="flex-1" style={{ background: '#006B3F' }} />
             </div>
-            <h2 className="text-[24px] font-bold text-text-primary mb-2">You're All Set!</h2>
+            <h2 className="text-[20px] sm:text-[24px] font-bold text-text-primary mb-2">You're All Set!</h2>
             <p className="text-[18px] text-text-primary mb-3">Akwaaba! {'\u{1F1EC}\u{1F1ED}'}</p>
             <p className="text-[14px] text-text-secondary max-w-[380px] mx-auto mb-2">
               Welcome! Start browsing and explore all 12 features designed to make your work easier, faster, and more secure.
@@ -362,24 +326,50 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     <div className="fixed inset-0 z-[300] flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
 
-      <div className="w-[540px] rounded-2xl border shadow-2xl overflow-hidden"
+      <div className="w-[calc(100%-2rem)] max-w-[540px] max-h-[calc(100vh-2rem)] rounded-2xl border shadow-2xl overflow-hidden flex flex-col"
         style={{ background: 'var(--color-surface-1)', borderColor: 'var(--color-border-1)' }}>
 
+        {/* Kente crown — woven band at the top of the onboarding card */}
+        <div className="shrink-0" style={{
+          height: 3,
+          background: `repeating-linear-gradient(90deg,
+            #CE1126 0px, #CE1126 18px, #D4A017 18px, #D4A017 30px,
+            #006B3F 30px, #006B3F 44px, #FCD116 44px, #FCD116 52px,
+            #CE1126 52px, #CE1126 62px, #000000 62px, #000000 66px,
+            #D4A017 66px, #D4A017 80px, #006B3F 80px, #006B3F 96px,
+            #CE1126 96px, #CE1126 108px, #FCD116 108px, #FCD116 120px)`,
+          borderRadius: '16px 16px 0 0',
+        }} />
+
         {/* Skip button */}
-        <div className="flex justify-end px-5 pt-4">
+        <div className="flex justify-end px-4 sm:px-5 pt-3 sm:pt-4 shrink-0">
           <button onClick={skip} className="text-[12px] text-text-muted hover:text-text-secondary transition-colors">
             Skip tour
           </button>
         </div>
 
-        {/* Slide content */}
-        <div className="px-10 pb-2 pt-4" key={step}
+        {/* Slide content — scrollable */}
+        <div className="px-5 sm:px-10 pb-2 pt-3 sm:pt-4 overflow-y-auto min-h-0 flex-1" key={step}
           style={{ animation: `slideIn${direction === 'next' ? 'Right' : 'Left'} 0.3s ease-out` }}>
           {renderStep()}
         </div>
 
+        {/* Kente thread separator */}
+        <div className="shrink-0" style={{
+          height: 1,
+          background: `linear-gradient(90deg,
+            #CE1126 0%, #CE1126 3%, var(--color-border-1) 3%, var(--color-border-1) 12%,
+            #D4A017 12%, #D4A017 15%, var(--color-border-1) 15%, var(--color-border-1) 28%,
+            #006B3F 28%, #006B3F 31%, var(--color-border-1) 31%, var(--color-border-1) 45%,
+            #D4A017 45%, #D4A017 48%, var(--color-border-1) 48%, var(--color-border-1) 60%,
+            #CE1126 60%, #CE1126 63%, var(--color-border-1) 63%, var(--color-border-1) 75%,
+            #006B3F 75%, #006B3F 78%, var(--color-border-1) 78%, var(--color-border-1) 90%,
+            #D4A017 90%, #D4A017 93%, var(--color-border-1) 93%, var(--color-border-1) 100%)`,
+          opacity: 0.5,
+        }} />
+
         {/* Bottom bar: dots + buttons */}
-        <div className="flex items-center justify-between px-8 py-5">
+        <div className="flex items-center justify-between px-5 sm:px-8 py-4 sm:py-5 shrink-0">
           {/* Progress dots */}
           <div className="flex gap-2">
             {Array.from({ length: totalSteps }).map((_, i) => (

@@ -9,6 +9,8 @@ import fs from 'fs';
 let dbDir = '';
 let tables: Record<string, any[]> = {};
 let dbLoaded = false;
+let isDirty = false;
+let isWriting = false;
 
 function getDbPath(): string {
   return path.join(dbDir, 'database.json');
@@ -20,15 +22,31 @@ function loadFromDisk(): void {
     try {
       const raw = fs.readFileSync(dbPath, 'utf-8');
       tables = JSON.parse(raw);
+      // Reset auto-increment counters to max existing ID + 1
+      for (const tableName of Object.keys(tables)) {
+        const table = tables[tableName];
+        if (Array.isArray(table) && table.length > 0) {
+          const maxId = table.reduce((max: number, row: any) => Math.max(max, row.id || 0), 0);
+          autoIncrements[tableName] = maxId + 1;
+        }
+      }
       // Create backup after successful load
       try {
         fs.writeFileSync(dbPath + '.bak', raw);
-      } catch { /* backup write failed — non-critical */ }
+      } catch (err) { console.warn('[DB] Backup write failed:', err); }
     } catch {
       // Main file is corrupt — try loading from backup
       try {
         const bak = fs.readFileSync(dbPath + '.bak', 'utf-8');
         tables = JSON.parse(bak);
+        // Reset auto-increment counters from backup data
+        for (const tableName of Object.keys(tables)) {
+          const table = tables[tableName];
+          if (Array.isArray(table) && table.length > 0) {
+            const maxId = table.reduce((max: number, row: any) => Math.max(max, row.id || 0), 0);
+            autoIncrements[tableName] = maxId + 1;
+          }
+        }
       } catch {
         tables = {};
       }
@@ -39,6 +57,8 @@ function loadFromDisk(): void {
 
 function saveToDisk(): void {
   if (!dbDir) return;
+  if (isWriting) return;
+  isWriting = true;
   try {
     const dbPath = getDbPath();
     const tempPath = dbPath + '.tmp';
@@ -46,6 +66,8 @@ function saveToDisk(): void {
     fs.renameSync(tempPath, dbPath);
   } catch {
     // Silently fail during shutdown
+  } finally {
+    isWriting = false;
   }
 }
 
@@ -97,7 +119,7 @@ class PreparedStatement {
       return this.handleDelete(sql, flatParams);
     }
 
-    saveToDisk();
+    isDirty = true;
     return { lastInsertRowid: 0, changes: 0 };
   }
 
@@ -126,7 +148,7 @@ class PreparedStatement {
     // Parse column names from INSERT INTO table (col1, col2, ...) VALUES (?, ?, ...)
     const colMatch = sql.match(/\(([^)]+)\)\s*VALUES/i);
     if (!colMatch) {
-      saveToDisk();
+      isDirty = true;
       return { lastInsertRowid: 0, changes: 0 };
     }
 
@@ -140,10 +162,12 @@ class PreparedStatement {
       row[col] = i < params.length ? params[i] : null;
     });
 
-    // Handle OR IGNORE
+    // Handle OR IGNORE — skip insert if a row matches by id, url, or name (unique-ish fields)
     if (/OR\s+IGNORE/i.test(sql)) {
       const existing = table.find((r: any) => {
-        if (row.id !== undefined) return r.id === row.id;
+        if (row.id !== undefined && r.id === row.id) return true;
+        if (row.url !== undefined && r.url === row.url) return true;
+        if (row.name !== undefined && r.name === row.name) return true;
         return false;
       });
       if (existing) return { lastInsertRowid: existing.id || 0, changes: 0 };
@@ -157,7 +181,7 @@ class PreparedStatement {
         if (existing.visit_count !== undefined) existing.visit_count++;
         existing.last_visited_at = new Date().toISOString();
         if (row.title) existing.title = row.title;
-        saveToDisk();
+        isDirty = true;
         return { lastInsertRowid: existing.id || 0, changes: 1 };
       }
     }
@@ -172,7 +196,7 @@ class PreparedStatement {
     if (!row.updated_at && columns.includes('updated_at')) row.updated_at = new Date().toISOString();
 
     table.push(row);
-    saveToDisk();
+    isDirty = true;
     return { lastInsertRowid: row.id, changes: 1 };
   }
 
@@ -229,7 +253,7 @@ class PreparedStatement {
       changes++;
     });
 
-    saveToDisk();
+    isDirty = true;
     return { lastInsertRowid: 0, changes };
   }
 
@@ -241,14 +265,14 @@ class PreparedStatement {
       // DELETE all
       const count = table.length;
       tables[this.tableName] = [];
-      saveToDisk();
+      isDirty = true;
       return { lastInsertRowid: 0, changes: count };
     }
 
     const before = table.length;
     const toKeep = table.filter((row: any) => !this.matchesWhere(row, whereMatch[1], params));
     tables[this.tableName] = toKeep;
-    saveToDisk();
+    isDirty = true;
     return { lastInsertRowid: 0, changes: before - toKeep.length };
   }
 
@@ -354,7 +378,7 @@ class DatabaseWrapper {
   exec(sql: string): void {
     // Handle CREATE TABLE, CREATE INDEX etc — no-op for JSON storage
     // These are migration commands that don't apply to JSON
-    saveToDisk();
+    isDirty = true;
   }
 
   pragma(_pragma: string): any {
@@ -364,7 +388,7 @@ class DatabaseWrapper {
   transaction<T>(fn: () => T): () => T {
     return () => {
       const result = fn();
-      saveToDisk();
+      isDirty = true;
       return result;
     };
   }
@@ -377,15 +401,19 @@ class DatabaseWrapper {
 
 let wrapper: DatabaseWrapper | null = null;
 
-export async function initDatabase(): Promise<void> {
-  dbDir = app.getPath('userData');
+export async function initDatabase(profileDir?: string): Promise<void> {
+  dbDir = profileDir || app.getPath('userData');
   fs.mkdirSync(dbDir, { recursive: true });
   loadFromDisk();
 
   wrapper = new DatabaseWrapper();
 
-  // Auto-save periodically
-  saveInterval = setInterval(saveToDisk, 5000);
+  // Auto-save periodically (only when dirty)
+  saveInterval = setInterval(() => {
+    if (!isDirty) return;
+    isDirty = false;
+    saveToDisk();
+  }, 5000);
 }
 
 export function getDatabase(): DatabaseWrapper {

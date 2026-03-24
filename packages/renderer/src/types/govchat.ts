@@ -58,7 +58,7 @@ export interface ChatRoom {
   createdAt: number;
 }
 
-export type MessageType = 'text' | 'file' | 'voice' | 'image' | 'system';
+export type MessageType = 'text' | 'file' | 'voice' | 'image' | 'system' | 'sticker';
 
 export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
 
@@ -111,6 +111,38 @@ export interface GovChatMessage {
   // Attachments
   file?: FileAttachment;
   voiceNote?: VoiceNote;
+
+  // Sticker
+  sticker?: {
+    packId: string;
+    stickerId: string;
+  };
+
+  // MoMo (mobile money)
+  momoRequest?: {
+    msgtype: 'm.momo.request';
+    body: string;
+    amount: number;
+    currency: string;
+    note: string;
+    provider: string;
+    status: string;
+    requestId: string;
+  };
+  momoReceipt?: {
+    msgtype: 'm.momo.receipt';
+    body: string;
+    amount: number;
+    currency: string;
+    provider: string;
+    transactionId: string;
+    note: string;
+    requestId?: string;
+    timestamp: number;
+  };
+
+  // Football score (runtime-only, attached via cast)
+  footballMatch?: Record<string, unknown>;
 
   // Mentions
   mentions: string[]; // user IDs mentioned

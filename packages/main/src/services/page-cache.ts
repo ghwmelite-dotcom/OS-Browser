@@ -2,7 +2,7 @@ import { app } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
-import { AD_BLOCK_WHITELIST, PAGE_CACHE_LIMIT_MB } from '@os-browser/shared';
+import { AD_BLOCK_WHITELIST, PAGE_CACHE_LIMIT_MB } from '../../../shared/dist';
 
 const CACHE_DIR = path.join(app.getPath('userData'), 'page-cache');
 

@@ -26,7 +26,9 @@ import { API_BASE_URL, MATRIX_HOMESERVER_URL } from '@/lib/api-config';
 type EventCallback = (data: unknown) => void;
 
 const WORKER_URL = API_BASE_URL;
-const STORAGE_KEY = 'govchat_credentials';
+// Credentials now stored via encrypted IPC (main process AES-256-GCM)
+// instead of plaintext localStorage. The osBrowser.govchatCredentials API
+// is exposed by the preload script.
 
 // Default homeserver for government deployment
 const DEFAULT_HOMESERVER = MATRIX_HOMESERVER_URL;
@@ -210,7 +212,8 @@ class MatrixClientServiceClass {
       try {
         const lastDeviceKey = 'govchat_last_device';
         const currentDevice = `${credentials.userId}:${credentials.deviceId}`;
-        const lastDevice = localStorage.getItem(lastDeviceKey);
+        // Use sessionStorage for device tracking (non-sensitive, cleared on close)
+        const lastDevice = sessionStorage.getItem(lastDeviceKey);
         if (!lastDevice || lastDevice !== currentDevice) {
           console.info('[MatrixClientService] Device changed, clearing stale crypto stores');
           const databases = await indexedDB.databases();
@@ -221,7 +224,7 @@ class MatrixClientServiceClass {
             }
           }
         }
-        localStorage.setItem(lastDeviceKey, currentDevice);
+        sessionStorage.setItem(lastDeviceKey, currentDevice);
       } catch {
         // IndexedDB cleanup is best-effort
       }
@@ -480,7 +483,7 @@ class MatrixClientServiceClass {
    * This is safe for a government intranet where all users are on the same homeserver.
    */
   private _txnCounter = 0;
-  private async sendEventRaw(
+  async sendEventRaw(
     roomId: string,
     eventType: string,
     content: Record<string, unknown>,
@@ -512,6 +515,40 @@ class MatrixClientServiceClass {
 
     const data = await res.json() as { event_id: string };
     return data.event_id;
+  }
+
+  /**
+   * Public wrapper for sending custom event types (e.g. m.momo.request).
+   * Delegates to the sendEventRaw helper.
+   */
+  async sendCustomEvent(
+    roomId: string,
+    eventType: string,
+    content: Record<string, unknown>,
+  ): Promise<string> {
+    return this.sendEventRaw(roomId, eventType, content);
+  }
+
+  /**
+   * Send a sticker message via Matrix.
+   */
+  async sendSticker(
+    roomId: string,
+    packId: string,
+    stickerId: string,
+    altText: string,
+  ): Promise<void> {
+    if (!this.client && !this._credentials) return;
+    try {
+      await this.sendEventRaw(roomId, 'm.room.message', {
+        msgtype: 'm.sticker',
+        body: altText,
+        info: { packId, stickerId, w: 160, h: 160 },
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to send sticker';
+      this.emit('error', { message });
+    }
   }
 
   /* ──────────────── Message Operations ──────────────── */
@@ -727,18 +764,17 @@ class MatrixClientServiceClass {
     }
   }
 
-  /* ──────────────── Credential Storage ──────────────── */
+  /* ──────────────── Credential Storage (Encrypted IPC) ──────────────── */
 
   /**
-   * Load credentials persisted in localStorage.
-   * Returns null if none exist or localStorage is unavailable.
+   * Load credentials from encrypted main-process storage.
+   * Returns null if none exist or IPC is unavailable.
    */
-  loadStoredCredentials(): GovChatCredentials | null {
+  async loadStoredCredentialsAsync(): Promise<GovChatCredentials | null> {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return null;
-
-      const parsed = JSON.parse(raw);
+      const osBrowser = (window as any).osBrowser;
+      if (!osBrowser?.govchatCredentials?.load) return null;
+      const parsed = await osBrowser.govchatCredentials.load();
       if (
         parsed &&
         typeof parsed.userId === 'string' &&
@@ -753,11 +789,22 @@ class MatrixClientServiceClass {
     }
   }
 
+  /**
+   * Synchronous credential check from in-memory cache only.
+   * Used by the store for initial state — does NOT read from disk.
+   */
+  loadStoredCredentials(): GovChatCredentials | null {
+    return this._credentials;
+  }
+
   private storeCredentials(credentials: GovChatCredentials): void {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(credentials));
+      const osBrowser = (window as any).osBrowser;
+      if (osBrowser?.govchatCredentials?.store) {
+        osBrowser.govchatCredentials.store(credentials);
+      }
     } catch {
-      // localStorage unavailable — credentials live only in memory
+      // IPC unavailable — credentials live only in memory
     }
   }
 
@@ -770,7 +817,10 @@ class MatrixClientServiceClass {
     this._isSyncing = false;
 
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      const osBrowser = (window as any).osBrowser;
+      if (osBrowser?.govchatCredentials?.clear) {
+        osBrowser.govchatCredentials.clear();
+      }
     } catch {
       // noop
     }

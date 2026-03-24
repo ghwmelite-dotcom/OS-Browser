@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronRight, FolderOpen } from 'lucide-react';
+import { ChevronRight, FolderOpen, LayoutGrid } from 'lucide-react';
 import { useBookmarksStore } from '@/store/bookmarks';
 import { useTabsStore } from '@/store/tabs';
 
@@ -10,6 +10,18 @@ export function BookmarksBar() {
   const barRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { loadBookmarks(); }, []);
+
+  // Refresh when bookmarks change (e.g. after browser import)
+  useEffect(() => {
+    const handler = () => loadBookmarks();
+    window.addEventListener('bookmark-changed', handler);
+    // Also listen for IPC-driven refresh from main process
+    const cleanup = window.osBrowser?.bookmarks?.onRefresh?.(handler);
+    return () => {
+      window.removeEventListener('bookmark-changed', handler);
+      cleanup?.();
+    };
+  }, [loadBookmarks]);
 
   const topLevel = bookmarks.filter(b => !b.folder_id).slice(0, 20);
   const topFolders = folders.filter(f => !f.parent_id);
@@ -32,6 +44,21 @@ export function BookmarksBar() {
   return (
     <div ref={barRef} className="h-7 bg-surface-1 border-b border-border-1/40 flex items-center gap-0.5 px-2 overflow-x-auto shrink-0"
       style={{ scrollbarWidth: 'none' }}>
+
+      {/* All Bookmarks icon — opens bookmarks manager page */}
+      <button
+        onClick={() => createTab('os-browser://bookmarks')}
+        className="bookmarks-grid-btn flex items-center justify-center w-6 h-6 rounded-md transition-all duration-200 shrink-0"
+        style={{
+          background: 'var(--color-surface-2)',
+          border: '1px solid var(--color-border-1)',
+        }}
+        title={`All Bookmarks (${bookmarks.length})`}
+      >
+        <LayoutGrid size={13} strokeWidth={2} style={{ color: 'var(--color-accent)' }} />
+      </button>
+
+      <div className="w-px h-3 bg-border-1/50 mx-0.5 shrink-0" />
 
       {/* Bookmark items */}
       {topLevel.map((bm) => (

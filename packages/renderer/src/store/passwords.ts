@@ -1,3 +1,11 @@
+// TODO: SECURITY — Migrate password storage from Base64 encoding to AES-256-GCM encryption.
+// The IPC bridge is ready: window.osBrowser.passwordVault.encrypt() / .decrypt()
+// These call the main process credential-encryption service (AES-256-GCM with OS-level key protection).
+// Migration plan:
+//   1. Make encodePassword/decodePassword async, calling IPC encrypt/decrypt
+//   2. Update all callers (addPassword, updatePassword, loadFromStorage, saveToStorage) to be async
+//   3. On load, detect legacy Base64 entries (no ":" separator) and re-encrypt them
+// Current Base64 encoding is NOT secure — it's trivially reversible.
 import { create } from 'zustand';
 
 export interface SavedPassword {

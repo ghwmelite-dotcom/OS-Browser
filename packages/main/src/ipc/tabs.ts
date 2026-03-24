@@ -1,16 +1,31 @@
 import { app, ipcMain, BrowserWindow, WebContentsView, nativeImage, net, Menu, MenuItem, clipboard, shell, dialog } from 'electron';
-import { IPC } from '@os-browser/shared';
+import { IPC } from '../../../shared/dist';
 import { getDatabase } from '../db/database';
 import crypto from 'crypto';
 import path from 'path';
 // import { cachePage } from '../services/page-cache'; // Disabled: automatic page caching removed (I5 security fix)
 import { isTabSuspended, markTabRestored } from '../services/tab-suspension';
 import { getAdBlockService } from '../services/adblock-engine';
+import { isGovCaptureDomain, captureCurrentPage } from '../services/interaction-vault';
+
+function isAllowedUrl(url: string): boolean {
+  if (!url) return false;
+  if (url.startsWith('os-browser://')) return true;
+  if (url.startsWith('view-source:')) return true;
+  try { return ['http:', 'https:'].includes(new URL(url).protocol); }
+  catch { return false; }
+}
 
 // Track which tabs have already had PWA detection run (once per page load)
 const pwaDetectedTabs = new Set<string>();
 
 const tabViews = new Map<string, WebContentsView>();
+
+// ── OAuth tab tracking ────────────────────────────────────────────────
+// Maps an OAuth tab ID → { openerTabId, openerHost } so we can detect
+// when the auth flow redirects back to the original site and auto-close
+// the OAuth tab, switching focus back to the opener.
+const oauthTabOrigins = new Map<string, { openerTabId: string; openerHost: string }>();
 
 export function registerTabHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle(IPC.TAB_CREATE, (_event, url?: string) => {
@@ -50,6 +65,7 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
       mainWindow.contentView.addChildView(view);
       resizeViewToContent(view, mainWindow);
       setupViewEvents(view, id, mainWindow);
+      (view.webContents as any).__markUserNavigation?.();
       view.webContents.loadURL(tabUrl);
       tabViews.set(id, view);
     }
@@ -85,6 +101,7 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
       mainWindow.contentView.addChildView(view);
       resizeViewToContent(view, mainWindow);
       setupViewEvents(view, id, mainWindow);
+      (view.webContents as any).__markUserNavigation?.();
       view.webContents.loadURL(tab.url);
       tabViews.set(id, view);
       if (isTabSuspended(id)) {
@@ -108,6 +125,8 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
   });
 
   ipcMain.handle(IPC.TAB_NAVIGATE, (_event, id: string, url: string) => {
+    if (!isAllowedUrl(url)) return;
+
     const db = getDatabase();
     db.prepare('UPDATE tabs SET url = ?, last_accessed_at = datetime("now") WHERE id = ?').run(url, id);
 
@@ -123,6 +142,8 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
       tabViews.set(id, view);
     }
     view.setVisible(true);
+    // Mark as user-initiated so will-navigate doesn't block cross-domain navigation
+    (view.webContents as any).__markUserNavigation?.();
     view.webContents.loadURL(url);
   });
 
@@ -164,6 +185,31 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     db.prepare(`UPDATE tabs SET ${sets} WHERE id = ?`).run(...values, id);
   });
 
+  // Picture-in-Picture — find first <video> in the active tab and trigger PiP
+  ipcMain.handle('tab:pip', async (_event, id: string) => {
+    const view = tabViews.get(id);
+    if (!view) return { success: false, error: 'No view found' };
+    try {
+      const result = await view.webContents.executeJavaScript(`
+        (async () => {
+          try {
+            const video = document.querySelector('video');
+            if (!video) return { success: false, error: 'No video found on this page' };
+            if (document.pictureInPictureElement) {
+              await document.exitPictureInPicture();
+              return { success: true, action: 'exited' };
+            }
+            await video.requestPictureInPicture();
+            return { success: true, action: 'entered' };
+          } catch (e) { return { success: false, error: e.message || 'PiP not supported' }; }
+        })()
+      `);
+      return result;
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Failed to execute PiP' };
+    }
+  });
+
   ipcMain.handle('tab:print', (_event, id: string) => {
     const view = tabViews.get(id);
     if (view) {
@@ -189,6 +235,264 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     const fs = require('fs');
     fs.writeFileSync(filePath, data);
     return filePath;
+  });
+
+  // ── Exchange Rate Price Overlay ─────────────────────────────────────
+  // Injects a content script that detects foreign currency prices on the page
+  // and shows GHS conversion tooltips on hover.
+  ipcMain.handle('exchange:inject-overlay', async (_event, id: string, rates: Record<string, number>) => {
+    const view = tabViews.get(id);
+    if (!view) return { success: false, error: 'No view found' };
+
+    try {
+      await view.webContents.executeJavaScript(`
+        (function() {
+          // Prevent duplicate injection
+          if (window.__osBrowserExchangeOverlay) {
+            // If already injected, just update rates and re-scan
+            window.__osBrowserExchangeRates = ${JSON.stringify(rates)};
+            if (window.__osBrowserExchangeRescan) window.__osBrowserExchangeRescan();
+            return;
+          }
+          window.__osBrowserExchangeOverlay = true;
+          window.__osBrowserExchangeRates = ${JSON.stringify(rates)};
+
+          var SYMBOL_MAP = {
+            '$': 'USD', '\\u20AC': 'EUR', '\\u00A3': 'GBP', '\\u00A5': 'CNY',
+            '\\u20A6': 'NGN', 'C$': 'CAD',
+          };
+          var CODE_MAP = {
+            'USD': 'USD', 'EUR': 'EUR', 'GBP': 'GBP', 'CNY': 'CNY',
+            'JPY': 'JPY', 'NGN': 'NGN', 'CAD': 'CAD', 'AUD': 'AUD',
+          };
+
+          // Regex: symbol-first prices like $49.99 or \\u00A320.00
+          var symbolFirstRe = /(?:\\$|\\u20AC|\\u00A3|\\u00A5|\\u20A6|C\\$)\\s*[\\d,]+\\.?\\d*/g;
+          // Regex: code-first prices like USD 49.99
+          var codeFirstRe = /(?:USD|EUR|GBP|CNY|JPY|NGN|CAD|AUD)\\s+[\\d,]+\\.?\\d*/g;
+          // Regex: code-after prices like 49.99 USD
+          var codeAfterRe = /[\\d,]+\\.?\\d*\\s*(?:USD|EUR|GBP|CNY|JPY|NGN|CAD|AUD)/g;
+
+          function parsePriceMatch(match) {
+            match = match.trim();
+            var currency = null;
+            var amountStr = null;
+
+            // Check symbol-first
+            for (var sym in SYMBOL_MAP) {
+              if (match.indexOf(sym) === 0) {
+                currency = SYMBOL_MAP[sym];
+                amountStr = match.substring(sym.length).trim();
+                break;
+              }
+            }
+
+            // Check code-first
+            if (!currency) {
+              for (var code in CODE_MAP) {
+                if (match.indexOf(code) === 0) {
+                  currency = CODE_MAP[code];
+                  amountStr = match.substring(code.length).trim();
+                  break;
+                }
+              }
+            }
+
+            // Check code-after
+            if (!currency) {
+              for (var code2 in CODE_MAP) {
+                if (match.indexOf(code2) === match.length - code2.length) {
+                  currency = CODE_MAP[code2];
+                  amountStr = match.substring(0, match.length - code2.length).trim();
+                  break;
+                }
+              }
+            }
+
+            if (!currency || !amountStr) return null;
+
+            var amount = parseFloat(amountStr.replace(/,/g, ''));
+            if (isNaN(amount) || amount <= 0) return null;
+
+            return { currency: currency, amount: amount, original: match };
+          }
+
+          function createTooltip() {
+            var tip = document.createElement('div');
+            tip.id = '__osBrowserExchangeTooltip';
+            tip.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;' +
+              'background:rgba(15,17,23,0.95);color:#D4A017;font-size:13px;font-weight:600;' +
+              'font-family:ui-monospace,monospace;padding:6px 10px;border-radius:8px;' +
+              'border:1px solid rgba(212,160,23,0.3);box-shadow:0 4px 16px rgba(0,0,0,0.4);' +
+              'white-space:nowrap;display:none;backdrop-filter:blur(8px);';
+            document.body.appendChild(tip);
+            return tip;
+          }
+
+          var tooltip = createTooltip();
+
+          function processTextNode(node) {
+            var text = node.textContent;
+            if (!text || text.length < 2) return;
+
+            var parent = node.parentElement;
+            if (!parent) return;
+            if (parent.closest('[data-ozzy-exchange]')) return;
+            var tag = parent.tagName;
+            if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'CODE' || tag === 'PRE') return;
+
+            var matches = [];
+            var m;
+
+            symbolFirstRe.lastIndex = 0;
+            while ((m = symbolFirstRe.exec(text)) !== null) {
+              var parsed = parsePriceMatch(m[0]);
+              if (parsed) matches.push({ index: m.index, length: m[0].length, data: parsed });
+            }
+
+            codeFirstRe.lastIndex = 0;
+            while ((m = codeFirstRe.exec(text)) !== null) {
+              var parsed2 = parsePriceMatch(m[0]);
+              if (parsed2) matches.push({ index: m.index, length: m[0].length, data: parsed2 });
+            }
+
+            codeAfterRe.lastIndex = 0;
+            while ((m = codeAfterRe.exec(text)) !== null) {
+              var parsed3 = parsePriceMatch(m[0]);
+              if (parsed3) matches.push({ index: m.index, length: m[0].length, data: parsed3 });
+            }
+
+            if (matches.length === 0) return;
+
+            // Deduplicate overlapping matches
+            matches.sort(function(a, b) { return a.index - b.index; });
+            var deduped = [matches[0]];
+            for (var i = 1; i < matches.length; i++) {
+              var prev = deduped[deduped.length - 1];
+              if (matches[i].index >= prev.index + prev.length) {
+                deduped.push(matches[i]);
+              }
+            }
+
+            // Build replacement
+            var frag = document.createDocumentFragment();
+            var lastIdx = 0;
+
+            deduped.forEach(function(match) {
+              // Text before match
+              if (match.index > lastIdx) {
+                frag.appendChild(document.createTextNode(text.substring(lastIdx, match.index)));
+              }
+
+              var rates = window.__osBrowserExchangeRates;
+              var rate = rates[match.data.currency];
+              var ghsAmount = rate ? (match.data.amount * rate) : 0;
+
+              var span = document.createElement('span');
+              span.setAttribute('data-ozzy-exchange', 'true');
+              span.setAttribute('data-currency', match.data.currency);
+              span.setAttribute('data-amount', String(match.data.amount));
+              span.textContent = text.substring(match.index, match.index + match.length);
+              span.style.cssText = 'border-bottom:1.5px dashed #D4A017;cursor:help;position:relative;';
+
+              span.addEventListener('mouseenter', function(e) {
+                var r = window.__osBrowserExchangeRates;
+                var cur = this.getAttribute('data-currency');
+                var amt = parseFloat(this.getAttribute('data-amount'));
+                var rt = r[cur];
+                if (!rt) return;
+                var ghs = (amt * rt).toFixed(2);
+                tooltip.textContent = this.textContent + ' \\u2192 GH\\u20B5' + Number(ghs).toLocaleString('en-US', {minimumFractionDigits:2}) + ' (1 ' + cur + ' = \\u20B5' + rt.toFixed(2) + ')';
+                tooltip.style.display = 'block';
+                var rect = this.getBoundingClientRect();
+                tooltip.style.left = rect.left + 'px';
+                tooltip.style.top = (rect.top - 36) + 'px';
+              });
+
+              span.addEventListener('mouseleave', function() {
+                tooltip.style.display = 'none';
+              });
+
+              frag.appendChild(span);
+              lastIdx = match.index + match.length;
+            });
+
+            // Remaining text
+            if (lastIdx < text.length) {
+              frag.appendChild(document.createTextNode(text.substring(lastIdx)));
+            }
+
+            parent.replaceChild(frag, node);
+          }
+
+          function scanDocument() {
+            var walker = document.createTreeWalker(
+              document.body,
+              NodeFilter.SHOW_TEXT,
+              null
+            );
+            var nodes = [];
+            var n;
+            while ((n = walker.nextNode())) nodes.push(n);
+            nodes.forEach(processTextNode);
+          }
+
+          // Debounced scan
+          var scanTimer;
+          function debouncedScan() {
+            clearTimeout(scanTimer);
+            scanTimer = setTimeout(scanDocument, 500);
+          }
+
+          window.__osBrowserExchangeRescan = debouncedScan;
+
+          // Initial scan after 500ms
+          setTimeout(scanDocument, 500);
+
+          // Observe DOM mutations for dynamically loaded content
+          var observer = new MutationObserver(function(mutations) {
+            var hasNew = mutations.some(function(m) { return m.addedNodes.length > 0; });
+            if (hasNew) debouncedScan();
+          });
+
+          observer.observe(document.body, { childList: true, subtree: true });
+        })()
+      `);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Injection failed' };
+    }
+  });
+
+  // Remove exchange overlay from page
+  ipcMain.handle('exchange:remove-overlay', async (_event, id: string) => {
+    const view = tabViews.get(id);
+    if (!view) return { success: false };
+
+    try {
+      await view.webContents.executeJavaScript(`
+        (function() {
+          // Remove all annotated spans
+          var spans = document.querySelectorAll('[data-ozzy-exchange]');
+          spans.forEach(function(span) {
+            var parent = span.parentNode;
+            if (parent) {
+              var text = document.createTextNode(span.textContent || '');
+              parent.replaceChild(text, span);
+            }
+          });
+          // Remove tooltip
+          var tip = document.getElementById('__osBrowserExchangeTooltip');
+          if (tip) tip.remove();
+          // Reset flag
+          window.__osBrowserExchangeOverlay = false;
+          window.__osBrowserExchangeRescan = null;
+        })()
+      `);
+      return { success: true };
+    } catch {
+      return { success: false };
+    }
   });
 
   // PWA install handler — opens a standalone BrowserWindow for the PWA
@@ -246,10 +550,28 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     return { success: true };
   });
 
+  // Get readable content from the active tab's page
+  ipcMain.handle('tab:get-content', async (_event, id: string) => {
+    const view = tabViews.get(id);
+    if (!view) return null;
+    try {
+      const result = await view.webContents.executeJavaScript(`
+        (function() {
+          var article = document.querySelector('article') || document.querySelector('[role="main"]') || document.querySelector('main') || document.body;
+          var title = document.title;
+          var clone = article.cloneNode(true);
+          clone.querySelectorAll('script, style, nav, footer, aside, header, [role="navigation"], [role="banner"], .ad, .ads, .advertisement, .sidebar, iframe, svg, form').forEach(function(el) { el.remove(); });
+          return { title: title, content: clone.innerText, html: clone.innerHTML };
+        })()
+      `);
+      return result;
+    } catch { return null; }
+  });
+
   // Resize views when window resizes
   mainWindow.on('resize', () => {
     for (const view of tabViews.values()) {
-      if (view.getVisible?.() !== false) {
+      if ((view as any).getVisible?.() !== false) {
         resizeViewToContent(view, mainWindow);
       }
     }
@@ -257,44 +579,218 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
 }
 
 function resizeViewToContent(view: WebContentsView, win: BrowserWindow): void {
-  const bounds = win.getContentBounds();
-  // Browser chrome heights (measured from actual components):
-  // TitleBar: 32px, TabBar: 36px, NavigationBar: 44px = 112px base
-  // BookmarksBar: ~28px, KenteStatusBar: ~28px = 56px additional
-  // Total: 168px when all visible
-  const topOffset = 168;
-  // Kente Sidebar icon rail width = 48px (always visible on the left)
-  const sidebarWidth = 48;
-  // Bottom safety margin — prevents covering the Windows taskbar on maximize
-  const bottomMargin = 2;
-  const height = Math.max(100, bounds.height - topOffset - bottomMargin);
-  const width = Math.max(100, bounds.width - sidebarWidth);
-  view.setBounds({ x: sidebarWidth, y: topOffset, width, height });
+  try {
+    const bounds = win.getContentBounds();
+    // Browser chrome heights (measured from actual components):
+    // KenteCrown: 3px, TitleBar: 32px, TabBar: 36px, NavigationBar: 44px = 115px base
+    // BookmarksBar: ~28px, KenteStatusBar: ~28px = 56px additional
+    // Total: 171px when all visible
+    const topOffset = 171;
+    // Kente Sidebar icon rail width = 48px (always visible on the left)
+    const sidebarWidth = 48;
+    // Bottom safety margin — prevents covering the Windows taskbar on maximize
+    const bottomMargin = 2;
+    const height = Math.max(100, bounds.height - topOffset - bottomMargin);
+    const width = Math.max(100, bounds.width - sidebarWidth);
+    view.setBounds({ x: sidebarWidth, y: topOffset, width, height });
+  } catch (err) {
+    console.error('[Tabs] resizeViewToContent failed:', err);
+  }
+}
+
+/**
+ * Create a new tab from the main process (used by context menu and window.open handler).
+ * Creates the tab in the DB + WebContentsView, then notifies the renderer to sync its store.
+ * @param oauthOpener If provided, marks this tab as an OAuth flow so we can auto-close it
+ *                    when the auth redirects back to the opener's domain.
+ */
+export function createTabFromMain(mainWindow: BrowserWindow, url: string, oauthOpener?: { openerTabId: string; openerHost: string }): void {
+  if (!url || (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('view-source:'))) return;
+
+  const db = getDatabase();
+  const id = crypto.randomUUID();
+  const position = (db.prepare('SELECT MAX(position) as max FROM tabs').get() as any)?.max + 1 || 0;
+
+  // Deactivate current tab
+  db.prepare('UPDATE tabs SET is_active = 0 WHERE is_active = 1').run();
+
+  // Insert new tab as active
+  db.prepare(
+    'INSERT INTO tabs (id, title, url, position, is_active, last_accessed_at) VALUES (?, ?, ?, ?, 1, datetime("now"))'
+  ).run(id, 'Loading...', url, position);
+
+  // Hide all existing views
+  for (const v of tabViews.values()) {
+    v.setVisible(false);
+  }
+
+  // Create WebContentsView for the new tab
+  const view = new WebContentsView();
+  mainWindow.contentView.addChildView(view);
+  resizeViewToContent(view, mainWindow);
+  setupViewEvents(view, id, mainWindow);
+  tabViews.set(id, view);
+  (view.webContents as any).__markUserNavigation?.();
+  view.webContents.loadURL(url);
+  view.setVisible(true);
+
+  // If this is an OAuth tab, track it so we can auto-close when auth completes
+  if (oauthOpener) {
+    oauthTabOrigins.set(id, oauthOpener);
+  }
+
+  // Tell the renderer to reload its tab list so the UI syncs
+  mainWindow.webContents.send('tabs:refresh', {
+    newTabId: id,
+    url,
+    title: 'Loading...',
+    position,
+  });
 }
 
 function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: BrowserWindow): void {
   const wc = view.webContents;
   const db = getDatabase();
 
-  // ── Navigation Guards (security) ──────────────────────────────────
-  // Prevent navigation to non-HTTP protocols (blocks javascript:, file:, data: etc.)
+  // ── Ad domain list for navigation blocking ──────────────────────────
+  const AD_POPUP_DOMAINS = [
+    'doubleclick.net', 'googlesyndication.com', 'googleadservices.com',
+    'moatads.com', 'adsrvr.org', 'serving-sys.com', 'adnxs.com',
+    'taboola.com', 'outbrain.com', 'revcontent.com', 'mgid.com',
+    'popads.net', 'popcash.net', 'propellerads.com', 'hilltopads.net',
+    'exoclick.com', 'juicyads.com', 'trafficjunky.com', 'adcash.com',
+    'clickadu.com', 'richpush.com', 'pushground.com', 'evadav.com',
+    'notification.top', 'pushame.com', 'push.house', 'rolemedia.co',
+    'onclicka.com', 'onclickmax.com', 'clickaine.com', 'adf.ly',
+    'bc.vc', 'sh.st', 'linkbucks.com', 'shorte.st',
+    'betaheat.com', 'revenuenetworkcpm.com', '1movietv.com',
+  ];
+
+  function isAdPopupUrl(url: string): boolean {
+    try {
+      const hostname = new URL(url).hostname.toLowerCase();
+      return AD_POPUP_DOMAINS.some(d => hostname === d || hostname.endsWith('.' + d));
+    } catch { return false; }
+  }
+
+  // Track whether the current navigation was user-initiated (from omni bar / createTab)
+  let userInitiatedNavigation = false;
+  wc.on('did-finish-load', () => {
+    // Reset after page fully loads — the navigation is complete
+    userInitiatedNavigation = false;
+  });
+
+  // Expose a way for the IPC navigate handler to mark navigation as user-initiated
+  (wc as any).__markUserNavigation = () => { userInitiatedNavigation = true; };
+
+  // ── Navigation Guards (security + ad blocking) ──────────────────────
+  // Prevent navigation to non-HTTP protocols and ad redirect hijacking
   wc.on('will-navigate', (event, url) => {
     if (!url.startsWith('https://') && !url.startsWith('http://')) {
       event.preventDefault();
+      return;
     }
+    // Block ad redirect hijacking — known ad domains
+    if (isAdPopupUrl(url)) {
+      event.preventDefault();
+      return;
+    }
+    // Note: Cross-domain navigation is allowed — this is a web browser.
+    // Ad redirect hijacking is already blocked by the isAdPopupUrl check above.
   });
 
-  // Prevent window.open to non-HTTP protocols and handle in-app
+  // Handle target="_blank" links, window.open(), and middle-click
+  // Allow OAuth/auth popups as real windows; open other links as new tabs
+  const OAUTH_POPUP_HOSTS = [
+    'accounts.google.com', 'login.microsoftonline.com', 'login.live.com',
+    'appleid.apple.com', 'github.com', 'auth0.com',
+    'facebook.com', 'www.facebook.com',
+    'api.twitter.com', 'twitter.com',
+    'discord.com', 'slack.com',
+    'login.yahoo.com', 'login.aol.com',
+  ];
+
   wc.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https://') || url.startsWith('http://')) {
-      // Open in a new tab instead of a new window
-      mainWindow.webContents.send('tab:open-url', url);
+    if (!url.startsWith('https://') && !url.startsWith('http://')) {
+      return { action: 'deny' };
     }
-    return { action: 'deny' }; // Always deny popup windows
+    if (isAdPopupUrl(url)) {
+      return { action: 'deny' };
+    }
+    // OAuth/auth popups: allow as real BrowserWindow so window.open() returns
+    // a valid reference. Google GSI and other OAuth SDKs need this to detect
+    // popup completion. COOP headers are stripped in main.ts so window.opener works.
+    try {
+      const hostname = new URL(url).hostname;
+      if (OAUTH_POPUP_HOSTS.some(h => hostname === h || hostname.endsWith('.' + h))) {
+        return {
+          action: 'allow',
+          overrideBrowserWindowOptions: {
+            width: 500,
+            height: 700,
+            autoHideMenuBar: true,
+            webPreferences: {
+              // Same session as parent — cookies are shared
+              partition: undefined,
+              contextIsolation: true,
+              nodeIntegration: false,
+              sandbox: true,
+            },
+          },
+        };
+      }
+    } catch {}
+    // Everything else opens as a new tab
+    createTabFromMain(mainWindow, url);
+    return { action: 'deny' };
   });
 
-  // Right-click context menu
-  wc.on('context-menu', (_e, params) => {
+  // Monitor OAuth popup windows — when auth completes and navigates away from
+  // the auth domain, close the popup and reload the parent tab with auth cookies
+  wc.on('did-create-window', (popupWindow) => {
+    const popupWc = popupWindow.webContents;
+
+    popupWc.on('will-navigate', (_event, navUrl) => {
+      try {
+        const navHost = new URL(navUrl).hostname;
+        // If the popup navigates to a non-OAuth host, auth is complete
+        const isStillOAuth = OAUTH_POPUP_HOSTS.some(h => navHost === h || navHost.endsWith('.' + h));
+        if (!isStillOAuth) {
+          // Auth complete — close popup and reload parent tab
+          setTimeout(() => {
+            try { popupWindow.close(); } catch {}
+            try { wc.reload(); } catch {}
+          }, 500);
+        }
+      } catch {}
+    });
+
+    // Also handle when popup finishes loading a non-OAuth page
+    popupWc.on('did-navigate', (_event, navUrl) => {
+      try {
+        const navHost = new URL(navUrl).hostname;
+        const isStillOAuth = OAUTH_POPUP_HOSTS.some(h => navHost === h || navHost.endsWith('.' + h));
+        if (!isStillOAuth) {
+          setTimeout(() => {
+            try { popupWindow.close(); } catch {}
+            try { wc.reload(); } catch {}
+          }, 300);
+        }
+      } catch {}
+    });
+  });
+
+  // Handle new-window events from <a target="_blank"> that bypass setWindowOpenHandler
+  wc.on('new-window' as any, (event: any, url: string) => {
+    event.preventDefault();
+    if ((url.startsWith('https://') || url.startsWith('http://')) && !isAdPopupUrl(url)) {
+      createTabFromMain(mainWindow, url);
+    }
+  });
+
+  // Right-click context menu — prevent default Chromium menu so only ours shows
+  wc.on('context-menu', (e, params) => {
+    e.preventDefault();
     const menu = new Menu();
 
     if (params.isEditable) {
@@ -312,7 +808,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
           label: `Search Google for "${params.selectionText.substring(0, 30)}${params.selectionText.length > 30 ? '...' : ''}"`,
           click: () => {
             const q = encodeURIComponent(params.selectionText);
-            mainWindow.webContents.send('tab:navigate-new', `https://www.google.com/search?q=${q}`);
+            createTabFromMain(mainWindow, `https://www.google.com/search?q=${q}`);
           },
         }));
         menu.append(new MenuItem({ type: 'separator' }));
@@ -329,7 +825,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
       if (params.linkURL) {
         menu.append(new MenuItem({
           label: 'Open Link in New Tab',
-          click: () => mainWindow.webContents.send('tab:navigate-new', params.linkURL),
+          click: () => createTabFromMain(mainWindow, params.linkURL),
         }));
         menu.append(new MenuItem({
           label: 'Copy Link Address',
@@ -345,7 +841,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
         }));
         menu.append(new MenuItem({
           label: 'Open Image in New Tab',
-          click: () => mainWindow.webContents.send('tab:navigate-new', params.srcURL),
+          click: () => createTabFromMain(mainWindow, params.srcURL),
         }));
         menu.append(new MenuItem({ type: 'separator' }));
       }
@@ -356,34 +852,124 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
       }));
       menu.append(new MenuItem({ type: 'separator' }));
       menu.append(new MenuItem({ label: 'View Page Source', accelerator: 'Ctrl+U', click: () => {
-        mainWindow.webContents.send('tab:navigate-new', `view-source:${wc.getURL()}`);
+        createTabFromMain(mainWindow, `view-source:${wc.getURL()}`);
       }}));
-      if (!app.isPackaged || process.env.OS_BROWSER_DEBUG === '1') {
-        menu.append(new MenuItem({ label: 'Inspect Element', accelerator: 'Ctrl+Shift+I', click: () => wc.openDevTools() }));
-      }
+      menu.append(new MenuItem({ label: 'Inspect Element', accelerator: 'Ctrl+Shift+I', click: () => {
+        wc.openDevTools();
+        wc.devToolsWebContents?.focus();
+      }}));
     }
 
     menu.popup({ window: mainWindow });
   });
 
-  wc.on('page-title-updated', (_e, title) => {
-    db.prepare('UPDATE tabs SET title = ? WHERE id = ?').run(title, tabId);
-    mainWindow.webContents.send('tab:title-updated', { id: tabId, title });
+  // Keyboard shortcut: F12 or Ctrl+Shift+I opens DevTools for the page
+  wc.on('before-input-event', (_event, input) => {
+    if (wc.isDestroyed()) return;
+    if (input.type !== 'keyDown') return;
+    if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
+      wc.openDevTools();
+    }
   });
 
+  wc.on('page-title-updated', (_e, title) => {
+    if (wc.isDestroyed() || mainWindow.isDestroyed()) return;
+    try { db.prepare('UPDATE tabs SET title = ? WHERE id = ?').run(title, tabId); } catch {}
+    try { mainWindow.webContents.send('tab:title-updated', { id: tabId, title }); } catch {}
+  });
+
+  // ── Tracking parameter list for URL stripping ──
+  const TRACKING_PARAMS = new Set([
+    'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id',
+    'fbclid', 'gclid', 'gclsrc', 'dclid', 'msclkid',
+    'mc_cid', 'mc_eid', '_ga', '_gl', 'yclid', 'wickedid',
+    'twclid', 'ttclid', 'igshid', 'ref_src', 'ref_url',
+    '__s', 'vero_id', '_hsenc', '_hsmi', 'mkt_tok',
+  ]);
+
+  function stripTrackingParams(rawUrl: string): string {
+    try {
+      const parsed = new URL(rawUrl);
+      let changed = false;
+      for (const key of Array.from(parsed.searchParams.keys())) {
+        if (TRACKING_PARAMS.has(key)) {
+          parsed.searchParams.delete(key);
+          changed = true;
+        }
+      }
+      return changed ? parsed.toString() : rawUrl;
+    } catch {
+      return rawUrl;
+    }
+  }
+
   wc.on('did-navigate', (_e, url) => {
+    if (wc.isDestroyed() || mainWindow.isDestroyed()) return;
+
+    // ── OAuth completion detection ─────────────────────────────────────
+    // If this tab was opened for OAuth and has now navigated back to the
+    // opener's domain, the auth flow is complete. Auto-close this tab and
+    // switch back to the opener tab.
+    const oauthOrigin = oauthTabOrigins.get(tabId);
+    if (oauthOrigin) {
+      try {
+        const navHost = new URL(url).hostname;
+        // Check if we've navigated back to the opener's domain (auth complete)
+        if (oauthOrigin.openerHost && (navHost === oauthOrigin.openerHost || navHost.endsWith('.' + oauthOrigin.openerHost))) {
+          oauthTabOrigins.delete(tabId);
+          // Schedule auto-close after a brief delay so cookies/tokens are fully set
+          setTimeout(() => {
+            try {
+              // Switch to the opener tab
+              const openerView = tabViews.get(oauthOrigin.openerTabId);
+              if (openerView && !openerView.webContents.isDestroyed()) {
+                // Hide all views, show opener
+                for (const v of tabViews.values()) v.setVisible(false);
+                openerView.setVisible(true);
+                db.prepare('UPDATE tabs SET is_active = 0').run();
+                db.prepare('UPDATE tabs SET is_active = 1, last_accessed_at = datetime("now") WHERE id = ?').run(oauthOrigin.openerTabId);
+                // Reload the opener tab so it picks up the new auth cookies
+                openerView.webContents.reload();
+                mainWindow.webContents.send('tabs:refresh', { switchToTabId: oauthOrigin.openerTabId });
+              }
+              // Close the OAuth tab
+              const oauthView = tabViews.get(tabId);
+              if (oauthView) {
+                mainWindow.contentView.removeChildView(oauthView);
+                if (!oauthView.webContents.isDestroyed()) {
+                  (oauthView.webContents as any).destroy?.();
+                }
+                tabViews.delete(tabId);
+              }
+              db.prepare('DELETE FROM tabs WHERE id = ?').run(tabId);
+              mainWindow.webContents.send('tabs:refresh', { closedTabId: tabId });
+            } catch (err) {
+              console.error('[OAuth] Auto-close failed:', err);
+            }
+          }, 500);
+          return; // Skip normal did-navigate processing for this final redirect
+        }
+      } catch {}
+    }
+
     // Clear PWA detection for this tab so it re-checks on the new page
     for (const key of pwaDetectedTabs) {
       if (key.startsWith(`${tabId}:`)) pwaDetectedTabs.delete(key);
     }
-    db.prepare('UPDATE tabs SET url = ? WHERE id = ?').run(url, tabId);
-    mainWindow.webContents.send('tab:url-updated', { id: tabId, url, canGoBack: wc.canGoBack(), canGoForward: wc.canGoForward() });
+
+    // Strip tracking parameters from URL (cosmetic only — no page reload)
+    const cleanUrl = stripTrackingParams(url);
+
+    try { db.prepare('UPDATE tabs SET url = ? WHERE id = ?').run(cleanUrl, tabId); } catch {}
+    try { mainWindow.webContents.send('tab:url-updated', { id: tabId, url: cleanUrl, canGoBack: wc.canGoBack(), canGoForward: wc.canGoForward() }); } catch {}
 
     // Record history
-    db.prepare(`
-      INSERT INTO history (url, title, last_visited_at) VALUES (?, ?, datetime('now'))
-      ON CONFLICT(url) DO UPDATE SET visit_count = visit_count + 1, last_visited_at = datetime('now'), title = excluded.title
-    `).run(url, '');
+    try {
+      db.prepare(`
+        INSERT INTO history (url, title, last_visited_at) VALUES (?, ?, datetime('now'))
+        ON CONFLICT(url) DO UPDATE SET visit_count = visit_count + 1, last_visited_at = datetime('now'), title = excluded.title
+      `).run(url, '');
+    } catch {}
 
     // Apply cosmetic filters + YouTube ad blocking
     const adblock = getAdBlockService();
@@ -391,7 +977,8 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
   });
 
   wc.on('did-navigate-in-page', (_e, url) => {
-    mainWindow.webContents.send('tab:url-updated', { id: tabId, url, canGoBack: wc.canGoBack(), canGoForward: wc.canGoForward() });
+    if (wc.isDestroyed() || mainWindow.isDestroyed()) return;
+    try { mainWindow.webContents.send('tab:url-updated', { id: tabId, url, canGoBack: wc.canGoBack(), canGoForward: wc.canGoForward() }); } catch {}
 
     // Apply cosmetic filters + YouTube ad blocking (YouTube is a SPA)
     const adblock2 = getAdBlockService();
@@ -399,10 +986,156 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
   });
 
   wc.on('did-start-loading', () => {
+    if (wc.isDestroyed() || mainWindow.isDestroyed()) return;
     mainWindow.webContents.send('tab:loading', { id: tabId, isLoading: true });
   });
 
+  // Inject ad blocking scripts as early as possible — dom-ready fires before
+  // page scripts run, ensuring our fetch/XHR intercepts are in place before
+  // the video player requests ad data. This eliminates the "ad flash" where
+  // users briefly see an ad before the blocker kicks in.
+  wc.on('dom-ready', () => {
+    if (wc.isDestroyed()) return;
+    const url = wc.getURL();
+    const adblock3 = getAdBlockService();
+    if (adblock3) try { adblock3.applyCosmeticFilters(wc, url); } catch {}
+
+    // Inject click interceptor for Ctrl+click and middle-click on links.
+    // Electron's WebContentsView has no built-in tab concept, so Ctrl+click
+    // and middle-click on <a> tags just navigate in the same frame.
+    // This script converts those clicks into window.open() calls which are
+    // caught by setWindowOpenHandler and opened in a new tab.
+    try {
+      wc.executeJavaScript(`
+        (function() {
+          if (window.__osBrowserClickInterceptor) return;
+          window.__osBrowserClickInterceptor = true;
+
+          function findAnchor(el) {
+            while (el && el !== document.body) {
+              if (el.tagName === 'A' && el.href) return el;
+              el = el.parentElement;
+            }
+            return null;
+          }
+
+          // Handle Ctrl+click (Windows/Linux) and Cmd+click (macOS)
+          document.addEventListener('click', function(e) {
+            if (!e.ctrlKey && !e.metaKey) return;
+            var anchor = findAnchor(e.target);
+            if (!anchor || !anchor.href) return;
+            var href = anchor.href;
+            if (!href.startsWith('http://') && !href.startsWith('https://')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            window.open(href, '_blank');
+          }, true);
+
+          // Handle middle-click (mouse button 1)
+          document.addEventListener('auxclick', function(e) {
+            if (e.button !== 1) return;
+            var anchor = findAnchor(e.target);
+            if (!anchor || !anchor.href) return;
+            var href = anchor.href;
+            if (!href.startsWith('http://') && !href.startsWith('https://')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            window.open(href, '_blank');
+          }, true);
+        })()
+      `);
+    } catch { /* injection failed — non-critical */ }
+
+    // ── USSD Code Detection ─────────────────────────────────────────
+    // Scan visible text for USSD patterns and make them interactive.
+    // Wraps matched codes in a styled span with gold underline and
+    // a copy-to-clipboard tooltip on hover.
+    try {
+      wc.executeJavaScript(`
+        (function() {
+          if (window.__osBrowserUSSDDetector) return;
+          window.__osBrowserUSSDDetector = true;
+
+          var USSD_RE = /\\*(\\d{2,4}(?:\\*\\d+)*)#/g;
+
+          // Style tag for USSD highlights
+          var style = document.createElement('style');
+          style.textContent = [
+            '.ozzy-ussd { text-decoration: underline; text-decoration-color: #D4A017; text-underline-offset: 2px; cursor: pointer; position: relative; color: inherit; }',
+            '.ozzy-ussd:hover { background: rgba(212,160,23,0.12); border-radius: 2px; }',
+            '.ozzy-ussd-tip { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); padding: 3px 8px; border-radius: 4px; background: #1e212b; color: #e8e8ec; font-size: 11px; white-space: nowrap; pointer-events: auto; cursor: pointer; border: 1px solid #2e3340; z-index: 99999; box-shadow: 0 2px 8px rgba(0,0,0,0.3); opacity: 0; transition: opacity 150ms ease; }',
+            '.ozzy-ussd:hover .ozzy-ussd-tip { opacity: 1; }',
+          ].join('\\n');
+          document.head.appendChild(style);
+
+          function wrapTextNode(node) {
+            var text = node.textContent;
+            if (!text || !USSD_RE.test(text)) return;
+            USSD_RE.lastIndex = 0;
+
+            var frag = document.createDocumentFragment();
+            var lastIdx = 0;
+            var match;
+            while ((match = USSD_RE.exec(text)) !== null) {
+              if (match.index > lastIdx) {
+                frag.appendChild(document.createTextNode(text.slice(lastIdx, match.index)));
+              }
+              var span = document.createElement('span');
+              span.className = 'ozzy-ussd';
+              span.textContent = match[0];
+              span.setAttribute('data-ussd', match[0]);
+
+              var tip = document.createElement('span');
+              tip.className = 'ozzy-ussd-tip';
+              tip.textContent = 'Copy ' + match[0];
+              span.appendChild(tip);
+
+              span.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var code = this.getAttribute('data-ussd');
+                navigator.clipboard.writeText(code).then(function() {
+                  var t = e.target.closest('.ozzy-ussd').querySelector('.ozzy-ussd-tip');
+                  if (t) { t.textContent = 'Copied!'; setTimeout(function() { t.textContent = 'Copy ' + code; }, 1500); }
+                }).catch(function(err) { console.warn('[USSD] clipboard copy failed:', err); });
+              });
+
+              frag.appendChild(span);
+              lastIdx = match.index + match[0].length;
+            }
+            if (lastIdx < text.length) {
+              frag.appendChild(document.createTextNode(text.slice(lastIdx)));
+            }
+            if (lastIdx > 0) {
+              node.parentNode.replaceChild(frag, node);
+            }
+          }
+
+          function scanNode(root) {
+            var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+              acceptNode: function(n) {
+                var tag = n.parentNode ? n.parentNode.tagName : '';
+                if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT' || tag === 'TEXTAREA' || tag === 'INPUT') return NodeFilter.FILTER_REJECT;
+                if (n.parentNode && n.parentNode.classList && n.parentNode.classList.contains('ozzy-ussd')) return NodeFilter.FILTER_REJECT;
+                return NodeFilter.FILTER_ACCEPT;
+              }
+            });
+            var nodes = [];
+            while (walker.nextNode()) nodes.push(walker.currentNode);
+            nodes.forEach(wrapTextNode);
+          }
+
+          // Scan after a short delay to let dynamic content settle
+          setTimeout(function() { scanNode(document.body); }, 800);
+        })()
+      `);
+    } catch { /* USSD detection injection failed — non-critical */ }
+  });
+
   wc.on('did-stop-loading', () => {
+    if (wc.isDestroyed() || mainWindow.isDestroyed()) return;
     mainWindow.webContents.send('tab:loading', { id: tabId, isLoading: false });
   });
 
@@ -415,6 +1148,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
   // Uses async IIFE inside executeJavaScript (the correct Electron pattern)
   // plus net.fetch fallback for URL guessing
   wc.on('did-finish-load', async () => {
+    if (wc.isDestroyed() || mainWindow.isDestroyed()) return;
     const loadUrl = wc.getURL();
     if (!loadUrl || loadUrl.startsWith('os-browser://') || loadUrl.startsWith('about:') || loadUrl.startsWith('data:')) return;
 
@@ -504,10 +1238,107 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     });
   });
 
+  // ── Vault: Gov Site Form Detection ──────────────────────────────────
+  // After page loads, if it's a government site from the allowlist,
+  // inject a content script that detects form submissions and triggers
+  // automatic vault captures for proof of interaction.
+  wc.on('did-finish-load', async () => {
+    if (wc.isDestroyed() || mainWindow.isDestroyed()) return;
+    const pageUrl = wc.getURL();
+    if (!pageUrl || !isGovCaptureDomain(pageUrl)) return;
+
+    try {
+      // Inject form detection script
+      await wc.executeJavaScript(`
+        (function() {
+          if (window.__osBrowserVaultInjected) return;
+          window.__osBrowserVaultInjected = true;
+
+          // Listen for form submit events
+          document.addEventListener('submit', function(e) {
+            // Signal pre-submit capture via postMessage
+            window.postMessage({ type: '__OS_BROWSER_VAULT_CAPTURE', action: 'pre-submit' }, '*');
+          }, true);
+
+          // Also detect button clicks that might submit forms programmatically
+          document.addEventListener('click', function(e) {
+            var el = e.target;
+            while (el && el !== document.body) {
+              if (el.tagName === 'BUTTON' && (el.type === 'submit' || el.closest('form'))) {
+                window.postMessage({ type: '__OS_BROWSER_VAULT_CAPTURE', action: 'pre-submit' }, '*');
+                return;
+              }
+              if (el.tagName === 'INPUT' && el.type === 'submit') {
+                window.postMessage({ type: '__OS_BROWSER_VAULT_CAPTURE', action: 'pre-submit' }, '*');
+                return;
+              }
+              el = el.parentElement;
+            }
+          }, true);
+        })()
+      `);
+
+      // Listen for the postMessage from the content script
+      wc.on('console-message', () => {}); // no-op, needed for event loop
+
+      // Use ipc-message from the content script
+      // Actually, listen to postMessage via executeJavaScript polling or via
+      // a preload IPC bridge. Since we can't use preload in WebContentsView,
+      // we use a message channel approach.
+
+      // Set up a message listener in the page that calls Electron's IPC
+      // We inject a message event listener that calls back via window.postMessage
+      // and we listen via wc.on('ipc-message') — but WebContentsView doesn't
+      // support preload. So instead, we use webContents.executeJavaScript to poll.
+
+      // Simpler approach: intercept via did-navigate (post-form-submit) for
+      // form submissions typically cause a navigation.
+      // We already capture on form navigation via did-navigate when the URL
+      // is a gov domain.
+
+      // Notify renderer that this page is vault-eligible (for showing the toast)
+      mainWindow.webContents.send('vault:gov-site-detected', {
+        tabId,
+        url: pageUrl,
+      });
+    } catch {
+      // Injection failed — non-critical
+    }
+  });
+
+  // Capture on navigation away from a gov site form (post-submit detection)
+  wc.on('did-start-navigation', ((_e: any, url: string, isInPlace: boolean, isMainFrame: boolean) => {
+    if (!isMainFrame || wc.isDestroyed() || mainWindow.isDestroyed()) return;
+    try {
+      const previousUrl = wc.getURL();
+      if (previousUrl && isGovCaptureDomain(previousUrl)) {
+        // Auto-capture the page before navigating away (post-submit)
+        captureCurrentPage(wc, {
+          url: previousUrl,
+          title: wc.getTitle() || '',
+          pageAction: 'pre-submit',
+        }).then(entry => {
+          mainWindow.webContents.send('vault:auto-captured', {
+            id: entry.id,
+            url: entry.url,
+            title: entry.title,
+            timestamp: entry.timestamp,
+            pageAction: entry.pageAction,
+          });
+        }).catch((err: any) => {
+          console.warn('[Tab]', err?.message || err);
+        });
+      }
+    } catch {
+      // URL parsing or capture failed — non-critical
+    }
+  }) as any);
+
   wc.on('page-favicon-updated', (_e, favicons) => {
+    if (wc.isDestroyed() || mainWindow.isDestroyed()) return;
     if (favicons.length > 0) {
-      db.prepare('UPDATE tabs SET favicon_path = ? WHERE id = ?').run(favicons[0], tabId);
-      mainWindow.webContents.send('tab:favicon-updated', { id: tabId, favicon: favicons[0] });
+      try { db.prepare('UPDATE tabs SET favicon_path = ? WHERE id = ?').run(favicons[0], tabId); } catch {}
+      try { mainWindow.webContents.send('tab:favicon-updated', { id: tabId, favicon: favicons[0] }); } catch {}
     }
   });
 }

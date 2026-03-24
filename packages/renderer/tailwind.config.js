@@ -31,7 +31,7 @@ module.exports = {
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       fontSize: {
-        xs: '11px', sm: '12px', base: '13px', md: '14px', lg: '16px', xl: '20px', '2xl': '28px',
+        xs: '12px', sm: '13px', base: '14px', md: '15px', lg: '17px', xl: '22px', '2xl': '32px', '3xl': '40px',
       },
       borderRadius: { card: '12px', search: '16px', btn: '8px' },
       animation: {

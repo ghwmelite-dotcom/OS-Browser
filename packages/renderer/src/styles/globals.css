@@ -29,34 +29,95 @@
   --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.25);
   --card-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(212, 160, 23, 0.06);
   --sidebar-bg: #141620;
+  /* Dark mode Kente chrome */
+  --kente-tab-bg: linear-gradient(180deg, #0f1117 0%, #12101a 100%);
+  --kente-header-bg: linear-gradient(180deg, #111018 0%, #0f1117 100%);
+  --kente-sidebar-bg: linear-gradient(180deg,
+    rgba(206,17,38,0.05) 0%, rgba(20,22,32,0.98) 6%,
+    rgba(212,160,23,0.03) 18%, rgba(23,25,33,1) 30%,
+    rgba(0,107,63,0.03) 45%, rgba(23,25,33,1) 55%,
+    rgba(212,160,23,0.03) 68%, rgba(23,25,33,1) 78%,
+    rgba(206,17,38,0.03) 90%, rgba(20,22,32,0.98) 100%);
+  --kente-crown: repeating-linear-gradient(90deg,
+    #CE1126 0px, #CE1126 18px, #D4A017 18px, #D4A017 30px,
+    #006B3F 30px, #006B3F 44px, #FCD116 44px, #FCD116 52px,
+    #CE1126 52px, #CE1126 62px, #000000 62px, #000000 66px,
+    #D4A017 66px, #D4A017 80px, #006B3F 80px, #006B3F 96px,
+    #CE1126 96px, #CE1126 108px, #FCD116 108px, #FCD116 120px);
+  --kente-thread: linear-gradient(90deg,
+    #CE1126 0%, #CE1126 3%, #2e3340 3%, #2e3340 12%,
+    #D4A017 12%, #D4A017 15%, #2e3340 15%, #2e3340 28%,
+    #006B3F 28%, #006B3F 31%, #2e3340 31%, #2e3340 45%,
+    #D4A017 45%, #D4A017 48%, #2e3340 48%, #2e3340 60%,
+    #CE1126 60%, #CE1126 63%, #2e3340 63%, #2e3340 75%,
+    #006B3F 75%, #006B3F 78%, #2e3340 78%, #2e3340 90%,
+    #D4A017 90%, #D4A017 93%, #2e3340 93%, #2e3340 100%);
+  --kente-sidebar-thread: linear-gradient(180deg,
+    #CE1126 0%, #CE1126 8%, transparent 8%, transparent 14%,
+    #D4A017 14%, #D4A017 22%, transparent 22%, transparent 30%,
+    #006B3F 30%, #006B3F 38%, transparent 38%, transparent 46%,
+    #D4A017 46%, #D4A017 54%, transparent 54%, transparent 62%,
+    #CE1126 62%, #CE1126 70%, transparent 70%, transparent 78%,
+    #006B3F 78%, #006B3F 86%, transparent 86%, transparent 92%,
+    #D4A017 92%, #D4A017 100%);
 }
 
-/* Light mode: Clean Chrome-style white/grey */
+/* Light mode: Kente-inspired warm ivory */
 .light {
-  --color-bg: #ffffff;
-  --color-surface-1: #ffffff;
-  --color-surface-2: #f1f3f4;
-  --color-surface-3: #e8eaed;
-  --color-border-1: #dadce0;
-  --color-border-2: #c4c7cc;
-  --color-text-primary: #202124;
-  --color-text-secondary: #5f6368;
-  --color-text-muted: #80868b;
-  --color-accent: #1a73e8;
+  --color-bg: #fffdf8;
+  --color-surface-1: #fffdf8;
+  --color-surface-2: #f8f2e5;
+  --color-surface-3: #f0e8d8;
+  --color-border-1: #e8dcc6;
+  --color-border-2: #d1c4a8;
+  --color-text-primary: #1a1408;
+  --color-text-secondary: #5c5040;
+  --color-text-muted: #8a7e6c;
+  --color-accent: #b8860b;
   --color-accent-green: #1e8e3e;
-  --color-heading: #202124;
-  --color-subheading: #1a73e8;
-  --color-link: #1a73e8;
-  --color-btn-bg: #1a73e8;
+  --color-heading: #1a1408;
+  --color-subheading: #b8860b;
+  --color-link: #9a7209;
+  --color-btn-bg: #b8860b;
   --color-btn-text: #ffffff;
-  --glass-bg: rgba(255, 255, 255, 0.92);
-  --glass-border: rgba(218, 220, 224, 0.7);
+  --glass-bg: rgba(255, 253, 248, 0.92);
+  --glass-border: rgba(232, 220, 198, 0.7);
   --noise-opacity: 0;
-  --search-shadow: 0 1px 6px rgba(32, 33, 36, 0.08), 0 1px 3px rgba(32, 33, 36, 0.04);
-  --search-glow: 0 0 0 2px rgba(26, 115, 232, 0.3), 0 1px 6px rgba(32, 33, 36, 0.08);
-  --card-shadow: 0 1px 3px rgba(32, 33, 36, 0.08), 0 1px 2px rgba(32, 33, 36, 0.04);
-  --card-shadow-hover: 0 4px 12px rgba(32, 33, 36, 0.12), 0 2px 6px rgba(32, 33, 36, 0.06);
-  --sidebar-bg: #f8f9fa;
+  --search-shadow: 0 1px 6px rgba(26, 20, 8, 0.06), 0 1px 3px rgba(26, 20, 8, 0.03);
+  --search-glow: 0 0 0 3px rgba(212, 160, 23, 0.12), 0 2px 8px rgba(140, 100, 20, 0.06);
+  --card-shadow: 0 1px 3px rgba(26, 20, 8, 0.06), 0 1px 2px rgba(26, 20, 8, 0.03);
+  --card-shadow-hover: 0 4px 12px rgba(26, 20, 8, 0.1), 0 2px 6px rgba(184, 134, 11, 0.06);
+  --sidebar-bg: #faf5ea;
+  --kente-header-bg: linear-gradient(180deg, #fef9ee 0%, #fdf5e4 100%);
+  --kente-tab-bg: linear-gradient(180deg, #fdf5e4 0%, #faf0d8 100%);
+  --kente-crown: repeating-linear-gradient(90deg,
+    #CE1126 0px, #CE1126 18px, #D4A017 18px, #D4A017 30px,
+    #006B3F 30px, #006B3F 44px, #FCD116 44px, #FCD116 52px,
+    #CE1126 52px, #CE1126 62px, #000000 62px, #000000 66px,
+    #D4A017 66px, #D4A017 80px, #006B3F 80px, #006B3F 96px,
+    #CE1126 96px, #CE1126 108px, #FCD116 108px, #FCD116 120px);
+  --kente-thread: linear-gradient(90deg,
+    #CE1126 0%, #CE1126 3%, #e8d5a8 3%, #e8d5a8 12%,
+    #D4A017 12%, #D4A017 15%, #e8d5a8 15%, #e8d5a8 28%,
+    #006B3F 28%, #006B3F 31%, #e8d5a8 31%, #e8d5a8 45%,
+    #D4A017 45%, #D4A017 48%, #e8d5a8 48%, #e8d5a8 60%,
+    #CE1126 60%, #CE1126 63%, #e8d5a8 63%, #e8d5a8 75%,
+    #006B3F 75%, #006B3F 78%, #e8d5a8 78%, #e8d5a8 90%,
+    #D4A017 90%, #D4A017 93%, #e8d5a8 93%, #e8d5a8 100%);
+  --kente-sidebar-bg: linear-gradient(180deg,
+    rgba(206,17,38,0.06) 0%, rgba(255,250,235,0.98) 6%,
+    rgba(212,160,23,0.04) 18%, rgba(255,253,248,1) 30%,
+    rgba(0,107,63,0.04) 45%, rgba(255,253,248,1) 55%,
+    rgba(212,160,23,0.04) 68%, rgba(255,253,248,1) 78%,
+    rgba(206,17,38,0.04) 90%, rgba(255,250,235,0.98) 100%);
+  --kente-sidebar-thread: linear-gradient(180deg,
+    #CE1126 0%, #CE1126 8%, transparent 8%, transparent 14%,
+    #D4A017 14%, #D4A017 22%, transparent 22%, transparent 30%,
+    #006B3F 30%, #006B3F 38%, transparent 38%, transparent 46%,
+    #D4A017 46%, #D4A017 54%, transparent 54%, transparent 62%,
+    #CE1126 62%, #CE1126 70%, transparent 70%, transparent 78%,
+    #006B3F 78%, #006B3F 86%, transparent 86%, transparent 92%,
+    #D4A017 92%, #D4A017 100%);
 }
 
 /* ─── Base layer ─── */
@@ -167,7 +228,7 @@
   }
 
   .light .text-gradient-gold {
-    background: linear-gradient(135deg, #d4870b 0%, #e8a030 50%, #d4870b 100%);
+    background: linear-gradient(135deg, #b8860b 0%, #D4A017 50%, #b8860b 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -311,6 +372,55 @@
   }
 }
 
+/* ─── Kente chrome styles (both modes) ─── */
+.kente-tab-bar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--kente-thread);
+  opacity: 0.6;
+  z-index: 1;
+}
+
+.kente-sidebar-thread::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -1px;
+  width: 2px;
+  height: 100%;
+  background: var(--kente-sidebar-thread);
+  opacity: 0.25;
+  z-index: 2;
+}
+
+.kente-status-floor::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--kente-crown);
+  opacity: 0.35;
+}
+
+/* ─── Tab close animation ─── */
+.tab-closing {
+  transition: width 150ms ease-out, opacity 150ms ease-out, padding 150ms ease-out, margin 150ms ease-out, max-width 150ms ease-out, min-width 150ms ease-out;
+  width: 0 !important;
+  max-width: 0 !important;
+  min-width: 0 !important;
+  opacity: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 /* ─── Keyframes ─── */
 @keyframes fadeUp {
   from {
@@ -344,6 +454,48 @@
   50% { transform: scale(1.1); opacity: 0.8; }
 }
 
+/* Bookmarks grid button */
+.bookmarks-grid-btn:hover {
+  background: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(212, 160, 23, 0.3);
+}
+.bookmarks-grid-btn:hover svg {
+  color: #fff !important;
+}
+.bookmarks-grid-btn:active {
+  transform: scale(0.95);
+}
+
+/* Browser logo animations */
+.browser-logo-spin {
+  animation: logoSpin 20s linear infinite;
+}
+.browser-logo-pulse {
+  animation: logoPulse 2.5s ease-in-out infinite;
+}
+.browser-logo-glow {
+  background: radial-gradient(circle, rgba(212, 160, 23, 0.15) 0%, transparent 70%);
+  animation: logoGlow 3s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes logoSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes logoPulse {
+  0%, 100% { opacity: 1; r: 2; }
+  50% { opacity: 0.6; r: 2.5; }
+}
+@keyframes logoGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.15); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .confetti-piece { animation: none !important; display: none; }
+  .browser-logo-spin { animation: none !important; }
+  .browser-logo-pulse { animation: none !important; }
+  .browser-logo-glow { animation: none !important; }
 }

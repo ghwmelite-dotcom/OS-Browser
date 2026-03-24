@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Settings, Check } from 'lucide-react';
+import { Settings, Check, Globe } from 'lucide-react';
 import { useSettingsStore } from '@/store/settings';
 import { useProfileStore } from '@/store/profile';
 import { AvatarPicker } from '@/components/shared/AvatarPicker';
@@ -12,6 +12,66 @@ function SaveIndicator({ show }: { show: boolean }) {
       style={{ background: 'var(--color-accent)', color: '#fff' }}>
       <Check size={14} />
       <span className="text-[13px] font-medium">Saved automatically</span>
+    </div>
+  );
+}
+
+// Default browser section — lets users set OS Browser as their system default
+function DefaultBrowserSection() {
+  const [isDefault, setIsDefault] = useState<boolean | null>(null);
+  const [setting, setSetting] = useState(false);
+
+  useEffect(() => {
+    (window as any).osBrowser?.app?.isDefaultBrowser?.().then((res: any) => {
+      setIsDefault(res?.isDefault ?? false);
+    }).catch(() => setIsDefault(false));
+  }, []);
+
+  const handleSetDefault = async () => {
+    setSetting(true);
+    try {
+      await (window as any).osBrowser?.app?.setDefaultBrowser?.();
+      // Re-check after a short delay (user may need to confirm in Windows Settings)
+      setTimeout(async () => {
+        const res = await (window as any).osBrowser?.app?.isDefaultBrowser?.();
+        setIsDefault(res?.isDefault ?? false);
+        setSetting(false);
+      }, 2000);
+    } catch {
+      setSetting(false);
+    }
+  };
+
+  return (
+    <div className="mb-8">
+      <h3 className="text-[13px] font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--color-accent)' }}>Default Browser</h3>
+      <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--color-border-1)', background: 'var(--color-surface-1)' }}>
+        <div className="flex items-center justify-between px-5 py-3.5">
+          <div className="flex items-center gap-3">
+            <Globe size={18} style={{ color: 'var(--color-accent)' }} />
+            <div>
+              <span className="text-[14px] text-text-primary font-medium">Default Web Browser</span>
+              <p className="text-[12px] text-text-muted mt-0.5">
+                {isDefault === null ? 'Checking...' : isDefault ? 'OS Browser is your default browser' : 'OS Browser is not your default browser'}
+              </p>
+            </div>
+          </div>
+          {isDefault ? (
+            <span className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-lg"
+              style={{ background: 'var(--color-accent)', color: '#fff' }}>
+              <Check size={14} /> Default
+            </span>
+          ) : (
+            <button
+              onClick={handleSetDefault}
+              disabled={setting || isDefault === null}
+              className="text-[12px] font-medium px-4 py-2 rounded-lg transition-all hover:opacity-90 disabled:opacity-50"
+              style={{ background: 'var(--color-accent)', color: '#fff' }}>
+              {setting ? 'Opening Settings...' : 'Set as Default'}
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -291,13 +351,15 @@ export function SettingsPage() {
             onChange={v => autoSave({ language: v })} />
         </Section>
 
+        <DefaultBrowserSection />
+
         <Section title="About">
           <Row>
             <div>
               <span className="text-[14px] text-text-primary font-medium">OS Browser</span>
               <p className="text-[12px] text-text-muted mt-0.5">Version 1.0.0 — Ghana's AI-Powered Browser</p>
             </div>
-            <span className="text-[12px] text-text-muted">Powered by OHCS</span>
+            <span className="text-[12px] text-text-muted">Designed & Developed by Osborn Hodges | Powered by RSIMD(OHCS)</span>
           </Row>
         </Section>
       </div>

@@ -30,6 +30,7 @@ const IPC = {
   WINDOW_MINIMIZE: 'window:minimize', WINDOW_MAXIMIZE: 'window:maximize',
   WINDOW_CLOSE: 'window:close', WINDOW_FULLSCREEN: 'window:fullscreen',
   APP_GET_VERSION: 'app:version', APP_CHECK_UPDATE: 'app:check-update',
+  APP_SET_DEFAULT_BROWSER: 'app:set-default-browser', APP_IS_DEFAULT_BROWSER: 'app:is-default-browser',
 } as const;
 
 contextBridge.exposeInMainWorld('osBrowser', {
@@ -40,6 +41,12 @@ contextBridge.exposeInMainWorld('osBrowser', {
   hideWebViews: () => ipcRenderer.invoke('webviews:hide'),
   showWebViews: () => ipcRenderer.invoke('webviews:show'),
   captureScreenshot: () => ipcRenderer.invoke('screenshot:capture'),
+  screenshot: {
+    captureVisible: () => ipcRenderer.invoke('screenshot:capture-visible'),
+    captureFull: () => ipcRenderer.invoke('screenshot:capture-full'),
+    captureRegion: (rect: { x: number; y: number; width: number; height: number }) => ipcRenderer.invoke('screenshot:capture-region', rect),
+    save: (dataUrl: string) => ipcRenderer.invoke('screenshot:save', dataUrl),
+  },
   close: () => ipcRenderer.invoke(IPC.WINDOW_CLOSE),
   fullscreen: () => ipcRenderer.invoke(IPC.WINDOW_FULLSCREEN),
 
@@ -54,6 +61,8 @@ contextBridge.exposeInMainWorld('osBrowser', {
     goForward: (id: string) => ipcRenderer.invoke(IPC.TAB_GO_FORWARD, id),
     reload: (id: string) => ipcRenderer.invoke(IPC.TAB_RELOAD, id),
     stop: (id: string) => ipcRenderer.invoke(IPC.TAB_STOP, id),
+    getContent: (id: string) => ipcRenderer.invoke('tab:get-content', id),
+    pip: (id: string) => ipcRenderer.invoke('tab:pip', id),
     onLoading: (callback: (data: any) => void) => {
       const listener = (_e: any, data: any) => callback(data);
       ipcRenderer.on('tab:loading', listener);
@@ -73,6 +82,11 @@ contextBridge.exposeInMainWorld('osBrowser', {
       const listener = (_e: any, data: any) => callback(data);
       ipcRenderer.on('tab:favicon-updated', listener);
       return () => ipcRenderer.removeListener('tab:favicon-updated', listener);
+    },
+    onTabsRefresh: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('tabs:refresh', listener);
+      return () => ipcRenderer.removeListener('tabs:refresh', listener);
     },
   },
 
@@ -95,6 +109,11 @@ contextBridge.exposeInMainWorld('osBrowser', {
     updateFolder: (id: number, data: any) => ipcRenderer.invoke('bookmark:folder:update', id, data),
     import: () => ipcRenderer.invoke('bookmark:import'),
     export: () => ipcRenderer.invoke('bookmark:export'),
+    onRefresh: (callback: () => void) => {
+      const listener = () => callback();
+      ipcRenderer.on('bookmarks:refresh', listener);
+      return () => ipcRenderer.removeListener('bookmarks:refresh', listener);
+    },
   },
 
   ai: {
@@ -158,6 +177,29 @@ contextBridge.exposeInMainWorld('osBrowser', {
   app: {
     getVersion: () => ipcRenderer.invoke(IPC.APP_GET_VERSION),
     checkUpdate: () => ipcRenderer.invoke(IPC.APP_CHECK_UPDATE),
+    setDefaultBrowser: () => ipcRenderer.invoke(IPC.APP_SET_DEFAULT_BROWSER),
+    isDefaultBrowser: () => ipcRenderer.invoke(IPC.APP_IS_DEFAULT_BROWSER),
+    onUpdateAvailable: (cb: (info: any) => void) => {
+      const l = (_e: any, info: any) => cb(info);
+      ipcRenderer.on('update:available', l);
+      return () => ipcRenderer.removeListener('update:available', l);
+    },
+    onUpdateDownloaded: (cb: (info: any) => void) => {
+      const l = (_e: any, info: any) => cb(info);
+      ipcRenderer.on('update:downloaded', l);
+      return () => ipcRenderer.removeListener('update:downloaded', l);
+    },
+    onUpdateError: (cb: (msg: string) => void) => {
+      const l = (_e: any, msg: string) => cb(msg);
+      ipcRenderer.on('update:error', l);
+      return () => ipcRenderer.removeListener('update:error', l);
+    },
+  },
+
+  govchatCredentials: {
+    store: (credentials: Record<string, unknown>) => ipcRenderer.invoke('govchat:store-credentials', credentials),
+    load: () => ipcRenderer.invoke('govchat:load-credentials'),
+    clear: () => ipcRenderer.invoke('govchat:clear-credentials'),
   },
 
   pwa: {
@@ -188,5 +230,115 @@ contextBridge.exposeInMainWorld('osBrowser', {
     toggleSite: (hostname: string) => ipcRenderer.invoke('adblock:toggle-site', hostname),
     isSiteEnabled: (hostname: string) => ipcRenderer.invoke('adblock:is-site-enabled', hostname),
     getBlockedCount: () => ipcRenderer.invoke('adblock:get-blocked-count'),
+  },
+
+  downloads: {
+    list: () => ipcRenderer.invoke('download:list'),
+    pause: (id: string) => ipcRenderer.invoke('download:pause', id),
+    resume: (id: string) => ipcRenderer.invoke('download:resume', id),
+    cancel: (id: string) => ipcRenderer.invoke('download:cancel', id),
+    retry: (id: string) => ipcRenderer.invoke('download:retry', id),
+    clearCompleted: () => ipcRenderer.invoke('download:clear-completed'),
+    onStarted: (cb: (data: any) => void) => { const l = (_e: any, d: any) => cb(d); ipcRenderer.on('download:started', l); return () => ipcRenderer.removeListener('download:started', l); },
+    onProgress: (cb: (data: any) => void) => { const l = (_e: any, d: any) => cb(d); ipcRenderer.on('download:progress', l); return () => ipcRenderer.removeListener('download:progress', l); },
+    onComplete: (cb: (data: any) => void) => { const l = (_e: any, d: any) => cb(d); ipcRenderer.on('download:complete', l); return () => ipcRenderer.removeListener('download:complete', l); },
+    onFailed: (cb: (data: any) => void) => { const l = (_e: any, d: any) => cb(d); ipcRenderer.on('download:failed', l); return () => ipcRenderer.removeListener('download:failed', l); },
+  },
+
+  dataTracker: {
+    getUsage: () => ipcRenderer.invoke('data:get-usage'),
+    getPageCost: (url: string) => ipcRenderer.invoke('data:get-page-cost', url),
+    reset: () => ipcRenderer.invoke('data:reset'),
+  },
+
+  power: {
+    getStatus: () => ipcRenderer.invoke('power:get-status'),
+    toggleSaver: () => ipcRenderer.invoke('power:toggle-saver'),
+    onStatusChanged: (cb: (data: any) => void) => {
+      const l = (_e: any, d: any) => cb(d);
+      ipcRenderer.on('power:status-changed', l);
+      return () => ipcRenderer.removeListener('power:status-changed', l);
+    },
+  },
+
+  totp: {
+    generate: (secret: string) => ipcRenderer.invoke('totp:generate', secret),
+    parseUri: (uri: string) => ipcRenderer.invoke('totp:parse-uri', uri),
+    generateBackupCodes: () => ipcRenderer.invoke('totp:generate-backup-codes'),
+    saveTotp: (id: number | string, secret: string) => ipcRenderer.invoke('credential:save-totp', id, secret),
+    getTotp: (id: number | string) => ipcRenderer.invoke('credential:get-totp', id),
+    checkBreach: (password: string) => ipcRenderer.invoke('credential:check-breach', password),
+  },
+
+  passwordVault: {
+    encrypt: (plaintext: string) => ipcRenderer.invoke('password:encrypt', plaintext),
+    decrypt: (encrypted: string) => ipcRenderer.invoke('password:decrypt', encrypted),
+  },
+
+  profiles: {
+    list: () => ipcRenderer.invoke('profile:list'),
+    create: (name: string, color: string, pin: string) => ipcRenderer.invoke('profile:create', name, color, pin),
+    verifyPin: (id: string, pin: string) => ipcRenderer.invoke('profile:verify-pin', id, pin),
+    switchProfile: (id: string) => ipcRenderer.invoke('profile:switch', id),
+    delete: (id: string, pin: string) => ipcRenderer.invoke('profile:delete', id, pin),
+    getActive: () => ipcRenderer.invoke('profile:get-active'),
+    updateAvatar: (id: string, avatarUrl: string) => ipcRenderer.invoke('profile:update-avatar', id, avatarUrl),
+    updateName: (id: string, name: string) => ipcRenderer.invoke('profile:update-name', id, name),
+    updateUnread: (id: string, count: number) => ipcRenderer.invoke('profile:update-unread', id, count),
+  },
+
+  recordings: {
+    save: (base64Data: string, metadata: { title?: string; duration: number; mimeType: string; quality?: string; hasMic?: boolean }) =>
+      ipcRenderer.invoke('recording:save', base64Data, metadata),
+    list: () => ipcRenderer.invoke('recording:list'),
+    get: (id: string) => ipcRenderer.invoke('recording:get', id),
+    delete: (id: string) => ipcRenderer.invoke('recording:delete', id),
+    rename: (id: string, newTitle: string) => ipcRenderer.invoke('recording:rename', id, newTitle),
+    showInFolder: (id: string) => ipcRenderer.invoke('recording:show-in-folder', id),
+    openExternal: (id: string) => ipcRenderer.invoke('recording:open-external', id),
+  },
+
+  vault: {
+    capture: (pageAction?: string) => ipcRenderer.invoke('vault:capture-page', pageAction),
+    list: (search?: string, dateFrom?: string, dateTo?: string) => ipcRenderer.invoke('vault:list', search, dateFrom, dateTo),
+    getImage: (id: string) => ipcRenderer.invoke('vault:get-image', id),
+    delete: (id: string) => ipcRenderer.invoke('vault:delete', id),
+    getStats: () => ipcRenderer.invoke('vault:get-stats'),
+    isGovSite: (url: string) => ipcRenderer.invoke('vault:is-gov-site', url),
+    onCaptured: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('vault:captured', listener);
+      return () => ipcRenderer.removeListener('vault:captured', listener);
+    },
+  },
+
+  exchange: {
+    injectOverlay: (id: string, rates: Record<string, number>) =>
+      ipcRenderer.invoke('exchange:inject-overlay', id, rates),
+    removeOverlay: (id: string) =>
+      ipcRenderer.invoke('exchange:remove-overlay', id),
+  },
+
+  browserImport: {
+    detect: () => ipcRenderer.invoke('browser-import:detect'),
+    run: (browserId: string) => ipcRenderer.invoke('browser-import:run', browserId),
+  },
+
+  watcher: {
+    add: (url: string, interval: number, selector?: string, title?: string) =>
+      ipcRenderer.invoke('watcher:add', url, interval, selector, title),
+    remove: (id: string) => ipcRenderer.invoke('watcher:remove', id),
+    list: () => ipcRenderer.invoke('watcher:list'),
+    getDiff: (id: string) => ipcRenderer.invoke('watcher:get-diff', id),
+    checkNow: (id: string) => ipcRenderer.invoke('watcher:check-now', id),
+    updateConfig: (id: string, config: { interval?: number; selector?: string; title?: string }) =>
+      ipcRenderer.invoke('watcher:update-config', id, config),
+    markRead: (id: string) => ipcRenderer.invoke('watcher:mark-read', id),
+    getUnreadCount: () => ipcRenderer.invoke('watcher:unread-count'),
+    onChangeDetected: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('watcher:change-detected', listener);
+      return () => ipcRenderer.removeListener('watcher:change-detected', listener);
+    },
   },
 });

@@ -13,7 +13,7 @@ export type FeatureCategory =
 // ── Surface Component Props ─────────────────────────────────────────
 export interface StatusBarIndicatorProps {
   stripColor: string;
-  onClick: () => void;
+  onClick?: () => void;
 }
 
 export interface SidebarPanelProps {

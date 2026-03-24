@@ -13,23 +13,18 @@ const dispatchMessaging = () => {
 };
 
 // ── Status Bar Indicator ────────────────────────────────────────────
-const GovChatIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor, onClick }) => {
+const GovChatIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor }) => {
   const unreadCount = useGovChatStore(s =>
     s.rooms.reduce((sum, r) => sum + r.unreadCount, 0)
   );
 
-  return React.createElement('button', {
-    onClick,
+  return React.createElement('span', {
     style: {
       display: 'flex',
       alignItems: 'center',
       gap: '4px',
-      padding: '2px 8px',
       fontSize: '11px',
       color: 'var(--color-text-primary)',
-      background: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
       fontFamily: 'inherit',
       whiteSpace: 'nowrap' as const,
     },

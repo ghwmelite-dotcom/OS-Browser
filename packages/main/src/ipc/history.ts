@@ -1,16 +1,19 @@
 import { ipcMain } from 'electron';
-import { IPC } from '@os-browser/shared';
+import { IPC } from '../../../shared/dist';
 import { getDatabase } from '../db/database';
 
 export function registerHistoryHandlers(): void {
   ipcMain.handle(IPC.HISTORY_LIST, (_event, page: number = 0) => {
+    if (typeof page !== 'number' || page < 0) page = 0;
     const db = getDatabase();
     const limit = 50;
-    const offset = page * limit;
+    const offset = Math.floor(page) * limit;
     return db.prepare('SELECT * FROM history ORDER BY last_visited_at DESC LIMIT ? OFFSET ?').all(limit, offset);
   });
 
   ipcMain.handle(IPC.HISTORY_ADD, (_event, entry: { url: string; title: string }) => {
+    if (!entry || typeof entry.url !== 'string' || typeof entry.title !== 'string') return;
+    if (entry.url.length > 4096 || entry.title.length > 1024) return;
     const db = getDatabase();
     db.prepare(`
       INSERT INTO history (url, title, last_visited_at) VALUES (?, ?, datetime('now'))
@@ -19,6 +22,7 @@ export function registerHistoryHandlers(): void {
   });
 
   ipcMain.handle(IPC.HISTORY_DELETE, (_event, id: number) => {
+    if (typeof id !== 'number' || id < 1) return;
     const db = getDatabase();
     db.prepare('DELETE FROM history WHERE id = ?').run(id);
   });
@@ -30,8 +34,8 @@ export function registerHistoryHandlers(): void {
   });
 
   ipcMain.handle(IPC.HISTORY_SEARCH, (_event, query: string) => {
+    if (typeof query !== 'string' || query.length > 500) return [];
     const db = getDatabase();
-    // Search by URL and title with LIKE for simplicity; FTS5 for full-text later
     const pattern = `%${query}%`;
     return db.prepare('SELECT * FROM history WHERE url LIKE ? OR title LIKE ? ORDER BY last_visited_at DESC LIMIT 50').all(pattern, pattern);
   });

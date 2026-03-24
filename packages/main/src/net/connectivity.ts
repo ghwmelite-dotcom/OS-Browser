@@ -1,6 +1,6 @@
 import { BrowserWindow } from 'electron';
-import { IPC } from '@os-browser/shared';
-import type { ConnectivityState } from '@os-browser/shared';
+import { IPC } from '../../../shared/dist';
+import type { ConnectivityState } from '../../../shared/dist';
 import { processQueue } from '../services/offline-queue';
 
 const API_BASE = 'https://os-browser-api.ghwmelite.workers.dev';
@@ -9,18 +9,18 @@ let checkInterval: NodeJS.Timeout | null = null;
 let mainWindowRef: BrowserWindow | null = null;
 
 async function checkConnectivity(): Promise<ConnectivityState> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-
     const response = await fetch(`${API_BASE}/api/v1/health`, {
       signal: controller.signal,
     });
-    clearTimeout(timeout);
 
     return response.ok ? 'online' : 'intermittent';
   } catch {
     return 'offline';
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

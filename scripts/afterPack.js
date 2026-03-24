@@ -3,7 +3,7 @@ const path = require('path');
 
 // Only keep these locales (electron-builder's electronLanguages should handle this,
 // but this is a belt-and-suspenders approach)
-const KEEP_LOCALES = new Set(['en-US.pak', 'en-GB.pak']);
+const KEEP_LOCALES = new Set(['en.pak', 'en-US.pak', 'en-GB.pak']);
 
 exports.default = async function afterPack(context) {
   const appOutDir = context.appOutDir;

@@ -46,6 +46,16 @@ export function SplitScreenPicker({ onClose }: { onClose: () => void }) {
           <p className="text-[12px] text-text-muted mt-1">
             Choose a tab to show on the right side
           </p>
+          <div className="flex items-center gap-3 mt-2">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono text-text-muted"
+              style={{ background: 'var(--color-surface-3)' }}>
+              Ctrl+Shift+<span className="text-[11px]">&larr;</span> Snap Left
+            </span>
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono text-text-muted"
+              style={{ background: 'var(--color-surface-3)' }}>
+              Ctrl+Shift+<span className="text-[11px]">&rarr;</span> Snap Right
+            </span>
+          </div>
         </div>
 
         <div className="max-h-[300px] overflow-y-auto py-2">

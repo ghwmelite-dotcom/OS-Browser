@@ -34,5 +34,5 @@ export const SEARCH_ENGINES = {
 export const PAGE_CACHE_LIMIT_MB = 500;
 export const FTS_RETENTION_DAYS = 90;
 export const TAB_SUSPEND_AFTER_MS = 5 * 60 * 1000;
-export const MAX_CONCURRENT_TABS = 10;
+export const MAX_CONCURRENT_TABS = 25;
 export const HISTORY_EXCERPT_LENGTH = 500;

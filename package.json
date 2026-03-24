@@ -2,6 +2,9 @@
   "name": "os-browser",
   "private": true,
   "version": "1.0.0",
+  "description": "Ghana's AI-Powered Government Browser",
+  "author": "OHCS",
+  "license": "UNLICENSED",
   "main": "packages/main/dist/main.js",
   "workspaces": [
     "packages/*",
@@ -26,6 +29,7 @@
     "concurrently": "^9.0.0",
     "electron": "^33.0.0",
     "electron-builder": "^25.0.0",
+    "electron-updater": "^6.3.0",
     "typescript": "^5.6.0"
   },
   "dependencies": {
