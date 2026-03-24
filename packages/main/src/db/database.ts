@@ -448,6 +448,8 @@ export function runMigrations(): void {
   ensureTable('credentials');
   ensureTable('window_state');
   ensureTable('adblock_whitelist');
+  ensureTable('tab_groups');
+  ensureTable('session_data');
 
   // Ensure default user profile
   const profile = ensureTable('user_profile');

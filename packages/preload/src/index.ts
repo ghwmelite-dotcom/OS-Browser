@@ -5,6 +5,16 @@ const IPC = {
   TAB_UPDATE: 'tab:update', TAB_LIST: 'tab:list', TAB_NAVIGATE: 'tab:navigate',
   TAB_GO_BACK: 'tab:go-back', TAB_GO_FORWARD: 'tab:go-forward',
   TAB_RELOAD: 'tab:reload', TAB_STOP: 'tab:stop',
+  TAB_REORDER: 'tab:reorder', TAB_DUPLICATE: 'tab:duplicate',
+  TAB_CLOSE_OTHERS: 'tab:close-others', TAB_CLOSE_TO_RIGHT: 'tab:close-to-right',
+  TAB_MOVE_LEFT: 'tab:move-left', TAB_MOVE_RIGHT: 'tab:move-right',
+  TAB_PIN: 'tab:pin', TAB_UNPIN: 'tab:unpin',
+  TAB_MUTE: 'tab:mute', TAB_UNMUTE: 'tab:unmute',
+  TAB_REOPEN_CLOSED: 'tab:reopen-closed', TAB_GET_STATE: 'tab:get-state',
+  GROUP_CREATE: 'group:create', GROUP_ADD_TAB: 'group:add-tab',
+  GROUP_REMOVE_TAB: 'group:remove-tab', GROUP_UPDATE: 'group:update',
+  GROUP_COLLAPSE: 'group:collapse', GROUP_EXPAND: 'group:expand',
+  GROUP_DELETE: 'group:delete',
   HISTORY_LIST: 'history:list', HISTORY_ADD: 'history:add',
   HISTORY_DELETE: 'history:delete', HISTORY_CLEAR: 'history:clear',
   HISTORY_SEARCH: 'history:search',
@@ -88,6 +98,33 @@ contextBridge.exposeInMainWorld('osBrowser', {
       ipcRenderer.on('tabs:refresh', listener);
       return () => ipcRenderer.removeListener('tabs:refresh', listener);
     },
+    reorder: (id: string, newIndex: number) => ipcRenderer.invoke(IPC.TAB_REORDER, id, newIndex),
+    duplicate: (id: string) => ipcRenderer.invoke(IPC.TAB_DUPLICATE, id),
+    closeOthers: (id: string) => ipcRenderer.invoke(IPC.TAB_CLOSE_OTHERS, id),
+    closeToRight: (id: string) => ipcRenderer.invoke(IPC.TAB_CLOSE_TO_RIGHT, id),
+    moveLeft: (id: string) => ipcRenderer.invoke(IPC.TAB_MOVE_LEFT, id),
+    moveRight: (id: string) => ipcRenderer.invoke(IPC.TAB_MOVE_RIGHT, id),
+    pin: (id: string) => ipcRenderer.invoke(IPC.TAB_PIN, id),
+    unpin: (id: string) => ipcRenderer.invoke(IPC.TAB_UNPIN, id),
+    mute: (id: string) => ipcRenderer.invoke(IPC.TAB_MUTE, id),
+    unmute: (id: string) => ipcRenderer.invoke(IPC.TAB_UNMUTE, id),
+    reopenClosed: () => ipcRenderer.invoke(IPC.TAB_REOPEN_CLOSED),
+    getState: () => ipcRenderer.invoke(IPC.TAB_GET_STATE),
+    onStateUpdated: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('tabs:state-updated', listener);
+      return () => ipcRenderer.removeListener('tabs:state-updated', listener);
+    },
+  },
+
+  groups: {
+    create: (tabIds: string[], name?: string) => ipcRenderer.invoke(IPC.GROUP_CREATE, tabIds, name),
+    addTab: (tabId: string, groupId: string) => ipcRenderer.invoke(IPC.GROUP_ADD_TAB, tabId, groupId),
+    removeTab: (tabId: string) => ipcRenderer.invoke(IPC.GROUP_REMOVE_TAB, tabId),
+    update: (groupId: string, data: any) => ipcRenderer.invoke(IPC.GROUP_UPDATE, groupId, data),
+    collapse: (groupId: string) => ipcRenderer.invoke(IPC.GROUP_COLLAPSE, groupId),
+    expand: (groupId: string) => ipcRenderer.invoke(IPC.GROUP_EXPAND, groupId),
+    delete: (groupId: string, closeTabs: boolean) => ipcRenderer.invoke(IPC.GROUP_DELETE, groupId, closeTabs),
   },
 
   history: {

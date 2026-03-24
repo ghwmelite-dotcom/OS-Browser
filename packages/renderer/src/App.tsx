@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { TitleBar } from './components/Browser/TitleBar';
-import { TabBar } from './components/Browser/TabBar';
+import { TabBar } from './components/Browser/tabs/TabBar';
 import { NavigationBar } from './components/Browser/NavigationBar';
 import { BookmarksBar } from './components/Browser/BookmarksBar';
 import { StatusBar } from './components/Browser/StatusBar';
@@ -418,6 +418,10 @@ export function App() {
             useWellbeingStore.getState().setSite(new URL(data.url).hostname);
           }
         } catch {}
+      }));
+      // Listen for authoritative state updates from TabManager
+      cleanups.push(window.osBrowser.tabs.onStateUpdated((state: any) => {
+        useTabsStore.getState().syncFromMain(state);
       }));
     } catch {}
 
