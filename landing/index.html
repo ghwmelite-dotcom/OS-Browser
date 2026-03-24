@@ -3213,5 +3213,27 @@
   });
 </script>
 
+<!-- Auto-login: detect OS Browser session cookie and show welcome -->
+<script>
+(function() {
+  try {
+    var match = document.cookie.match(/os_browser_user=([^;]+)/);
+    if (!match) return;
+    var user = JSON.parse(decodeURIComponent(match[1]));
+    if (!user || !user.displayName) return;
+
+    var bar = document.createElement('div');
+    bar.id = 'os-browser-welcome';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;display:flex;align-items:center;justify-content:center;gap:10px;padding:8px 16px;background:linear-gradient(135deg,#1a1a2e,#16213e);color:#e0e0e0;font-size:13px;font-family:Inter,system-ui,sans-serif;border-bottom:1px solid rgba(212,160,23,0.3);box-shadow:0 2px 12px rgba(0,0,0,0.3);';
+    bar.innerHTML = '<span style="color:#D4A017;font-weight:600;">Welcome back, ' + user.displayName + '</span>' +
+      '<span style="opacity:0.5;font-size:11px;">&middot;</span>' +
+      '<span style="opacity:0.6;font-size:11px;">Signed in via OS Browser</span>' +
+      (user.staffId ? '<span style="opacity:0.5;font-size:11px;">&middot;</span><span style="background:rgba(212,160,23,0.15);color:#D4A017;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">' + user.staffId + '</span>' : '') +
+      '<button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;color:#888;cursor:pointer;font-size:16px;padding:0 4px;">&times;</button>';
+    document.body.prepend(bar);
+  } catch(e) {}
+})();
+</script>
+
 </body>
 </html>
