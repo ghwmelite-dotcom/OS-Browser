@@ -1,7 +1,7 @@
 import { ipcMain, BrowserWindow, app, nativeImage, clipboard } from 'electron';
 import { IPC } from '../../../shared/dist';
 import { registerSettingsHandlers } from './settings';
-import { registerTabHandlers } from './tabs';
+import { registerTabHandlers, getTabViews } from './tabs';
 import { registerHistoryHandlers } from './history';
 import { registerBookmarkHandlers } from './bookmarks';
 // Old basic adblock replaced by adblock-engine.ts (Ghostery-based)
@@ -13,8 +13,7 @@ import { registerAgentHandlers } from './agents';
 import { initTray } from '../services/tray';
 import { registerCredentialHandlers } from './credentials';
 import { initDownloadManager } from '../services/download-manager';
-import { initTabSuspension } from '../services/tab-suspension';
-import { getTabViews } from './tabs';
+import { initMemorySaver } from '../services/tab-suspension';
 import { initCertHandler } from '../services/cert-handler';
 import { registerBookmarkImportHandlers, registerBookmarkExportHandler } from '../services/bookmark-import';
 import { getDatabase } from '../db/database';
@@ -647,8 +646,8 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
     }
   });
 
-  // Tab suspension — automatically suspends inactive tabs when over the concurrent limit
-  initTabSuspension(mainWindow, getTabViews());
+  // Memory Saver — Chrome-style tab suspension with memory tracking & exclude list
+  initMemorySaver(mainWindow);
 
   // System tray
   initTray(mainWindow);

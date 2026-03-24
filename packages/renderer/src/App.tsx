@@ -56,6 +56,7 @@ import { useExchangeStore } from './store/exchange';
 import { useDownloadStore } from './store/downloads';
 
 const ImportBanner = React.lazy(() => import('./components/BrowserImport/ImportBanner'));
+import { MemorySaverBanner } from './components/Browser/MemorySaverBanner';
 import { RegionSelector } from './components/Screenshots/RegionSelector';
 import { ScreenshotPreview } from './components/Screenshots/ScreenshotPreview';
 const RecorderControls = React.lazy(() => import('./components/ScreenRecorder/RecorderControls'));
@@ -134,7 +135,7 @@ function TabSearchOverlay() {
 }
 
 export function App() {
-  const { loadTabs, createTab } = useTabsStore();
+  const { loadTabs, createTab, activeTabId } = useTabsStore();
   const { loadSettings } = useSettingsStore();
   const { init: initConnectivity } = useConnectivityStore();
   const { loadStats } = useStatsStore();
@@ -209,6 +210,9 @@ export function App() {
   const [showImportBanner, setShowImportBanner] = useState(false);
   const [showRegionSelector, setShowRegionSelector] = useState(false);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [memorySaverBanner, setMemorySaverBanner] = useState<{
+    tabId: string; memorySavedBytes: number; domain: string;
+  } | null>(null);
 
   const handleProfileReady = async () => {
     setProfileReady(true);
@@ -423,6 +427,23 @@ export function App() {
       cleanups.push(window.osBrowser.tabs.onStateUpdated((state: any) => {
         useTabsStore.getState().syncFromMain(state);
       }));
+    } catch {}
+
+    // Memory saver: show banner when a suspended tab is restored
+    try {
+      if (window.osBrowser?.memorySaver?.onTabRestored) {
+        cleanups.push(window.osBrowser.memorySaver.onTabRestored((data: any) => {
+          try {
+            const tab = useTabsStore.getState().tabs.find(t => t.id === data.id);
+            const domain = tab?.url ? new URL(tab.url).hostname : '';
+            setMemorySaverBanner({
+              tabId: data.id,
+              memorySavedBytes: data.memorySavedBytes || 0,
+              domain,
+            });
+          } catch {}
+        }));
+      }
     } catch {}
 
     // Digital Wellbeing — tick every second to track browsing time
@@ -776,6 +797,18 @@ export function App() {
             <SplitScreenContent />
           ) : (
             <div className="flex-1 overflow-y-auto">
+              {memorySaverBanner && memorySaverBanner.tabId === activeTabId && (
+                <MemorySaverBanner
+                  tabId={memorySaverBanner.tabId}
+                  memorySavedBytes={memorySaverBanner.memorySavedBytes}
+                  domain={memorySaverBanner.domain}
+                  onDismiss={() => setMemorySaverBanner(null)}
+                  onExcludeSite={(domain) => {
+                    window.osBrowser?.memorySaver?.excludeAdd?.(domain);
+                    setMemorySaverBanner(null);
+                  }}
+                />
+              )}
               <ContentArea />
               <FloatingAIBar />
             </div>

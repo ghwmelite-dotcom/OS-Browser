@@ -58,6 +58,7 @@ export function TabBar() {
   const [containerWidth, setContainerWidth] = useState(800);
   const [collapsedGroupIds, setCollapsedGroupIds] = useState<Set<string>>(new Set());
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [suspendedTabIds, setSuspendedTabIds] = useState<Set<string>>(new Set());
 
   // DnD sensors with 5px activation distance to prevent accidental drags
   const sensors = useSensors(
@@ -140,6 +141,28 @@ export function TabBar() {
       window.removeEventListener('contextmenu', close);
     };
   }, [contextMenu]);
+
+  // ── Memory Saver: track suspended tab IDs ──
+  useEffect(() => {
+    const cleanups: (() => void)[] = [];
+    try {
+      if (window.osBrowser?.memorySaver?.onTabSuspended) {
+        cleanups.push(window.osBrowser.memorySaver.onTabSuspended((data: any) => {
+          setSuspendedTabIds(prev => new Set([...prev, data.id]));
+        }));
+      }
+      if (window.osBrowser?.memorySaver?.onTabRestored) {
+        cleanups.push(window.osBrowser.memorySaver.onTabRestored((data: any) => {
+          setSuspendedTabIds(prev => {
+            const next = new Set(prev);
+            next.delete(data.id);
+            return next;
+          });
+        }));
+      }
+    } catch {}
+    return () => cleanups.forEach(c => c());
+  }, []);
 
   // ── Click handlers ──
   const handleTabClick = useCallback(
@@ -358,6 +381,7 @@ export function TabBar() {
                           isAudioPlaying={tab.is_audio_playing}
                           isMuted={!!tab.is_muted}
                           isSelected={selectedTabIds.includes(tab.id)}
+                          isSuspended={suspendedTabIds.has(tab.id)}
                           groupColor={group.color}
                           index={idx}
                           tabCount={unpinnedCount + pinnedCount}
@@ -394,6 +418,7 @@ export function TabBar() {
                   isAudioPlaying={tab.is_audio_playing}
                   isMuted={!!tab.is_muted}
                   isSelected={selectedTabIds.includes(tab.id)}
+                  isSuspended={suspendedTabIds.has(tab.id)}
                   groupColor={null}
                   index={idx}
                   tabCount={unpinnedCount + pinnedCount}

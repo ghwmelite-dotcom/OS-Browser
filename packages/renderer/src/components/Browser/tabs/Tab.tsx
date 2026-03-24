@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { X, Volume2, VolumeX } from 'lucide-react';
+import { X, Volume2, VolumeX, Zap } from 'lucide-react';
 import { useTabsStore } from '@/store/tabs';
 import { useTabDrag } from '@/hooks/useTabDrag';
 import { TabPreview } from './TabPreview';
@@ -15,6 +15,7 @@ interface TabProps {
   isAudioPlaying?: boolean;
   isMuted?: boolean;
   isSelected?: boolean;
+  isSuspended?: boolean;
   groupColor?: string | null;
   index: number;
   tabCount: number;
@@ -67,6 +68,7 @@ export function Tab({
   isAudioPlaying,
   isMuted,
   isSelected,
+  isSuspended,
   groupColor,
   index,
   tabCount,
@@ -184,7 +186,7 @@ export function Tab({
       )}
 
       {/* Favicon or loading spinner */}
-      <div className="w-[16px] h-[16px] shrink-0 flex items-center justify-center">
+      <div className="relative w-[16px] h-[16px] shrink-0 flex items-center justify-center" style={{ opacity: isSuspended ? 0.5 : 1 }}>
         {isLoading ? (
           <div
             className="w-[14px] h-[14px] border-[1.5px] border-t-transparent rounded-full animate-spin"
@@ -198,6 +200,16 @@ export function Tab({
             style={{ background: color.accent }}
           >
             {title.charAt(0).toUpperCase()}
+          </div>
+        )}
+        {isSuspended && (
+          <div style={{
+            position: 'absolute', bottom: -1, right: -1,
+            width: 10, height: 10, borderRadius: '50%',
+            background: '#3B82F6',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Zap size={6} fill="#fff" color="#fff" />
           </div>
         )}
       </div>
