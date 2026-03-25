@@ -138,6 +138,19 @@ const YOUTUBE_AD_BLOCK_SCRIPT = `
       );
 
       if (isAdShowing && video) {
+        if (!wasInAd) {
+          // ── Ad just started — freeze the last content frame to prevent dark flash ──
+          // Hide the video element and show a frozen poster frame instead
+          video.style.opacity = '0';
+          video.style.pointerEvents = 'none';
+          // Add a dark overlay to mask any brief flicker
+          if (!document.getElementById('__ozzy-ad-mask')) {
+            const mask = document.createElement('div');
+            mask.id = '__ozzy-ad-mask';
+            mask.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:9998;pointer-events:none;';
+            player?.appendChild(mask);
+          }
+        }
         wasInAd = true;
 
         // Strategy 1: Click skip button immediately if available
@@ -202,11 +215,27 @@ const YOUTUBE_AD_BLOCK_SCRIPT = `
         }
 
         // If the player still has ad residue classes, force-click through
-        // This handles the edge case where the ad "ended" event is stuck
         if (player && player.classList.contains('ad-interrupting')) {
           const skipAny = document.querySelector('[class*="skip"]');
           if (skipAny instanceof HTMLElement) skipAny.click();
         }
+
+        // ── Smooth reveal: fade the video back in after a brief delay ──
+        // Wait 100ms for the player to settle on the real content, then crossfade
+        setTimeout(() => {
+          video.style.transition = 'opacity 200ms ease-in';
+          video.style.opacity = '1';
+          video.style.pointerEvents = '';
+          // Remove the dark mask with a fade
+          const mask = document.getElementById('__ozzy-ad-mask');
+          if (mask) {
+            mask.style.transition = 'opacity 200ms ease-out';
+            mask.style.opacity = '0';
+            setTimeout(() => mask.remove(), 200);
+          }
+          // Clean up transition after it completes
+          setTimeout(() => { video.style.transition = ''; }, 250);
+        }, 100);
       }
 
       // Always close overlay ads even when not in a video ad
@@ -233,9 +262,19 @@ const YOUTUBE_AD_BLOCK_SCRIPT = `
         const target = mutation.target;
         if (!(target instanceof HTMLElement) || target.id !== 'movie_player') continue;
         if (target.classList.contains('ad-showing')) {
-          // Ad just appeared — immediately try to skip or fast-forward
+          // Ad just appeared — immediately hide video and try to skip
           const video = document.querySelector('video');
           if (!video) return;
+          // Instantly hide video to prevent dark flash
+          video.style.opacity = '0';
+          video.style.pointerEvents = 'none';
+          if (!document.getElementById('__ozzy-ad-mask')) {
+            const mask = document.createElement('div');
+            mask.id = '__ozzy-ad-mask';
+            mask.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:#0f0f0f;z-index:9998;pointer-events:none;';
+            target.appendChild(mask);
+          }
+          wasInAd = true;
           const skipBtn = document.querySelector('.ytp-skip-ad-button, .ytp-ad-skip-button, .ytp-ad-skip-button-modern');
           if (skipBtn instanceof HTMLElement) {
             skipBtn.click();
