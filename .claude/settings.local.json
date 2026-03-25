@@ -163,7 +163,8 @@
       "Bash(CI=1 eas update --channel production --environment production --platform android --message \"test: first OTA update\")",
       "Bash(CI=1 eas update --channel production --environment production --platform android --message \"fix: AskOzzy AI chat — correct API URL + device auth\")",
       "Bash(CI=1 eas update --channel production --environment production --platform android --message \"fix: AskOzzy SSE streaming parse + 30s timeout\")",
-      "Bash(CI=1 eas update --channel production --environment production --platform android --message \"feat: GovPlay Batch 1 — 2048, Snake, Minesweeper, Ghana Trivia\")"
+      "Bash(CI=1 eas update --channel production --environment production --platform android --message \"feat: GovPlay Batch 1 — 2048, Snake, Minesweeper, Ghana Trivia\")",
+      "Bash(CI=1 eas update --channel production --environment production --platform android --message \"feat: GovPlay banner on dashboard\")"
     ]
   }
 }
