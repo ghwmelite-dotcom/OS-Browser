@@ -333,9 +333,19 @@ export default function GovHubScreen({ isDark, onOpenUrl }: GovHubScreenProps) {
 
         {/* ── GovPlay Games ── */}
         <SectionHeader icon="game-controller-outline" title="GovPlay Games" color="#FF4081" count={GOVPLAY_GAMES.length} />
-        <Text style={[styles.comingSoonNote, { color: theme.textMuted }]}>
-          Games are available on the desktop version. Mobile games coming soon!
-        </Text>
+        <TouchableOpacity
+          style={[styles.momoCard, { backgroundColor: '#FF408112', borderColor: '#FF408133', borderWidth: 1, borderRadius: 14 }]}
+          onPress={() => (globalThis as any).__switchTab?.('govplay')}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.momoIconBox, { backgroundColor: '#FF4081' }]}>
+            <Ionicons name="game-controller" size={20} color="#fff" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.momoName, { color: theme.text }]}>Open GovPlay</Text>
+            <Text style={[styles.momoDesc, { color: theme.textMuted }]}>Play 2048, Snake, Minesweeper, Ghana Trivia & more</Text>
+          </View>
+        </TouchableOpacity>
         <View style={styles.gameGrid}>
           {GOVPLAY_GAMES.map(game => (
             <View key={game.id} style={[styles.gameCard, { backgroundColor: theme.surface1, borderColor: theme.border }]}>

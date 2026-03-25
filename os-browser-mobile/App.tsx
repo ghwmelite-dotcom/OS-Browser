@@ -44,6 +44,11 @@ import GovChatScreen from './src/screens/GovChatScreen';
 import AskOzzyScreen from './src/screens/AskOzzyScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import GovHubScreen from './src/screens/GovHubScreen';
+import GovPlayScreen from './src/games/GovPlayScreen';
+import Game2048Screen from './src/games/game2048/Game2048Screen';
+import SnakeScreen from './src/games/snake/SnakeScreen';
+import MinesweeperScreen from './src/games/minesweeper/MinesweeperScreen';
+import TriviaScreen from './src/games/trivia/TriviaScreen';
 import { useNotificationStore } from './src/store/notifications';
 import { ToastBanner } from './src/components/ToastBanner';
 
@@ -307,8 +312,17 @@ function PlaceholderScreen({ name }: { name: string }) {
 
 // ── Main App ────────────────────────────────────────────────────────────────
 
+const GAME_SCREENS: Record<string, React.ComponentType<{ onBack: () => void }>> = {
+  '2048': Game2048Screen as any,
+  'snake': SnakeScreen as any,
+  'minesweeper': MinesweeperScreen as any,
+  'trivia': TriviaScreen as any,
+};
+
 function MainApp() {
   const [activeTab, setActiveTab] = useState<TabName>('browse');
+  const [activeGame, setActiveGame] = useState<string | null>(null);
+  const [showGovPlay, setShowGovPlay] = useState(false);
   const theme = useSettingsStore((s) => s.theme);
   const toggleTheme = useSettingsStore((s) => s.toggleTheme);
   const colors = COLORS[theme];
@@ -323,6 +337,10 @@ function MainApp() {
 
   // Expose tab switcher globally so BrowserScreen feature shortcuts can navigate
   (globalThis as any).__switchTab = useCallback((tab: string) => {
+    if (tab === 'govplay') {
+      setShowGovPlay(true);
+      return;
+    }
     if (['browse', 'govhub', 'govchat', 'askozzy', 'settings'].includes(tab)) {
       setActiveTab(tab as TabName);
       if (tab === 'govchat') clearUnread();
@@ -351,11 +369,26 @@ function MainApp() {
 
       {/* Screen content */}
       <View style={styles.screenContainer}>
-        {activeTab === 'browse' && <BrowserScreen />}
-        {activeTab === 'govhub' && <GovHubScreen isDark={isDark} onOpenUrl={handleGovHubOpenUrl} />}
-        {activeTab === 'govchat' && <GovChatScreen isDark={isDark} />}
-        {activeTab === 'askozzy' && <AskOzzyScreen isDark={isDark} />}
-        {activeTab === 'settings' && <SettingsScreen isDark={isDark} onToggleTheme={toggleTheme} />}
+        {/* Active game takes over the screen */}
+        {activeGame && GAME_SCREENS[activeGame] ? (
+          React.createElement(GAME_SCREENS[activeGame], {
+            onBack: () => { setActiveGame(null); setShowGovPlay(true); },
+          })
+        ) : showGovPlay ? (
+          <GovPlayScreen
+            isDark={isDark}
+            onSelectGame={(gameId: string) => { setActiveGame(gameId); setShowGovPlay(false); }}
+            onBack={() => setShowGovPlay(false)}
+          />
+        ) : (
+          <>
+            {activeTab === 'browse' && <BrowserScreen />}
+            {activeTab === 'govhub' && <GovHubScreen isDark={isDark} onOpenUrl={handleGovHubOpenUrl} />}
+            {activeTab === 'govchat' && <GovChatScreen isDark={isDark} />}
+            {activeTab === 'askozzy' && <AskOzzyScreen isDark={isDark} />}
+            {activeTab === 'settings' && <SettingsScreen isDark={isDark} onToggleTheme={toggleTheme} />}
+          </>
+        )}
       </View>
 
       <BottomTabBar activeTab={activeTab} onTabPress={handleTabPress} />
