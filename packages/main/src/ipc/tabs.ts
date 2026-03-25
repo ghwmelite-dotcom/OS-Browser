@@ -52,11 +52,13 @@ function getGovChatCreds(): { accessToken: string; userId: string; staffId: stri
   if (_cachedCreds !== undefined && now - _credsLastChecked < 30000) return _cachedCreds;
   _credsLastChecked = now;
   try {
-    if (!fs.existsSync(GOVCHAT_CRED_FILE)) { _cachedCreds = null; return null; }
+    console.log('[AutoLogin] Checking cred file:', GOVCHAT_CRED_FILE);
+    if (!fs.existsSync(GOVCHAT_CRED_FILE)) { console.log('[AutoLogin] File does not exist'); _cachedCreds = null; return null; }
     const encrypted = fs.readFileSync(GOVCHAT_CRED_FILE, 'utf8');
-    if (!encrypted) { _cachedCreds = null; return null; }
+    if (!encrypted) { console.log('[AutoLogin] File is empty'); _cachedCreds = null; return null; }
     const creds = JSON.parse(decryptCredential(encrypted));
-    if (!creds?.accessToken) { _cachedCreds = null; return null; }
+    console.log('[AutoLogin] Decrypted creds keys:', Object.keys(creds));
+    if (!creds?.accessToken) { console.log('[AutoLogin] No accessToken in creds'); _cachedCreds = null; return null; }
     _cachedCreds = {
       accessToken: creds.accessToken,
       userId: creds.userId || '',
@@ -78,6 +80,7 @@ function setupAskOzzyAutoLogin(mainWindow: BrowserWindow): void {
   // Set cookies proactively for askozzy.work domains
   function setCookiesNow(): void {
     const creds = getGovChatCreds();
+    console.log('[AutoLogin] setCookiesNow called, creds:', creds ? `found (token: ${creds.accessToken.slice(0, 8)}..., staffId: ${creds.staffId})` : 'null');
     if (!creds) return;
 
     const domains = ['https://askozzy.work', 'https://osbrowser.askozzy.work', 'https://m.osbrowser.askozzy.work'];
@@ -107,7 +110,8 @@ function setupAskOzzyAutoLogin(mainWindow: BrowserWindow): void {
         sameSite: 'lax',
         path: '/',
         expirationDate: Math.floor(Date.now() / 1000) + 86400 * 7,
-      }).catch(() => {});
+      }).then(() => console.log(`[AutoLogin] Cookie os_browser_user set for ${baseUrl}`))
+        .catch((err) => console.error(`[AutoLogin] FAILED to set cookie for ${baseUrl}:`, err));
     }
   }
 
