@@ -1,11 +1,24 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BarChart3, Globe, Star, MessageSquare, Shield } from 'lucide-react';
 import { useStatsStore } from '@/store/stats';
 
 export function StatsPage() {
   const { totalPages, totalBookmarks, totalConversations, totalAdsBlocked, loadStats } = useStatsStore();
+  const [browserVersion, setBrowserVersion] = useState('OS Browser');
+  const [engineInfo, setEngineInfo] = useState('Chromium (Electron)');
 
   useEffect(() => { loadStats(); }, []);
+
+  useEffect(() => {
+    window.osBrowser.getVersion().then((v: string) => {
+      setBrowserVersion(`OS Browser v${v}`);
+    }).catch(() => {});
+    const electronMatch = navigator.userAgent.match(/Electron\/([\d.]+)/);
+    const chromeMatch = navigator.userAgent.match(/Chrome\/([\d.]+)/);
+    setEngineInfo(
+      `Chromium ${chromeMatch?.[1] ?? ''}${electronMatch ? ` (Electron ${electronMatch[1]})` : ''}`
+    );
+  }, []);
 
   const stats = [
     { icon: Globe, label: 'Pages Visited', value: totalPages, color: '#3B82F6', desc: "Total web pages you've browsed" },
@@ -52,8 +65,8 @@ export function StatsPage() {
           </h3>
           <div className="space-y-3">
             {[
-              { label: 'Browser', value: 'OS Browser v1.0.0' },
-              { label: 'Engine', value: 'Chromium (Electron 33)' },
+              { label: 'Browser', value: browserVersion },
+              { label: 'Engine', value: engineInfo },
               { label: 'Platform', value: navigator.platform },
               { label: 'Language', value: navigator.language },
               { label: 'User Agent', value: navigator.userAgent.slice(0, 80) + '...' },

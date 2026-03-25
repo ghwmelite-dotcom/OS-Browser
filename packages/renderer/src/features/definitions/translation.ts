@@ -1,6 +1,7 @@
 import React from 'react';
 import { Languages, Globe } from 'lucide-react';
 import { FeatureRegistry, StatusBarIndicatorProps } from '../registry';
+import { useSettingsStore } from '@/store/settings';
 
 const dispatchTranslation = () => {
   window.dispatchEvent(new CustomEvent('os-browser:translation-panel'));
@@ -17,6 +18,9 @@ const LazyTranslationPanel = React.lazy(() =>
 
 // ── Status Bar Indicator ────────────────────────────────────────────
 const TranslationIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor }) => {
+  const language = useSettingsStore(s => s.settings?.language ?? 'en');
+  const langCode = language.slice(0, 2).toUpperCase();
+
   return React.createElement('span', {
     style: {
       display: 'flex',
@@ -30,7 +34,7 @@ const TranslationIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor })
     title: 'Translation — Click to change language',
   },
     React.createElement(Languages, { size: 12, style: { color: stripColor } }),
-    React.createElement('span', { style: { fontWeight: 600 } }, 'EN'),
+    React.createElement('span', { style: { fontWeight: 600 } }, langCode),
   );
 };
 

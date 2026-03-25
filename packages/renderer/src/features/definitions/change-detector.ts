@@ -38,7 +38,7 @@ const changeDetectorFeature = {
         label: 'View Watched Pages',
         description: 'Open the change detector panel',
         keywords: ['watch', 'watcher', 'change', 'detect', 'monitor', 'page', 'changes'],
-        action: () => {},
+        action: () => window.dispatchEvent(new CustomEvent('os-browser:open-panel', { detail: { featureId: 'change-detector' } })),
         group: 'Change Detector',
       },
       {
@@ -46,7 +46,7 @@ const changeDetectorFeature = {
         label: 'Watch Current Page',
         description: 'Start watching the current page for changes',
         keywords: ['watch', 'add', 'monitor', 'track', 'page', 'current'],
-        action: () => {},
+        action: () => window.dispatchEvent(new CustomEvent('os-browser:open-panel', { detail: { featureId: 'change-detector' } })),
         group: 'Change Detector',
       },
     ],

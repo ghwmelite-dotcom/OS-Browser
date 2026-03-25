@@ -12,7 +12,7 @@ const DownloadPanel = React.lazy(
 );
 
 const openDownloads = () => {
-  // Toggle sidebar panel via feature system
+  window.dispatchEvent(new CustomEvent('os-browser:open-panel', { detail: { featureId: 'download-manager' } }));
 };
 
 const pauseAllDownloads = () => {

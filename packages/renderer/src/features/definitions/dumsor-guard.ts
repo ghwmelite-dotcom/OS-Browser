@@ -9,7 +9,14 @@ const DumsorPanel = React.lazy(() =>
 );
 
 const saveSessionNow = () => {
-  // Trigger the browser's session save mechanism
+  // Trigger disk-based session save via main process (survives crashes/power loss)
+  try {
+    (window as any).osBrowser?.session?.save?.();
+  } catch {
+    // session:save IPC may not be available
+  }
+
+  // Also keep localStorage save as a volatile backup
   try {
     const tabs = useTabsStore.getState().tabs;
     const sessionData = tabs.map(t => ({ id: t.id, url: t.url, title: t.title }));

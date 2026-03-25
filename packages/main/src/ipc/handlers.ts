@@ -540,9 +540,19 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
   // App info
   ipcMain.handle(IPC.APP_GET_VERSION, () => app.getVersion());
 
-  ipcMain.handle(IPC.APP_CHECK_UPDATE, () => {
-    // Auto-updater would check here; for now just return current version
-    return { currentVersion: app.getVersion(), updateAvailable: false };
+  ipcMain.handle(IPC.APP_CHECK_UPDATE, async () => {
+    try {
+      const { autoUpdater } = require('electron-updater');
+      const result = await autoUpdater.checkForUpdates();
+      return {
+        currentVersion: app.getVersion(),
+        updateAvailable: !!result?.updateInfo,
+        version: result?.updateInfo?.version,
+      };
+    } catch {
+      // electron-updater not available or check failed
+      return { currentVersion: app.getVersion(), updateAvailable: false };
+    }
   });
 
   // Gov Portals
@@ -581,14 +591,17 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
     };
   });
 
-  // Ad block stats — now served by adblock-engine IPC handlers
-  // Legacy handler kept for compatibility with renderer stats display
+  // Ad block stats — reads real counts from adblock-engine singleton
   ipcMain.handle(IPC.ADBLOCK_STATS_UPDATE, async () => {
     try {
       const { getAdBlockService } = require('../services/adblock-engine');
       const svc = getAdBlockService();
-      const status = await ipcMain.emit('adblock:get-status');
-      return { ads_blocked: 0, trackers_blocked: 0 }; // Stats now tracked per-request in adblock-engine
+      if (svc) {
+        // totalBlocked is TS-private but accessible at runtime
+        const blocked = (svc as any).totalBlocked ?? 0;
+        return { ads_blocked: blocked, trackers_blocked: 0 };
+      }
+      return { ads_blocked: 0, trackers_blocked: 0 };
     } catch {
       return { ads_blocked: 0, trackers_blocked: 0 };
     }

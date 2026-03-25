@@ -68,7 +68,8 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         dateTo || undefined,
       );
       set({ entries: entries || [], isLoading: false });
-    } catch {
+    } catch (err) {
+      console.error('[Vault] loadEntries failed:', err);
       set({ isLoading: false });
     }
   },
@@ -79,7 +80,9 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     try {
       const stats = await osBrowser.vault.getStats();
       set({ totalCaptures: stats?.totalCaptures || 0 });
-    } catch {}
+    } catch (err) {
+      console.error('[Vault] loadStats failed:', err);
+    }
   },
 
   captureCurrentPage: async (pageAction?: string) => {
@@ -108,7 +111,8 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         await get().loadStats();
       }
       return result;
-    } catch {
+    } catch (err) {
+      console.error('[Vault] deleteEntry failed:', err);
       return false;
     }
   },
@@ -118,7 +122,8 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     if (!osBrowser?.vault) return null;
     try {
       return await osBrowser.vault.getImage(id);
-    } catch {
+    } catch (err) {
+      console.error('[Vault] getImage failed:', err);
       return null;
     }
   },
