@@ -387,6 +387,27 @@ export function BrowserScreen() {
           ))}
         </View>
 
+        {/* ── GovPlay Banner ── */}
+        <TouchableOpacity
+          style={[styles.govPlayBanner, { backgroundColor: colors.surface1, borderColor: '#FF408130' }]}
+          onPress={() => (globalThis as any).__switchTab?.('govplay')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.govPlayBannerAccent} />
+          <View style={styles.govPlayBannerIcon}>
+            <Ionicons name="game-controller" size={rs(28)} color="#FF4081" />
+          </View>
+          <View style={styles.govPlayBannerText}>
+            <Text style={[styles.govPlayBannerTitle, { color: '#FF4081' }]}>GovPlay</Text>
+            <Text style={[styles.govPlayBannerDesc, { color: colors.textMuted }]}>
+              2048, Snake, Minesweeper, Ghana Trivia — play now!
+            </Text>
+          </View>
+          <View style={styles.govPlayBannerArrow}>
+            <Ionicons name="chevron-forward" size={rs(20)} color="#FF4081" />
+          </View>
+        </TouchableOpacity>
+
         {/* ── Feature Shortcuts ── */}
         <View style={styles.sectionHeader}>
           <View style={[styles.sectionDot, { backgroundColor: KENTE.green }]} />
@@ -804,6 +825,57 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.xs,
     fontWeight: '600',
     textAlign: 'center',
+  },
+
+  // GovPlay banner
+  govPlayBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    padding: rs(16),
+    borderRadius: RADIUS.lg,
+    borderWidth: 1.5,
+    marginBottom: rs(24),
+    zIndex: 1,
+    overflow: 'hidden',
+  },
+  govPlayBannerAccent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: rs(3),
+    backgroundColor: '#FF4081',
+  },
+  govPlayBannerIcon: {
+    width: rs(52),
+    height: rs(52),
+    borderRadius: rs(16),
+    backgroundColor: '#FF408118',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: rs(14),
+  },
+  govPlayBannerText: {
+    flex: 1,
+  },
+  govPlayBannerTitle: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: '800',
+    marginBottom: rs(2),
+  },
+  govPlayBannerDesc: {
+    fontSize: FONT_SIZE.xs,
+    lineHeight: rs(18),
+  },
+  govPlayBannerArrow: {
+    width: rs(36),
+    height: rs(36),
+    borderRadius: rs(12),
+    backgroundColor: '#FF408112',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: rs(8),
   },
 
   // Feature shortcut grid
