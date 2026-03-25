@@ -28,7 +28,36 @@ interface AskOzzyScreenProps {
   isDark: boolean;
 }
 
-const API_URL = 'https://os-browser-worker.ghwmelite.workers.dev/api/ai/chat';
+const WORKER_URL = 'https://os-browser-worker.ghwmelite.workers.dev';
+const DEVICE_SECRET = 'os-mini-device-reg-2026';
+
+// Device token management — register once, reuse for all AI requests
+let cachedDeviceToken: string | null = null;
+
+async function getDeviceToken(): Promise<string> {
+  if (cachedDeviceToken) return cachedDeviceToken;
+
+  // Try to load from AsyncStorage
+  const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+  const stored = await AsyncStorage.getItem('@device_token');
+  if (stored) {
+    cachedDeviceToken = stored;
+    return stored;
+  }
+
+  // Register new device
+  const res = await fetch(`${WORKER_URL}/api/v1/register-device`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ app_version: '1.0.0', secret: DEVICE_SECRET }),
+  });
+
+  if (!res.ok) throw new Error('Device registration failed');
+  const data = await res.json() as any;
+  cachedDeviceToken = data.device_token;
+  await AsyncStorage.setItem('@device_token', data.device_token);
+  return data.device_token;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
@@ -71,9 +100,13 @@ export default function AskOzzyScreen({ isDark }: AskOzzyScreenProps) {
         content: m.text,
       }));
 
-      const response = await fetch(API_URL, {
+      const token = await getDeviceToken();
+      const response = await fetch(`${WORKER_URL}/api/v1/ai/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({
           message: trimmed,
           conversation_history: conversationHistory,
@@ -81,12 +114,29 @@ export default function AskOzzyScreen({ isDark }: AskOzzyScreenProps) {
       });
 
       if (!response.ok) {
+        // If auth failed, clear token and retry once
+        if (response.status === 401) {
+          cachedDeviceToken = null;
+          const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+          await AsyncStorage.removeItem('@device_token');
+        }
         throw new Error(`HTTP ${response.status}`);
       }
 
-      const data = await response.json();
-      const assistantText =
-        data?.response ?? data?.message ?? data?.reply ?? 'I received your message but couldn\'t generate a response.';
+      const contentType = response.headers.get('content-type') || '';
+      let assistantText: string;
+
+      if (contentType.includes('text/event-stream')) {
+        // Streaming response — collect all chunks
+        const text = await response.text();
+        const lines = text.split('\n').filter(l => l.startsWith('data: '));
+        assistantText = lines.map(l => {
+          try { const d = JSON.parse(l.slice(6)); return d.response || ''; } catch { return ''; }
+        }).join('');
+      } else {
+        const data = await response.json() as any;
+        assistantText = data?.content ?? data?.response ?? data?.message ?? 'I received your message but couldn\'t generate a response.';
+      }
 
       const assistantMsg: Message = {
         id: `${Date.now()}-assistant`,

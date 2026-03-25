@@ -159,7 +159,9 @@
       "Bash(cp /c/osm/android/app/build/outputs/apk/release/app-release.apk \"/c/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/OzzySurf-OS Browser/out/OS-Mini-v1.0.0-release.apk\")",
       "Bash(npm start:*)",
       "Bash(rm -f /c/Users/USER/.gradle/caches/journal-1/journal-1.lock)",
-      "Bash('JAVA_HOME=C:/Program Files/Android/Android Studio/jbr' ./gradlew --stop)"
+      "Bash('JAVA_HOME=C:/Program Files/Android/Android Studio/jbr' ./gradlew --stop)",
+      "Bash(CI=1 eas update --channel production --environment production --platform android --message \"test: first OTA update\")",
+      "Bash(CI=1 eas update --channel production --environment production --platform android --message \"fix: AskOzzy AI chat — correct API URL + device auth\")"
     ]
   }
 }
