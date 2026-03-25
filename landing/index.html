@@ -1337,7 +1337,6 @@
     }
     @media (max-width: 768px) {
       .os-mini-banner { display: block; }
-      .desktop-only-download { display: none !important; }
     }
 
     /* ═══════════════ FOOTER ═══════════════ */
@@ -1834,33 +1833,23 @@
     screen recording, reading mode, digital wellbeing &mdash; organized by the Kente System.
   </p>
 
-  <div class="hero-actions desktop-only-download">
+  <div class="hero-actions" style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;">
     <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/latest/download/OS.Browser.Setup.1.0.0.exe" class="btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
       Download for Windows
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    </a>
+    <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/download/v1.0.0-mini/OS-Mini-v1.0.0-release.apk" class="os-mini-btn" style="display:inline-flex;font-size:15px;padding:14px 32px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      OS Mini for Android
     </a>
     <a href="#features" class="btn-secondary">Explore Features</a>
-  </div>
-
-  <!-- OS Mini banner — visible only on mobile -->
-  <div class="os-mini-banner">
-    <div class="os-mini-badge">&#128241; Mobile Edition</div>
-    <div class="os-mini-title">OS Mini</div>
-    <div class="os-mini-desc">
-      The lightweight mobile companion. Ad-free browsing, GovChat, AskOzzy AI, 20+ gov portals, MoMo &amp; USSD codes.
-    </div>
-    <a href="https://github.com/ghwmelite-dotcom/OS-Browser/releases/download/v1.0.0-mini/OS-Mini-v1.0.0-release.apk" class="os-mini-btn">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Download OS Mini &mdash; Free
-    </a>
-    <div class="os-mini-size">Android 7+ &middot; 27 MB &middot; Signed APK</div>
   </div>
 
   <div class="download-counter">
     <div class="download-counter-inner">
       <span class="download-counter-fire">&#128293;</span>
       <span class="download-counter-number" id="downloadCount">0</span>
-      <span class="download-counter-label">downloads and counting</span>
+      <span class="download-counter-label">desktop &amp; mobile downloads</span>
     </div>
     <div class="milestone-progress" id="milestoneProgress" style="max-width:320px;margin:8px auto 0;">
       <div class="milestone-progress-bar">
@@ -1876,7 +1865,7 @@
   <div class="download-toast" id="downloadToast">
     <div class="download-toast-header">
       <div class="download-toast-icon">&#8595;</div>
-      <div class="download-toast-text" id="toastText">Someone in Accra just downloaded OS Browser</div>
+      <div class="download-toast-text" id="toastText">Someone in Accra just downloaded OS Browser / OS Mini</div>
     </div>
     <div class="download-toast-time" id="toastTime">3 minutes ago</div>
   </div>
@@ -3126,7 +3115,7 @@
 
     const event = toastQueue.shift();
     const city = event.city || ghCities[Math.floor(Math.random() * ghCities.length)];
-    toastTextEl.textContent = 'Someone in ' + city + ' just downloaded OS Browser';
+    toastTextEl.textContent = 'Someone in ' + city + ' just downloaded OS Browser / OS Mini';
     toastTimeEl.textContent = relativeTimeStr(event.timestamp);
 
     toastEl.classList.remove('hide');
@@ -3194,7 +3183,7 @@
   }, 5000);
 
   // ── Track download clicks ──
-  const downloadLinks = document.querySelectorAll('a[href*="OS.Browser.Setup"], a.cta-download, a.btn-primary[href*="releases"], a.nav-cta[href*="releases"]');
+  const downloadLinks = document.querySelectorAll('a[href*="OS.Browser.Setup"], a[href*="OS-Mini"], a.cta-download, a.btn-primary[href*="releases"], a.nav-cta[href*="releases"], a.os-mini-btn');
   downloadLinks.forEach(function(link) {
     link.addEventListener('click', async function(e) {
       e.preventDefault();
