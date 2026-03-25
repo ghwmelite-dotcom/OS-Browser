@@ -53,9 +53,9 @@ interface FeatureShortcut {
 
 const FEATURE_SHORTCUTS: FeatureShortcut[] = [
   { id: 'govhub', label: 'GovHub', desc: 'Gov portals & MoMo', icon: 'business', color: '#006B3F', gradient: ['#006B3F', '#00894D'] },
+  { id: 'govplay', label: 'GovPlay', desc: '4 games to play', icon: 'game-controller', color: '#FF4081', gradient: ['#FF4081', '#FF6B9D'] },
   { id: 'govchat', label: 'GovChat', desc: 'Secure messaging', icon: 'chatbubbles', color: '#D4A017', gradient: ['#D4A017', '#E8B830'] },
   { id: 'askozzy', label: 'AskOzzy', desc: 'AI assistant', icon: 'sparkles', color: '#8B5CF6', gradient: ['#8B5CF6', '#A78BFA'] },
-  { id: 'settings', label: 'Settings', desc: 'Customize browser', icon: 'settings', color: '#3B82F6', gradient: ['#3B82F6', '#60A5FA'] },
 ];
 
 // Time-aware greeting
