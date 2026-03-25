@@ -1,3 +1,9 @@
+/**
+ * Multi-profile management store — handles creating, switching, locking,
+ * and deleting browser profiles via IPC (PIN-protected, stored on disk).
+ *
+ * For the active user's display info (name, avatar, staffId), see ./profile.ts
+ */
 import { create } from 'zustand';
 
 export interface ProfilePublic {

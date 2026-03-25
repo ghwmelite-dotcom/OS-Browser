@@ -7,17 +7,24 @@ const openNetworkDetails = () => {
   useTabsStore.getState().createTab('os-browser://settings');
 };
 
-const suspendBackgroundTabs = () => {
-  const { tabs, activeTabId } = useTabsStore.getState();
-  // Mark non-active tabs as suspended by dispatching an event
-  const backgroundTabs = tabs.filter(t => t.id !== activeTabId);
-  window.dispatchEvent(new CustomEvent('os-browser:suspend-tabs', {
-    detail: { tabIds: backgroundTabs.map(t => t.id) },
-  }));
-};
-
-const resumeAllTabs = () => {
-  window.dispatchEvent(new CustomEvent('os-browser:resume-tabs'));
+const showMemorySaverStats = () => {
+  const memorySaver = (window as any).osBrowser?.memorySaver;
+  if (!memorySaver) {
+    window.dispatchEvent(new CustomEvent('os-browser:toast', {
+      detail: { message: 'Memory Saver is active — inactive tabs are suspended automatically' },
+    }));
+    return;
+  }
+  memorySaver.stats().then((stats: any) => {
+    const msg = stats?.suspendedCount > 0
+      ? `${stats.suspendedCount} tab${stats.suspendedCount > 1 ? 's' : ''} suspended, saving ${Math.round((stats.totalSaved || 0) / 1024 / 1024)}MB`
+      : 'Memory Saver is active — inactive tabs will be suspended automatically';
+    window.dispatchEvent(new CustomEvent('os-browser:toast', { detail: { message: msg } }));
+  }).catch(() => {
+    window.dispatchEvent(new CustomEvent('os-browser:toast', {
+      detail: { message: 'Memory Saver is active — inactive tabs are managed automatically' },
+    }));
+  });
 };
 
 // ── Status Bar Indicator ────────────────────────────────────────────
@@ -65,18 +72,10 @@ const networkManagerFeature = {
       },
       {
         id: 'network-manager:suspend',
-        label: 'Suspend background tabs',
-        description: 'Pause inactive tabs to save bandwidth and memory',
-        keywords: ['suspend', 'background', 'tabs', 'pause', 'freeze', 'save', 'memory'],
-        action: () => suspendBackgroundTabs(),
-        group: 'Network',
-      },
-      {
-        id: 'network-manager:resume',
-        label: 'Resume all tabs',
-        description: 'Resume all suspended background tabs',
-        keywords: ['resume', 'tabs', 'wake', 'restore', 'unsuspend', 'activate'],
-        action: () => resumeAllTabs(),
+        label: 'Memory Saver status',
+        description: 'Show how many tabs are suspended and memory saved',
+        keywords: ['suspend', 'background', 'tabs', 'pause', 'freeze', 'save', 'memory', 'saver'],
+        action: () => showMemorySaverStats(),
         group: 'Network',
       },
       {

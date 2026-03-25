@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useTabsStore } from '@/store/tabs';
 
 // ── Currency metadata ──────────────────────────────────────────────
 export interface CurrencyInfo {
@@ -82,17 +83,34 @@ export const useExchangeStore = create<ExchangeState>((set, get) => ({
   toggleOverlay: () => {
     const enabled = !get().overlayEnabled;
     set({ overlayEnabled: enabled });
-    // Dispatch event for main process to inject/remove content script
-    window.dispatchEvent(
-      new CustomEvent('exchange:overlay-toggle', { detail: { enabled } }),
-    );
+    const tabId = useTabsStore.getState().activeTabId;
+    const exchange = (window as any).osBrowser?.exchange;
+    if (tabId && exchange) {
+      if (enabled) {
+        const rates = get().rates;
+        if (Object.keys(rates).length > 0) {
+          exchange.injectOverlay(tabId, rates);
+        }
+      } else {
+        exchange.removeOverlay(tabId);
+      }
+    }
   },
 
   setOverlayEnabled: (enabled: boolean) => {
     set({ overlayEnabled: enabled });
-    window.dispatchEvent(
-      new CustomEvent('exchange:overlay-toggle', { detail: { enabled } }),
-    );
+    const tabId = useTabsStore.getState().activeTabId;
+    const exchange = (window as any).osBrowser?.exchange;
+    if (tabId && exchange) {
+      if (enabled) {
+        const rates = get().rates;
+        if (Object.keys(rates).length > 0) {
+          exchange.injectOverlay(tabId, rates);
+        }
+      } else {
+        exchange.removeOverlay(tabId);
+      }
+    }
   },
 
   openMiniConverter: (currency?: string) => {

@@ -1,3 +1,9 @@
+/**
+ * Single-user profile store — stores the ACTIVE user's display info
+ * (name, email, avatar, staffId, department, ministry) in localStorage.
+ *
+ * For multi-profile management (create/switch/lock/PIN), see ./profiles.ts
+ */
 import { create } from 'zustand';
 
 /* ──────────────── localStorage persistence ──────────────── */

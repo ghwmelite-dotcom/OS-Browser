@@ -64,7 +64,7 @@ const vaultFeature = {
         label: 'View Interaction Vault',
         description: 'Open the vault to see all captured interactions',
         keywords: ['vault', 'view', 'captures', 'proof', 'history', 'interactions'],
-        action: () => {},
+        action: () => window.dispatchEvent(new CustomEvent('os-browser:open-panel', { detail: { featureId: 'interaction-vault' } })),
         group: 'Vault',
       },
     ],

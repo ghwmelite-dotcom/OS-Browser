@@ -28,7 +28,7 @@ const ussdCodebookFeature = {
         label: 'Open USSD Code Book',
         description: 'Browse and search Ghana USSD codes',
         keywords: ['ussd', 'code', 'book', 'ghana', 'dial', 'momo', 'mobile money', 'bank', 'utility'],
-        action: () => { /* opened via sidebar click */ },
+        action: () => window.dispatchEvent(new CustomEvent('os-browser:open-panel', { detail: { featureId: 'ussd-codebook' } })),
         group: 'USSD Code Book',
       },
       {
@@ -36,7 +36,7 @@ const ussdCodebookFeature = {
         label: 'Search Mobile Money codes',
         description: 'Find MTN MoMo, Telecel Cash, AirtelTigo Money codes',
         keywords: ['momo', 'mobile money', 'mtn', 'telecel', 'vodafone', 'airteltigo', 'transfer', 'wallet'],
-        action: () => { /* opened via sidebar click */ },
+        action: () => window.dispatchEvent(new CustomEvent('os-browser:open-panel', { detail: { featureId: 'ussd-codebook' } })),
         group: 'USSD Code Book',
       },
       {
@@ -44,7 +44,7 @@ const ussdCodebookFeature = {
         label: 'Search bank USSD codes',
         description: 'Find GCB, Ecobank, Fidelity, and other bank codes',
         keywords: ['bank', 'gcb', 'ecobank', 'fidelity', 'stanbic', 'calbank', 'uba', 'access', 'balance'],
-        action: () => { /* opened via sidebar click */ },
+        action: () => window.dispatchEvent(new CustomEvent('os-browser:open-panel', { detail: { featureId: 'ussd-codebook' } })),
         group: 'USSD Code Book',
       },
     ],

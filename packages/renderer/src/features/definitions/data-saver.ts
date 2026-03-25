@@ -9,6 +9,9 @@ const toggleLiteMode = () => useDataSaverStore.getState().toggleLiteMode();
 
 // ── Status Bar Indicator ────────────────────────────────────────────
 const DataSaverIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor }) => {
+  const estimatedSavedGHS = useDataSaverStore(s => s.estimatedSavedGHS);
+  const formatted = `GH\u20B5${estimatedSavedGHS.toFixed(2)}`;
+
   return React.createElement('span', {
     style: {
       display: 'flex',
@@ -22,7 +25,7 @@ const DataSaverIndicator: React.FC<StatusBarIndicatorProps> = ({ stripColor }) =
     title: 'Data Saver — Click to open dashboard',
   },
     React.createElement(BarChart3, { size: 12, style: { color: stripColor } }),
-    React.createElement('span', null, 'GH\u20B50.00'),
+    React.createElement('span', null, formatted),
   );
 };
 

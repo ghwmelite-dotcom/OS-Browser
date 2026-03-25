@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  ChevronRight, Globe, User, Shield, Building2, Lock, Languages,
+  ChevronRight, Globe, Shield, Building2, Lock, Languages,
   Download, Smartphone, Battery, Keyboard, Sidebar, Terminal, BarChart3,
   Gamepad2, Video
 } from 'lucide-react';
@@ -11,8 +11,6 @@ interface OnboardingProps {
 
 export function Onboarding({ onComplete }: OnboardingProps) {
   const [step, setStep] = useState(0);
-  const [profileName, setProfileName] = useState('');
-  const [profileEmail, setProfileEmail] = useState('');
   const [direction, setDirection] = useState<'next' | 'prev'>('next');
   const totalSteps = 8; // was 9 — profile setup (old step 1) is now handled by ProfileLauncher
 
@@ -48,15 +46,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [step, profileName, profileEmail]);
-
-  // Generate initials for avatar preview
-  const getInitials = (name: string) => {
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 0 || !parts[0]) return '?';
-    if (parts.length === 1) return parts[0][0].toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
+  }, [step]);
 
   const renderStep = () => {
     switch (step) {

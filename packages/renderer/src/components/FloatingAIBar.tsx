@@ -89,7 +89,10 @@ export function FloatingAIBar() {
               key={action.label}
               onClick={() => {
                 if (action.label === 'Save PDF') {
-                  window.print();
+                  const tabId = useTabsStore.getState().activeTabId;
+                  if (tabId) {
+                    (window as any).osBrowser?.tabs?.printToPdf?.(tabId);
+                  }
                   return;
                 }
                 openPanel('ai');

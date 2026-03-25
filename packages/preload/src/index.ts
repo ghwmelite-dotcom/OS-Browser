@@ -110,6 +110,7 @@ contextBridge.exposeInMainWorld('osBrowser', {
     unmute: (id: string) => ipcRenderer.invoke(IPC.TAB_UNMUTE, id),
     reopenClosed: () => ipcRenderer.invoke(IPC.TAB_REOPEN_CLOSED),
     getState: () => ipcRenderer.invoke(IPC.TAB_GET_STATE),
+    printToPdf: (id: string) => ipcRenderer.invoke('tab:print-to-pdf', id),
     onStateUpdated: (callback: (data: any) => void) => {
       const listener = (_e: any, data: any) => callback(data);
       ipcRenderer.on('tabs:state-updated', listener);
@@ -304,6 +305,11 @@ contextBridge.exposeInMainWorld('osBrowser', {
     getUsage: () => ipcRenderer.invoke('data:get-usage'),
     getPageCost: (url: string) => ipcRenderer.invoke('data:get-page-cost', url),
     reset: () => ipcRenderer.invoke('data:reset'),
+  },
+
+  session: {
+    save: () => ipcRenderer.invoke('session:save'),
+    restore: () => ipcRenderer.invoke('session:restore'),
   },
 
   power: {
