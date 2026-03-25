@@ -101,6 +101,9 @@ export default function AskOzzyScreen({ isDark }: AskOzzyScreenProps) {
       }));
 
       const token = await getDeviceToken();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
       const response = await fetch(`${WORKER_URL}/api/v1/ai/chat`, {
         method: 'POST',
         headers: {
@@ -111,10 +114,12 @@ export default function AskOzzyScreen({ isDark }: AskOzzyScreenProps) {
           message: trimmed,
           conversation_history: conversationHistory,
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeout);
+
       if (!response.ok) {
-        // If auth failed, clear token and retry once
         if (response.status === 401) {
           cachedDeviceToken = null;
           const AsyncStorage = require('@react-native-async-storage/async-storage').default;
@@ -123,19 +128,33 @@ export default function AskOzzyScreen({ isDark }: AskOzzyScreenProps) {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      const contentType = response.headers.get('content-type') || '';
+      // Response is always SSE (text/event-stream) — collect full text then parse chunks
+      const rawText = await response.text();
       let assistantText: string;
 
-      if (contentType.includes('text/event-stream')) {
-        // Streaming response — collect all chunks
-        const text = await response.text();
-        const lines = text.split('\n').filter(l => l.startsWith('data: '));
-        assistantText = lines.map(l => {
-          try { const d = JSON.parse(l.slice(6)); return d.response || ''; } catch { return ''; }
-        }).join('');
+      if (rawText.includes('data: ')) {
+        // Parse SSE: each line is "data: {json}\n"
+        const chunks = rawText.split('\n')
+          .filter(line => line.startsWith('data: '))
+          .map(line => {
+            try {
+              const d = JSON.parse(line.slice(6));
+              return d.response || '';
+            } catch { return ''; }
+          });
+        assistantText = chunks.join('');
       } else {
-        const data = await response.json() as any;
-        assistantText = data?.content ?? data?.response ?? data?.message ?? 'I received your message but couldn\'t generate a response.';
+        // Fallback: try JSON
+        try {
+          const data = JSON.parse(rawText);
+          assistantText = data?.content ?? data?.response ?? data?.message ?? rawText;
+        } catch {
+          assistantText = rawText || 'I received your message but couldn\'t generate a response.';
+        }
+      }
+
+      if (!assistantText.trim()) {
+        assistantText = 'I received your message but couldn\'t generate a response. Please try again.';
       }
 
       const assistantMsg: Message = {
