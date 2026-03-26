@@ -684,19 +684,180 @@ function isDailymotion(hostname: string): boolean {
   return hostname === 'www.dailymotion.com' || hostname === 'dailymotion.com';
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// GENERIC AD BLOCKER — runs on ALL websites
+// ══════════════════════════════════════════════════════════════════════════════
+const GENERIC_AD_BLOCK_SCRIPT = `
+(function() {
+  'use strict';
+  if (window.__osBrowserGenericAdBlock) return;
+  window.__osBrowserGenericAdBlock = true;
+
+  // ── 1. CSS: Hide common ad containers, popups, overlays ──
+  const style = document.createElement('style');
+  style.textContent = [
+    // Common ad containers
+    'ins.adsbygoogle',
+    'iframe[src*="doubleclick"]',
+    'iframe[src*="googlesyndication"]',
+    'iframe[src*="googleadservices"]',
+    'iframe[src*="ads"]',
+    'iframe[id*="google_ads"]',
+    'div[id*="google_ads"]',
+    'div[class*="ad-container"]',
+    'div[class*="ad-wrapper"]',
+    'div[class*="ad-banner"]',
+    'div[class*="adunit"]',
+    'div[class*="ad-slot"]',
+    'div[class*="ad_slot"]',
+    'div[class*="advertisement"]',
+    'div[class*="sponsored"]',
+    'div[data-ad]',
+    'div[data-ad-slot]',
+    'div[data-google-query-id]',
+    'div[aria-label="advertisement"]',
+    // Popup overlays
+    'div[class*="popup"]',
+    'div[class*="modal"][class*="ad"]',
+    'div[class*="overlay"][class*="ad"]',
+    'div[id*="popup"]',
+    // Sticky bottom/top bars
+    'div[class*="sticky-ad"]',
+    'div[class*="fixed-ad"]',
+    'div[class*="floating-ad"]',
+    // Common ad network containers
+    '.mgbox', '.mgline',
+    '[id^="taboola"]',
+    '[id^="outbrain"]',
+    '[class*="taboola"]',
+    '[class*="outbrain"]',
+    '[class*="mgid"]',
+    '[class*="propeller"]',
+    'a-ads',
+    // Video player overlay ads
+    'div[class*="vast"]',
+    'div[class*="vpaid"]',
+    'div[class*="preroll"]',
+    'div[class*="midroll"]',
+    'div[class*="video-ad"]',
+    '.vjs-ad-playing .vjs-ad-overlay',
+    // Sports streaming site common patterns
+    'div[class*="bet"]',
+    'div[class*="casino"]',
+    'a[href*="bet365"]',
+    'a[href*="1xbet"]',
+    'a[href*="betway"]',
+    'a[href*="stake.com"]',
+    'a[href*="casino"]',
+    'a[href*="betting"]',
+    'div[onclick*="window.open"]',
+  ].join(', ') + ' { display: none !important; visibility: hidden !important; height: 0 !important; min-height: 0 !important; max-height: 0 !important; overflow: hidden !important; opacity: 0 !important; pointer-events: none !important; }';
+  document.head.appendChild(style);
+
+  // ── 2. Block popup windows / new tabs opened by ads ──
+  const origOpen = window.open;
+  window.open = function(url, target, features) {
+    if (!url) return null;
+    const urlStr = String(url).toLowerCase();
+    const adDomains = ['doubleclick','googlesyndication','googleadservices','adnxs','taboola','outbrain',
+      'mgid','propellerads','popads','popcash','adsterra','1xbet','bet365','betway','stake.com',
+      'casino','betting','track','click','redirect','adf.ly'];
+    if (adDomains.some(d => urlStr.includes(d))) return null;
+    // Block blank popup opens from click handlers (common ad trick)
+    if (target === '_blank' && !url.startsWith(window.location.origin)) {
+      // Allow only if user explicitly clicked a real link
+      return null;
+    }
+    return origOpen.call(this, url, target, features);
+  };
+
+  // ── 3. Block ad network scripts from loading ──
+  const origCreateElement = document.createElement.bind(document);
+  document.createElement = function(tag) {
+    const el = origCreateElement(tag);
+    if (tag.toLowerCase() === 'script') {
+      const origSetAttr = el.setAttribute.bind(el);
+      el.setAttribute = function(name, value) {
+        if (name === 'src' && typeof value === 'string') {
+          const blocked = ['doubleclick.net','googlesyndication.com','googleadservices.com',
+            'adnxs.com','taboola.com','outbrain.com','mgid.com','propellerads.com',
+            'popads.net','popcash.net','adsterra.com','juicyads.com','exoclick.com',
+            'trafficjunky.com','clickadu.com','hilltopads.com','pushground.com',
+            'richpush.com','evadav.com','galaksion.com','bidvertiser.com'];
+          if (blocked.some(d => value.includes(d))) {
+            origSetAttr.call(this, 'data-blocked', 'true');
+            origSetAttr.call(this, name, 'about:blank');
+            return;
+          }
+        }
+        return origSetAttr.call(this, name, value);
+      };
+    }
+    return el;
+  };
+
+  // ── 4. MutationObserver: Remove ads injected after page load ──
+  const observer = new MutationObserver(function(mutations) {
+    for (const m of mutations) {
+      for (const node of m.addedNodes) {
+        if (node.nodeType !== 1) continue;
+        const el = node;
+        const tag = (el.tagName || '').toLowerCase();
+
+        // Block ad iframes
+        if (tag === 'iframe') {
+          const src = el.getAttribute('src') || '';
+          if (src.includes('doubleclick') || src.includes('googlesyndication') ||
+              src.includes('adnxs') || src.includes('ads') || src.includes('taboola') ||
+              src.includes('popads') || src.includes('casino') || src.includes('bet')) {
+            el.remove();
+            continue;
+          }
+        }
+
+        // Block popup divs with inline onclick window.open
+        if (el.getAttribute && el.getAttribute('onclick') && String(el.getAttribute('onclick')).includes('window.open')) {
+          el.removeAttribute('onclick');
+        }
+
+        // Block elements with ad-related classes added dynamically
+        const cls = el.className || '';
+        if (typeof cls === 'string' && (cls.includes('ad-') || cls.includes('ads-') || cls.includes('popup') ||
+            cls.includes('overlay') || cls.includes('modal'))) {
+          if (cls.includes('ad-container') || cls.includes('ad-wrapper') || cls.includes('ad-banner') ||
+              cls.includes('popup-ad') || cls.includes('overlay-ad')) {
+            el.style.display = 'none';
+          }
+        }
+      }
+    }
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+
+  // ── 5. Neutralize common anti-adblock detection ──
+  Object.defineProperty(window, 'adBlockDetected', { get: () => false, set: () => {} });
+  Object.defineProperty(window, 'canRunAds', { get: () => true, set: () => {} });
+
+  window.addEventListener('unload', function() { observer.disconnect(); }, { once: true });
+})();
+`;
+
 // ── Public API ──────────────────────────────────────────────────────────────
 
 /**
- * Returns the appropriate ad-block injection script for the given hostname,
- * or null if no platform-specific blocker exists.
+ * Returns the appropriate ad-block injection script for the given hostname.
+ * Platform-specific blockers are prepended to the generic blocker for maximum coverage.
  */
 export function getAdBlockScript(hostname: string): string | null {
-  if (isYouTube(hostname)) return YOUTUBE_AD_BLOCK_SCRIPT;
-  if (isTwitch(hostname)) return TWITCH_AD_BLOCK_SCRIPT;
-  if (isFacebook(hostname)) return FACEBOOK_AD_BLOCK_SCRIPT;
-  if (isTwitter(hostname)) return TWITTER_AD_BLOCK_SCRIPT;
-  if (isDailymotion(hostname)) return DAILYMOTION_AD_BLOCK_SCRIPT;
-  return null;
+  let platformScript = '';
+  if (isYouTube(hostname)) platformScript = YOUTUBE_AD_BLOCK_SCRIPT;
+  else if (isTwitch(hostname)) platformScript = TWITCH_AD_BLOCK_SCRIPT;
+  else if (isFacebook(hostname)) platformScript = FACEBOOK_AD_BLOCK_SCRIPT;
+  else if (isTwitter(hostname)) platformScript = TWITTER_AD_BLOCK_SCRIPT;
+  else if (isDailymotion(hostname)) platformScript = DAILYMOTION_AD_BLOCK_SCRIPT;
+
+  // Always return generic blocker + platform-specific if available
+  return platformScript + GENERIC_AD_BLOCK_SCRIPT;
 }
 
 /** Check whether the given hostname is a known video/social platform. */
