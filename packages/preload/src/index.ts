@@ -385,6 +385,21 @@ contextBridge.exposeInMainWorld('osBrowser', {
     run: (browserId: string) => ipcRenderer.invoke('browser-import:run', browserId),
   },
 
+  password: {
+    onDetected: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('password:detected', listener);
+      return () => ipcRenderer.removeListener('password:detected', listener);
+    },
+    onPageLoaded: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('password:page-loaded', listener);
+      return () => ipcRenderer.removeListener('password:page-loaded', listener);
+    },
+    autofill: (tabId: string, username: string, password: string) =>
+      ipcRenderer.invoke('password:autofill', tabId, username, password),
+  },
+
   watcher: {
     add: (url: string, interval: number, selector?: string, title?: string) =>
       ipcRenderer.invoke('watcher:add', url, interval, selector, title),
