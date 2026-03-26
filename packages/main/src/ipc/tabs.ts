@@ -543,6 +543,47 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     }
   });
 
+  // ── Password autofill handler ─────────────────────────────────────
+  // Called from the renderer when a saved credential exists for the current domain.
+  // Injects username + password into the page's login form fields.
+  ipcMain.handle('password:autofill', async (_e, tabId: string, username: string, password: string) => {
+    const view = getTabView(tabId);
+    if (!view) return;
+    const safeUsername = JSON.stringify(username);
+    const safePassword = JSON.stringify(password);
+    try {
+      await view.webContents.executeJavaScript(`
+        (function() {
+          var username = ${safeUsername};
+          var password = ${safePassword};
+          var inputs = document.querySelectorAll('input');
+          for (var i = 0; i < inputs.length; i++) {
+            var input = inputs[i];
+            var type = (input.type || '').toLowerCase();
+            var name = (input.name || '').toLowerCase();
+            var id = (input.id || '').toLowerCase();
+            var autocomplete = (input.autocomplete || '').toLowerCase();
+
+            if (type === 'password') {
+              input.value = password;
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+            } else if (
+              (type === 'email' || type === 'text' || type === 'tel') &&
+              (name.match(/user|email|login|account|name|phone|mobile/) ||
+               id.match(/user|email|login|account|name|phone|mobile/) ||
+               autocomplete.match(/username|email/))
+            ) {
+              input.value = username;
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          }
+        })()
+      `);
+    } catch {}
+  });
+
   // PWA install handler — opens a standalone BrowserWindow for the PWA
   ipcMain.handle('pwa:install', async (_event, data: { name: string; startUrl: string; iconUrl: string }) => {
     // Strict input validation
@@ -943,7 +984,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     }
   }
 
-  wc.on('did-navigate', (_e, url) => {
+  wc.on('did-navigate', async (_e, url) => {
     if (wc.isDestroyed() || mainWindow.isDestroyed()) return;
 
     // ── OAuth completion detection ─────────────────────────────────────
@@ -1001,6 +1042,25 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
         INSERT INTO history (url, title, last_visited_at) VALUES (?, ?, datetime('now'))
         ON CONFLICT(url) DO UPDATE SET visit_count = visit_count + 1, last_visited_at = datetime('now'), title = excluded.title
       `).run(url, '');
+    } catch {}
+
+    // ── Password detection: check if credentials were captured before navigation ──
+    try {
+      const detectedCreds = await wc.executeJavaScript('window.__osBrowserDetectedCreds');
+      if (detectedCreds && detectedCreds.username && detectedCreds.password) {
+        // Clear immediately so we don't re-prompt
+        await wc.executeJavaScript('window.__osBrowserDetectedCreds = null');
+        const pageUrl = wc.getURL();
+        let domain = '';
+        try { domain = new URL(pageUrl).hostname; } catch {}
+        mainWindow.webContents.send('password:detected', {
+          tabId,
+          url: pageUrl,
+          domain,
+          username: detectedCreds.username,
+          password: detectedCreds.password,
+        });
+      }
     } catch {}
 
     // Apply cosmetic filters + YouTube ad blocking
@@ -1164,11 +1224,103 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
         })()
       `);
     } catch { /* USSD detection injection failed — non-critical */ }
+
+    // ── Password Form Detection ──────────────────────────────────────
+    // Detects login form submissions and stores credentials temporarily
+    // so the did-navigate handler can send them to the renderer for the
+    // "Save Password?" prompt.
+    try {
+      wc.executeJavaScript(`
+        (function() {
+          if (window.__osBrowserPasswordDetector) return;
+          window.__osBrowserPasswordDetector = true;
+
+          function extractCredentials(form) {
+            var inputs = form ? form.querySelectorAll('input') : document.querySelectorAll('input');
+            var username = '';
+            var password = '';
+
+            for (var i = 0; i < inputs.length; i++) {
+              var input = inputs[i];
+              var type = (input.type || '').toLowerCase();
+              var name = (input.name || '').toLowerCase();
+              var id = (input.id || '').toLowerCase();
+              var autocomplete = (input.autocomplete || '').toLowerCase();
+
+              if (type === 'password' && input.value) {
+                password = input.value;
+              } else if (
+                (type === 'email' || type === 'text' || type === 'tel') &&
+                (name.match(/user|email|login|account|name|phone|mobile/) ||
+                 id.match(/user|email|login|account|name|phone|mobile/) ||
+                 autocomplete.match(/username|email/)) &&
+                input.value
+              ) {
+                username = input.value;
+              }
+            }
+            return { username: username, password: password };
+          }
+
+          // Detect form submissions
+          document.addEventListener('submit', function(e) {
+            var form = e.target;
+            if (!(form instanceof HTMLFormElement)) return;
+            var creds = extractCredentials(form);
+            if (creds.username && creds.password) {
+              window.__osBrowserDetectedCreds = creds;
+            }
+          }, true);
+
+          // Also detect click on submit buttons (for JS-driven forms)
+          document.addEventListener('click', function(e) {
+            var el = e.target;
+            while (el && el !== document.body) {
+              if ((el.tagName === 'BUTTON' && (el.type === 'submit' || !el.type)) ||
+                  (el.tagName === 'INPUT' && el.type === 'submit') ||
+                  (el.tagName === 'A' && el.getAttribute('role') === 'button')) {
+                var form = el.closest('form');
+                var creds = extractCredentials(form);
+                if (creds.username && creds.password) {
+                  window.__osBrowserDetectedCreds = creds;
+                }
+                return;
+              }
+              el = el.parentElement;
+            }
+          }, true);
+
+          // For Enter key submission
+          document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+              var active = document.activeElement;
+              if (active && (active.type === 'password' || (active.closest && active.closest('form')))) {
+                var form = active.closest ? active.closest('form') : null;
+                var creds = extractCredentials(form);
+                if (creds.username && creds.password) {
+                  window.__osBrowserDetectedCreds = creds;
+                }
+              }
+            }
+          }, true);
+        })()
+      `);
+    } catch { /* password detection injection failed — non-critical */ }
   });
 
   wc.on('did-stop-loading', () => {
     if (wc.isDestroyed() || mainWindow.isDestroyed()) return;
     mainWindow.webContents.send('tab:loading', { id: tabId, isLoading: false });
+
+    // Notify renderer which domain just loaded so it can check for saved credentials
+    // and trigger autofill if a match exists.
+    try {
+      const pageUrl = wc.getURL();
+      if (pageUrl && !pageUrl.startsWith('os-browser://') && !pageUrl.startsWith('about:')) {
+        const domain = new URL(pageUrl).hostname;
+        mainWindow.webContents.send('password:page-loaded', { tabId, domain });
+      }
+    } catch {}
   });
 
   // ── Audio indicator ───────────────────────────────────────────────

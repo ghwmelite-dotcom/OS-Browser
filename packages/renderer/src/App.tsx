@@ -57,6 +57,8 @@ import { useDownloadStore } from './store/downloads';
 
 const ImportBanner = React.lazy(() => import('./components/BrowserImport/ImportBanner'));
 import { MemorySaverBanner } from './components/Browser/MemorySaverBanner';
+import { PasswordSavePrompt } from './components/Passwords/PasswordSavePrompt';
+import { usePasswordStore } from './store/passwords';
 import { RegionSelector } from './components/Screenshots/RegionSelector';
 import { ScreenshotPreview } from './components/Screenshots/ScreenshotPreview';
 const RecorderControls = React.lazy(() => import('./components/ScreenRecorder/RecorderControls'));
@@ -212,6 +214,9 @@ export function App() {
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [memorySaverBanner, setMemorySaverBanner] = useState<{
     tabId: string; memorySavedBytes: number; domain: string;
+  } | null>(null);
+  const [passwordPrompt, setPasswordPrompt] = useState<{
+    domain: string; username: string; password: string; url: string; tabId: string;
   } | null>(null);
 
   const handleProfileReady = async () => {
@@ -516,6 +521,29 @@ export function App() {
       }
     } catch {}
 
+    // Password detection — show "Save password?" prompt
+    let passwordDetectedCleanup: (() => void) | undefined;
+    let passwordPageLoadedCleanup: (() => void) | undefined;
+    try {
+      if ((window as any).osBrowser?.password?.onDetected) {
+        passwordDetectedCleanup = (window as any).osBrowser.password.onDetected((data: any) => {
+          // Don't prompt if we already have this credential saved
+          const existing = usePasswordStore.getState().getPasswordForDomain(data.domain);
+          if (existing && existing.username === data.username) return;
+          setPasswordPrompt(data);
+        });
+      }
+      if ((window as any).osBrowser?.password?.onPageLoaded) {
+        passwordPageLoadedCleanup = (window as any).osBrowser.password.onPageLoaded((data: any) => {
+          // Check if we have saved credentials for this domain and autofill
+          const saved = usePasswordStore.getState().getPasswordForDomain(data.domain);
+          if (saved && saved.username && saved.password) {
+            (window as any).osBrowser.password.autofill(data.tabId, saved.username, saved.password);
+          }
+        });
+      }
+    } catch {}
+
     // Exchange Rate Overlay — listen for toggle events from the store
     const handleExchangeOverlay = async (e: Event) => {
       const detail = (e as CustomEvent).detail;
@@ -560,6 +588,8 @@ export function App() {
       window.removeEventListener('exchange:overlay-toggle', handleExchangeOverlay);
       window.removeEventListener('screenshot:start-region', handleStartRegion);
       window.removeEventListener('screenshot:captured', handleScreenshotCaptured);
+      passwordDetectedCleanup?.();
+      passwordPageLoadedCleanup?.();
     };
   }, []);
 
@@ -797,6 +827,26 @@ export function App() {
             <SplitScreenContent />
           ) : (
             <div className="flex-1 overflow-y-auto">
+              {passwordPrompt && passwordPrompt.tabId === activeTabId && (
+                <PasswordSavePrompt
+                  domain={passwordPrompt.domain}
+                  username={passwordPrompt.username}
+                  password={passwordPrompt.password}
+                  url={passwordPrompt.url}
+                  onSave={() => {
+                    usePasswordStore.getState().addPassword({
+                      url: passwordPrompt.url,
+                      domain: passwordPrompt.domain,
+                      username: passwordPrompt.username,
+                      password: passwordPrompt.password,
+                      category: passwordPrompt.domain.endsWith('.gov.gh') ? 'government' : 'personal',
+                    });
+                    setPasswordPrompt(null);
+                  }}
+                  onNever={() => setPasswordPrompt(null)}
+                  onDismiss={() => setPasswordPrompt(null)}
+                />
+              )}
               {memorySaverBanner && memorySaverBanner.tabId === activeTabId && (
                 <MemorySaverBanner
                   tabId={memorySaverBanner.tabId}
