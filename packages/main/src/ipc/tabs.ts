@@ -1044,24 +1044,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
       `).run(url, '');
     } catch {}
 
-    // ── Password detection: check if credentials were captured before navigation ──
-    try {
-      const detectedCreds = await wc.executeJavaScript('window.__osBrowserDetectedCreds');
-      if (detectedCreds && detectedCreds.username && detectedCreds.password) {
-        // Clear immediately so we don't re-prompt
-        await wc.executeJavaScript('window.__osBrowserDetectedCreds = null');
-        const pageUrl = wc.getURL();
-        let domain = '';
-        try { domain = new URL(pageUrl).hostname; } catch {}
-        mainWindow.webContents.send('password:detected', {
-          tabId,
-          url: pageUrl,
-          domain,
-          username: detectedCreds.username,
-          password: detectedCreds.password,
-        });
-      }
-    } catch {}
+    // Password detection moved to did-start-navigation (old page still alive there)
 
     // Apply cosmetic filters + YouTube ad blocking
     const adblock = getAdBlockService();
@@ -1525,6 +1508,30 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     } catch {
       // URL parsing or capture failed — non-critical
     }
+
+    // ── Password detection: read captured credentials BEFORE old page unloads ──
+    // did-start-navigation fires while the old page's JS context is still alive
+    try {
+      wc.executeJavaScript('window.__osBrowserDetectedCreds')
+        .then((detectedCreds: any) => {
+          if (detectedCreds && detectedCreds.username && detectedCreds.password) {
+            wc.executeJavaScript('window.__osBrowserDetectedCreds = null').catch(() => {});
+            // Use the PREVIOUS page's URL (where the form was), not the new navigation target
+            const previousUrl = wc.getURL();
+            let domain = '';
+            try { domain = new URL(previousUrl).hostname; } catch {}
+            console.log('[PasswordDetect] Credentials captured for', domain, '- user:', detectedCreds.username);
+            mainWindow.webContents.send('password:detected', {
+              tabId,
+              url: previousUrl,
+              domain,
+              username: detectedCreds.username,
+              password: detectedCreds.password,
+            });
+          }
+        })
+        .catch(() => {});
+    } catch {}
   }) as any);
 
   wc.on('page-favicon-updated', (_e, favicons) => {
