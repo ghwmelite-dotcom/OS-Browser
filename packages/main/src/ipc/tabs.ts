@@ -25,6 +25,12 @@ function isAllowedUrl(url: string): boolean {
 // Track which tabs have already had PWA detection run (once per page load)
 const pwaDetectedTabs = new Set<string>();
 
+// ── Multi-step login support ──────────────────────────────────────────
+// Stores the username from step 1 (email page) so it can be paired with
+// the password from step 2 (password page). Keyed by tabId.
+// Entry expires after 2 minutes to avoid stale data.
+const pendingUsernames = new Map<string, { username: string; domain: string; timestamp: number }>();
+
 // Module-level TabManager reference — set in registerTabHandlers, used by setupViewEvents & createTabFromMain
 let _tabManager: TabManager;
 
@@ -1245,14 +1251,18 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
             return { username: username, password: password };
           }
 
+          // Store any captured data — username-only, password-only, or both
+          function storeCreds(creds) {
+            if (creds.username || creds.password) {
+              window.__osBrowserDetectedCreds = creds;
+            }
+          }
+
           // Detect form submissions
           document.addEventListener('submit', function(e) {
             var form = e.target;
             if (!(form instanceof HTMLFormElement)) return;
-            var creds = extractCredentials(form);
-            if (creds.username && creds.password) {
-              window.__osBrowserDetectedCreds = creds;
-            }
+            storeCreds(extractCredentials(form));
           }, true);
 
           // Also detect click on submit buttons (for JS-driven forms)
@@ -1263,10 +1273,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
                   (el.tagName === 'INPUT' && el.type === 'submit') ||
                   (el.tagName === 'A' && el.getAttribute('role') === 'button')) {
                 var form = el.closest('form');
-                var creds = extractCredentials(form);
-                if (creds.username && creds.password) {
-                  window.__osBrowserDetectedCreds = creds;
-                }
+                storeCreds(extractCredentials(form));
                 return;
               }
               el = el.parentElement;
@@ -1279,10 +1286,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
               var active = document.activeElement;
               if (active && (active.type === 'password' || (active.closest && active.closest('form')))) {
                 var form = active.closest ? active.closest('form') : null;
-                var creds = extractCredentials(form);
-                if (creds.username && creds.password) {
-                  window.__osBrowserDetectedCreds = creds;
-                }
+                storeCreds(extractCredentials(form));
               }
             }
           }, true);
@@ -1510,24 +1514,66 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     }
 
     // ── Password detection: read captured credentials BEFORE old page unloads ──
-    // did-start-navigation fires while the old page's JS context is still alive
+    // Supports multi-step logins (Gmail, Microsoft): username on page 1, password on page 2
     try {
       wc.executeJavaScript('window.__osBrowserDetectedCreds')
         .then((detectedCreds: any) => {
-          if (detectedCreds && detectedCreds.username && detectedCreds.password) {
-            wc.executeJavaScript('window.__osBrowserDetectedCreds = null').catch(() => {});
-            // Use the PREVIOUS page's URL (where the form was), not the new navigation target
-            const previousUrl = wc.getURL();
-            let domain = '';
-            try { domain = new URL(previousUrl).hostname; } catch {}
-            console.log('[PasswordDetect] Credentials captured for', domain, '- user:', detectedCreds.username);
+          if (!detectedCreds) return;
+          wc.executeJavaScript('window.__osBrowserDetectedCreds = null').catch(() => {});
+
+          const previousUrl = wc.getURL();
+          let domain = '';
+          try { domain = new URL(previousUrl).hostname; } catch {}
+
+          const hasUsername = !!(detectedCreds.username);
+          const hasPassword = !!(detectedCreds.password);
+
+          if (hasUsername && hasPassword) {
+            // Both captured on same page — standard single-page login
+            console.log('[PasswordDetect] Full credentials for', domain);
             mainWindow.webContents.send('password:detected', {
-              tabId,
-              url: previousUrl,
-              domain,
+              tabId, url: previousUrl, domain,
               username: detectedCreds.username,
               password: detectedCreds.password,
             });
+            pendingUsernames.delete(tabId);
+
+          } else if (hasUsername && !hasPassword) {
+            // Step 1 of multi-step login — store username for later
+            console.log('[PasswordDetect] Username captured for', domain, '- waiting for password step');
+            pendingUsernames.set(tabId, {
+              username: detectedCreds.username,
+              domain,
+              timestamp: Date.now(),
+            });
+
+          } else if (hasPassword && !hasUsername) {
+            // Step 2 of multi-step login — pair with stored username
+            const pending = pendingUsernames.get(tabId);
+            // Only pair if same domain (or related — e.g., accounts.google.com → mail.google.com)
+            const domainMatch = pending && (
+              pending.domain === domain ||
+              pending.domain.endsWith('.' + domain) ||
+              domain.endsWith('.' + pending.domain) ||
+              // Google special case: accounts.google.com → myaccount.google.com
+              (pending.domain.includes('google') && domain.includes('google')) ||
+              (pending.domain.includes('microsoft') && domain.includes('microsoft')) ||
+              (pending.domain.includes('apple') && domain.includes('apple'))
+            );
+            // Also check timestamp — expire after 2 minutes
+            const isRecent = pending && (Date.now() - pending.timestamp < 120000);
+
+            if (pending && domainMatch && isRecent) {
+              console.log('[PasswordDetect] Password captured, paired with stored username for', domain);
+              mainWindow.webContents.send('password:detected', {
+                tabId, url: previousUrl, domain,
+                username: pending.username,
+                password: detectedCreds.password,
+              });
+              pendingUsernames.delete(tabId);
+            } else {
+              console.log('[PasswordDetect] Password captured but no matching username found for', domain);
+            }
           }
         })
         .catch(() => {});
