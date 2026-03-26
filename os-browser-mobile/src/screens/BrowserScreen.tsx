@@ -155,15 +155,13 @@ export function BrowserScreen() {
         useNetworkStore.getState().recordPageLoad();
       }
 
-      // Re-inject ad blocker on navigation to video platforms
+      // Re-inject ad blocker on EVERY navigation (not just video platforms)
       if (adBlockEnabled && url) {
         try {
           const host = new URL(url).hostname;
-          if (isVideoHost(host)) {
-            const script = getAdBlockScript(host);
-            if (script) {
-              webViewRefs.current[tabId]?.injectJavaScript(script + '; true;');
-            }
+          const script = getAdBlockScript(host);
+          if (script) {
+            webViewRefs.current[tabId]?.injectJavaScript(script + '; true;');
           }
         } catch {}
       }
