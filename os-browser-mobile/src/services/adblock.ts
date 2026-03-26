@@ -834,11 +834,62 @@ const GENERIC_AD_BLOCK_SCRIPT = `
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
-  // ── 5. Neutralize common anti-adblock detection ──
+  // ── 5. Block scam popups (fake missed calls, prizes, virus warnings) ──
+  const origAlert = window.alert;
+  const origConfirm = window.confirm;
+  const origPrompt = window.prompt;
+  const scamKeywords = ['missed call','prize','congratulation','winner','virus','infected',
+    'battery','malware','reward','gift card','claim','lottery','urgent','warning'];
+
+  window.alert = function(msg) {
+    if (scamKeywords.some(k => String(msg).toLowerCase().includes(k))) return;
+    return origAlert.call(this, msg);
+  };
+  window.confirm = function(msg) {
+    if (scamKeywords.some(k => String(msg).toLowerCase().includes(k))) return false;
+    return origConfirm.call(this, msg);
+  };
+  window.prompt = function(msg) {
+    if (scamKeywords.some(k => String(msg).toLowerCase().includes(k))) return null;
+    return origPrompt.call(this, msg);
+  };
+
+  // ── 6. Aggressively remove scam/ad overlays every 2 seconds ──
+  const cleanupInterval = setInterval(function() {
+    // Remove fixed/absolute positioned overlays that look like ads
+    document.querySelectorAll('div, section, aside').forEach(function(el) {
+      const style = window.getComputedStyle(el);
+      if ((style.position === 'fixed' || style.position === 'absolute') &&
+          parseInt(style.zIndex || '0') > 999) {
+        const text = (el.textContent || '').toLowerCase();
+        if (scamKeywords.some(k => text.includes(k)) ||
+            text.includes('play video') || text.includes('click here') ||
+            text.includes('continue') || text.includes('close') && el.offsetHeight < 300) {
+          el.remove();
+        }
+      }
+    });
+
+    // Remove iframes that appeared after load
+    document.querySelectorAll('iframe').forEach(function(iframe) {
+      const src = iframe.src || '';
+      if (!src || src === 'about:blank' || src.includes('ad') || src.includes('pop') ||
+          src.includes('click') || src.includes('track') || src.includes('bet') ||
+          src.includes('casino') || !src.includes(window.location.hostname)) {
+        const style = window.getComputedStyle(iframe);
+        if (style.position === 'fixed' || style.position === 'absolute' ||
+            parseInt(style.zIndex || '0') > 100) {
+          iframe.remove();
+        }
+      }
+    });
+  }, 2000);
+
+  // ── 7. Neutralize common anti-adblock detection ──
   Object.defineProperty(window, 'adBlockDetected', { get: () => false, set: () => {} });
   Object.defineProperty(window, 'canRunAds', { get: () => true, set: () => {} });
 
-  window.addEventListener('unload', function() { observer.disconnect(); }, { once: true });
+  window.addEventListener('unload', function() { observer.disconnect(); clearInterval(cleanupInterval); }, { once: true });
 })();
 `;
 
