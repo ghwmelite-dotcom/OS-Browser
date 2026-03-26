@@ -166,7 +166,8 @@
       "Bash(CI=1 eas update --channel production --environment production --platform android --message \"feat: GovPlay Batch 1 — 2048, Snake, Minesweeper, Ghana Trivia\")",
       "Bash(CI=1 eas update --channel production --environment production --platform android --message \"feat: GovPlay banner on dashboard\")",
       "Bash(CI=1 eas update --channel production --environment production --platform android --message \"feat: generic ad blocker for all websites — blocks popups, overlays, ad networks, betting ads\")",
-      "Bash(CI=1 eas update --channel production --environment production --platform android --message \"fix: aggressive ad blocker — scam popup blocking, re-inject on all navigations, periodic cleanup\")"
+      "Bash(CI=1 eas update --channel production --environment production --platform android --message \"fix: aggressive ad blocker — scam popup blocking, re-inject on all navigations, periodic cleanup\")",
+      "Bash(CI=1 eas update --channel production --environment production --platform android --message \"test: OTA verification — greeting subtitle change\")"
     ]
   }
 }
