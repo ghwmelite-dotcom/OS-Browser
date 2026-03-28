@@ -1015,11 +1015,12 @@ export function BrowserScreen() {
                   allowsBackForwardNavigationGestures
                   allowsInlineMediaPlayback
                   allowsFullscreenVideo
-                  pullToRefreshEnabled={Platform.OS === 'android'}
+                  pullToRefreshEnabled
                   mediaPlaybackRequiresUserAction={false}
                   javaScriptEnabled
                   domStorageEnabled
                   startInLoadingState
+                  overScrollMode="always"
                   onContentProcessDidTerminate={() => {
                     webViewRefs.current[tab.id]?.reload();
                   }}
@@ -1041,7 +1042,6 @@ export function BrowserScreen() {
                       setWebViewError({ code: nativeEvent.statusCode, description: `HTTP Error ${nativeEvent.statusCode}` });
                     }
                   }}
-                  {...(!isActive && Platform.OS === 'android' ? { overScrollMode: 'never' } : {})}
                 />
               )}
             </View>
