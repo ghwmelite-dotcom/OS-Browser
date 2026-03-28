@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,16 +11,23 @@ import {
   Platform,
   Dimensions,
   StatusBar,
+  BackHandler,
+  Share,
+  Animated,
+  Modal,
+  Clipboard,
 } from 'react-native';
 import { WebView, type WebViewNavigation } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ScreenOrientation from 'expo-screen-orientation';
+import * as Haptics from 'expo-haptics';
 import { useBrowserStore } from '../store/browser';
 import { useSettingsStore, buildSearchUrl } from '../store/settings';
 import { getAdBlockScript, isVideoHost } from '../services/adblock';
 import { COLORS, KENTE, SPACING, FONT_SIZE, RADIUS, MIN_TOUCH_TARGET, rs } from '../constants/theme';
 import { useNetworkStore } from '../store/network';
+import { useNotificationStore } from '../store/notifications';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -107,16 +114,82 @@ export function BrowserScreen() {
   const switchTab = useBrowserStore((s) => s.switchTab);
   const updateTab = useBrowserStore((s) => s.updateTab);
   const addHistoryEntry = useBrowserStore((s) => s.addHistoryEntry);
+  const addBookmark = useBrowserStore((s) => s.addBookmark);
+  const removeBookmark = useBrowserStore((s) => s.removeBookmark);
+  const isBookmarked = useBrowserStore((s) => s.isBookmarked);
+  const bookmarks = useBrowserStore((s) => s.bookmarks);
+  const addToast = useNotificationStore((s) => s.addToast);
 
   const activeTab = useMemo(() => tabs.find((t) => t.id === activeTabId), [tabs, activeTabId]);
+  const activeTabBookmarked = useMemo(
+    () => activeTab?.url ? bookmarks.some((b) => b.url === activeTab.url) : false,
+    [activeTab?.url, bookmarks],
+  );
 
   const [addressBarText, setAddressBarText] = useState('');
   const [addressBarFocused, setAddressBarFocused] = useState(false);
   const [showTabManager, setShowTabManager] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [loadProgress, setLoadProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showFindBar, setShowFindBar] = useState(false);
+  const [findQuery, setFindQuery] = useState('');
+  const [findMatchCount, setFindMatchCount] = useState(0);
+  const [webViewError, setWebViewError] = useState<{ code: number; description: string } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ url: string; text: string } | null>(null);
+
+  // Animated values
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const progressOpacity = useRef(new Animated.Value(0)).current;
+  const addressBarTranslateY = useRef(new Animated.Value(0)).current;
+  const lastScrollY = useRef(0);
+  const addressBarVisible = useRef(true);
 
   // WebView refs — one per tab
   const webViewRefs = useRef<Record<string, WebView | null>>({});
+  // Track canGoBack per tab
+  const canGoBackRef = useRef<Record<string, boolean>>({});
+
+  // ── [2] Android back button handler ─────────────────────────────────────
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const handler = () => {
+      // Close find bar first
+      if (showFindBar) { setShowFindBar(false); setFindQuery(''); return true; }
+      // Close context menu
+      if (contextMenu) { setContextMenu(null); return true; }
+      // Close tab manager
+      if (showTabManager) { setShowTabManager(false); return true; }
+      // Go back in WebView
+      if (activeTab && canGoBackRef.current[activeTab.id]) {
+        webViewRefs.current[activeTab.id]?.goBack();
+        return true;
+      }
+      // If on a loaded page, go home
+      if (activeTab?.url) {
+        updateTab(activeTab.id, { url: '', title: 'New Tab' });
+        return true;
+      }
+      return false; // Let system handle (exit app)
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', handler);
+    return () => sub.remove();
+  }, [activeTab, showFindBar, contextMenu, showTabManager, updateTab]);
+
+  // ── [6] Haptic helpers ──────────────────────────────────────────────────
+
+  const hapticLight = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, []);
+
+  const hapticMedium = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  }, []);
+
+  const hapticSuccess = useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, []);
 
   // ── Address bar handlers ──────────────────────────────────────────────────
 
@@ -149,8 +222,12 @@ export function BrowserScreen() {
 
   const handleNavigationStateChange = useCallback(
     (tabId: string, navState: WebViewNavigation) => {
-      const { url, title } = navState;
+      const { url, title, canGoBack } = navState;
       updateTab(tabId, { url, title: title || extractHostname(url) });
+      canGoBackRef.current[tabId] = !!canGoBack;
+
+      // Clear error state on successful navigation
+      if (tabId === activeTabId) setWebViewError(null);
 
       // Record in history + track data usage
       if (url && url !== 'about:blank' && !url.startsWith('data:')) {
@@ -169,7 +246,7 @@ export function BrowserScreen() {
         } catch {}
       }
     },
-    [updateTab, addHistoryEntry, adBlockEnabled],
+    [updateTab, addHistoryEntry, adBlockEnabled, activeTabId],
   );
 
   // ── Quick link tap ────────────────────────────────────────────────────────
@@ -186,43 +263,194 @@ export function BrowserScreen() {
   // ── Navigation buttons ────────────────────────────────────────────────────
 
   const goBack = useCallback(() => {
-    if (activeTab) webViewRefs.current[activeTab.id]?.goBack();
-  }, [activeTab]);
+    if (activeTab) { hapticLight(); webViewRefs.current[activeTab.id]?.goBack(); }
+  }, [activeTab, hapticLight]);
 
   const goForward = useCallback(() => {
-    if (activeTab) webViewRefs.current[activeTab.id]?.goForward();
-  }, [activeTab]);
+    if (activeTab) { hapticLight(); webViewRefs.current[activeTab.id]?.goForward(); }
+  }, [activeTab, hapticLight]);
 
   const reload = useCallback(() => {
-    if (activeTab) webViewRefs.current[activeTab.id]?.reload();
-  }, [activeTab]);
+    if (activeTab) { hapticLight(); setWebViewError(null); webViewRefs.current[activeTab.id]?.reload(); }
+  }, [activeTab, hapticLight]);
 
   const goHome = useCallback(() => {
     if (activeTab) {
+      hapticLight();
       updateTab(activeTab.id, { url: '', title: 'New Tab' });
     }
-  }, [activeTab, updateTab]);
+  }, [activeTab, updateTab, hapticLight]);
+
+  // ── [4] Bookmark star toggle ──────────────────────────────────────────────
+
+  const toggleBookmark = useCallback(() => {
+    if (!activeTab?.url) return;
+    hapticMedium();
+    if (activeTabBookmarked) {
+      const bm = useBrowserStore.getState().bookmarks.find((b) => b.url === activeTab.url);
+      if (bm) removeBookmark(bm.id);
+      addToast({ title: 'Bookmark removed', body: extractHostname(activeTab.url), type: 'info' });
+    } else {
+      addBookmark({ url: activeTab.url, title: activeTab.title || extractHostname(activeTab.url), favicon: '' });
+      addToast({ title: 'Bookmarked!', body: activeTab.title || activeTab.url, type: 'success' });
+    }
+  }, [activeTab, activeTabBookmarked, hapticMedium, addBookmark, removeBookmark, addToast]);
+
+  // ── [5] Share URL ─────────────────────────────────────────────────────────
+
+  const shareUrl = useCallback(async () => {
+    if (!activeTab?.url) return;
+    hapticMedium();
+    try {
+      await Share.share({
+        message: activeTab.url,
+        title: activeTab.title || 'Shared from OS Mini',
+      });
+    } catch { /* cancelled */ }
+  }, [activeTab, hapticMedium]);
+
+  // ── [3] Page loading progress bar ─────────────────────────────────────────
+
+  const handleLoadProgress = useCallback(({ nativeEvent }: { nativeEvent: { progress: number } }) => {
+    const p = nativeEvent.progress;
+    setLoadProgress(p);
+    Animated.timing(progressAnim, { toValue: p, duration: 150, useNativeDriver: false }).start();
+    if (p < 1) {
+      setIsLoading(true);
+      progressOpacity.setValue(1);
+    } else {
+      setIsLoading(false);
+      Animated.timing(progressOpacity, { toValue: 0, duration: 400, useNativeDriver: false }).start();
+    }
+  }, [progressAnim, progressOpacity]);
+
+  // ── [8] Custom error page ─────────────────────────────────────────────────
+
+  const handleWebViewError = useCallback((syntheticEvent: any) => {
+    const { nativeEvent } = syntheticEvent;
+    setWebViewError({ code: nativeEvent.code || -1, description: nativeEvent.description || 'Page failed to load' });
+  }, []);
+
+  // ── [9] Auto-hide address bar on scroll ───────────────────────────────────
+
+  const handleWebViewScroll = useCallback((event: any) => {
+    // [11] Dismiss keyboard on scroll
+    Keyboard.dismiss();
+
+    const y = event?.nativeEvent?.contentOffset?.y ?? 0;
+    const dy = y - lastScrollY.current;
+    lastScrollY.current = y;
+
+    if (isFullscreen) return;
+
+    // Scroll down > 10px → hide address bar
+    if (dy > 10 && addressBarVisible.current) {
+      addressBarVisible.current = false;
+      Animated.timing(addressBarTranslateY, { toValue: -80, duration: 200, useNativeDriver: true }).start();
+    }
+    // Scroll up > 10px → show address bar
+    if (dy < -10 && !addressBarVisible.current) {
+      addressBarVisible.current = true;
+      Animated.timing(addressBarTranslateY, { toValue: 0, duration: 200, useNativeDriver: true }).start();
+    }
+  }, [addressBarTranslateY, isFullscreen]);
+
+  // ── [10] Find in page ─────────────────────────────────────────────────────
+
+  const handleFindInPage = useCallback((query: string) => {
+    setFindQuery(query);
+    if (!activeTab || !query.trim()) { setFindMatchCount(0); return; }
+    // Use window.find() + count matches
+    webViewRefs.current[activeTab.id]?.injectJavaScript(`
+      (function() {
+        if (window.getSelection) window.getSelection().removeAllRanges();
+        var count = 0;
+        if ('${query.replace(/'/g, "\\'")}') {
+          var body = document.body.innerText;
+          var re = new RegExp('${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}', 'gi');
+          var m = body.match(re);
+          count = m ? m.length : 0;
+          if (count > 0) window.find('${query.replace(/'/g, "\\'")}');
+        }
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'findResult', count: count }));
+      })(); true;
+    `);
+  }, [activeTab]);
+
+  const findNext = useCallback(() => {
+    if (!activeTab || !findQuery) return;
+    webViewRefs.current[activeTab.id]?.injectJavaScript(`window.find('${findQuery.replace(/'/g, "\\'")}'); true;`);
+  }, [activeTab, findQuery]);
+
+  const findPrev = useCallback(() => {
+    if (!activeTab || !findQuery) return;
+    webViewRefs.current[activeTab.id]?.injectJavaScript(`window.find('${findQuery.replace(/'/g, "\\'")}', false, true); true;`);
+  }, [activeTab, findQuery]);
+
+  // ── [7] Long-press context menu handler ───────────────────────────────────
+
+  const handleContextMenuAction = useCallback((action: string) => {
+    if (!contextMenu) return;
+    hapticMedium();
+    switch (action) {
+      case 'newTab':
+        addTab(contextMenu.url);
+        addToast({ title: 'Opened in new tab', body: extractHostname(contextMenu.url), type: 'info' });
+        break;
+      case 'copy':
+        Clipboard.setString(contextMenu.url);
+        addToast({ title: 'Copied!', body: contextMenu.url, type: 'success' });
+        break;
+      case 'share':
+        Share.share({ message: contextMenu.url, title: contextMenu.text || 'Shared from OS Mini' });
+        break;
+    }
+    setContextMenu(null);
+  }, [contextMenu, hapticMedium, addTab, addToast]);
 
   // ── Injected script per tab ───────────────────────────────────────────────
 
-  // Fullscreen detection script — notifies RN when video enters/exits fullscreen
-  const FULLSCREEN_DETECT_SCRIPT = `
+  // Fullscreen + context menu + scroll detection script
+  const BRIDGE_SCRIPT = `
     (function() {
-      if (window.__fsDetectInstalled) return;
-      window.__fsDetectInstalled = true;
-      function notify() {
+      if (window.__osMiniInstalled) return;
+      window.__osMiniInstalled = true;
+
+      // Fullscreen detection
+      function notifyFs() {
         var isFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
         window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'fullscreen', active: isFull }));
       }
-      document.addEventListener('fullscreenchange', notify);
-      document.addEventListener('webkitfullscreenchange', notify);
+      document.addEventListener('fullscreenchange', notifyFs);
+      document.addEventListener('webkitfullscreenchange', notifyFs);
+
+      // Long-press context menu on links
+      var longPressTimer = null;
+      var longPressTarget = null;
+      document.addEventListener('touchstart', function(e) {
+        var el = e.target;
+        while (el && el.tagName !== 'A') el = el.parentElement;
+        if (el && el.href) {
+          longPressTarget = el;
+          longPressTimer = setTimeout(function() {
+            e.preventDefault();
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'contextMenu',
+              url: el.href,
+              text: el.textContent ? el.textContent.trim().substring(0, 100) : ''
+            }));
+          }, 600);
+        }
+      }, { passive: false });
+      document.addEventListener('touchend', function() { clearTimeout(longPressTimer); });
+      document.addEventListener('touchmove', function() { clearTimeout(longPressTimer); });
     })();
     true;
   `;
 
   const getInjectedScript = useCallback(
     (url: string): string => {
-      let script = FULLSCREEN_DETECT_SCRIPT;
+      let script = BRIDGE_SCRIPT;
       if (adBlockEnabled && url) {
         try {
           const host = new URL(url).hostname;
@@ -235,22 +463,29 @@ export function BrowserScreen() {
     [adBlockEnabled],
   );
 
-  // Handle messages from WebView (fullscreen changes)
+  // Handle messages from WebView (fullscreen, context menu, find results)
   const handleWebViewMessage = useCallback((event: { nativeEvent: { data: string } }) => {
     try {
       const msg = JSON.parse(event.nativeEvent.data);
-      if (msg.type === 'fullscreen') {
-        setIsFullscreen(msg.active);
-        if (msg.active) {
-          // Allow rotation when video is fullscreen
-          ScreenOrientation.unlockAsync();
-        } else {
-          // Lock back to portrait when exiting fullscreen
-          ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-        }
+      switch (msg.type) {
+        case 'fullscreen':
+          setIsFullscreen(msg.active);
+          if (msg.active) {
+            ScreenOrientation.unlockAsync();
+          } else {
+            ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+          }
+          break;
+        case 'contextMenu':
+          hapticMedium();
+          setContextMenu({ url: msg.url, text: msg.text });
+          break;
+        case 'findResult':
+          setFindMatchCount(msg.count || 0);
+          break;
       }
     } catch { /* ignore non-JSON messages */ }
-  }, []);
+  }, [hapticMedium]);
 
   // ── Tab manager overlay ───────────────────────────────────────────────────
 
@@ -590,61 +825,129 @@ export function BrowserScreen() {
       {/* Hide system status bar in fullscreen */}
       <StatusBar hidden={isFullscreen} />
 
-      {/* Address bar — hidden during fullscreen video */}
-      {!isFullscreen && <View style={[styles.addressBarContainer, { backgroundColor: colors.surface1, paddingTop: insets.top + SPACING.xs }]}>
-        {/* Nav buttons row */}
-        <View style={styles.navRow}>
-          <TouchableOpacity style={styles.navBtn} onPress={goBack} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons name="chevron-back" size={22} color={colors.textMuted} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navBtn} onPress={goForward} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons name="chevron-forward" size={22} color={colors.textMuted} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navBtn} onPress={goHome} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons name="home-outline" size={20} color={colors.textMuted} />
-          </TouchableOpacity>
+      {/* Address bar — animated hide on scroll, hidden during fullscreen */}
+      {!isFullscreen && (
+        <Animated.View style={[
+          styles.addressBarContainer,
+          { backgroundColor: colors.surface1, paddingTop: insets.top + SPACING.xs, transform: [{ translateY: addressBarTranslateY }] },
+        ]}>
+          {/* Nav buttons row */}
+          <View style={styles.navRow}>
+            <TouchableOpacity style={styles.navBtn} onPress={goBack} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="chevron-back" size={22} color={colors.textMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.navBtn} onPress={goForward} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="chevron-forward" size={22} color={colors.textMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.navBtn} onPress={goHome} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="home-outline" size={20} color={colors.textMuted} />
+            </TouchableOpacity>
 
-          {/* URL pill */}
-          <View style={[styles.urlPill, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
-            <Ionicons name="search" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
-            <TextInput
-              style={[styles.urlInput, { color: colors.text }]}
-              placeholder="Search or enter URL"
-              placeholderTextColor={colors.textMuted}
-              returnKeyType="go"
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-              onFocus={handleAddressFocus}
-              onBlur={handleAddressBlur}
-              onChangeText={setAddressBarText}
-              onSubmitEditing={handleAddressSubmit}
-              value={
-                addressBarFocused
-                  ? addressBarText
-                  : activeTab?.url
-                    ? extractHostname(activeTab.url)
-                    : ''
-              }
-              selectTextOnFocus
-            />
+            {/* URL pill */}
+            <View style={[styles.urlPill, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
+              <Ionicons name="search" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
+              <TextInput
+                style={[styles.urlInput, { color: colors.text }]}
+                placeholder="Search or enter URL"
+                placeholderTextColor={colors.textMuted}
+                returnKeyType="go"
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                onFocus={handleAddressFocus}
+                onBlur={handleAddressBlur}
+                onChangeText={setAddressBarText}
+                onSubmitEditing={handleAddressSubmit}
+                value={
+                  addressBarFocused
+                    ? addressBarText
+                    : activeTab?.url
+                      ? extractHostname(activeTab.url)
+                      : ''
+                }
+                selectTextOnFocus
+              />
+              {/* [4] Bookmark star */}
+              {activeTab?.url ? (
+                <TouchableOpacity onPress={toggleBookmark} style={styles.navBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Ionicons
+                    name={activeTabBookmarked ? 'star' : 'star-outline'}
+                    size={18}
+                    color={activeTabBookmarked ? KENTE.gold : colors.textMuted}
+                  />
+                </TouchableOpacity>
+              ) : null}
+              {activeTab?.url ? (
+                <TouchableOpacity onPress={reload} style={styles.navBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Ionicons name="reload" size={18} color={colors.textMuted} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            {/* [5] Share button */}
             {activeTab?.url ? (
-              <TouchableOpacity onPress={reload} style={styles.navBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Ionicons name="reload" size={18} color={colors.textMuted} />
+              <TouchableOpacity style={styles.navBtn} onPress={shareUrl} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="share-outline" size={20} color={colors.textMuted} />
               </TouchableOpacity>
             ) : null}
+
+            {/* [10] Find in page button */}
+            {activeTab?.url ? (
+              <TouchableOpacity style={styles.navBtn} onPress={() => { hapticLight(); setShowFindBar(!showFindBar); }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="search-outline" size={18} color={showFindBar ? KENTE.gold : colors.textMuted} />
+              </TouchableOpacity>
+            ) : null}
+
+            {/* Tab count badge */}
+            <TouchableOpacity
+              style={[styles.tabBadge, { borderColor: colors.textMuted }]}
+              onPress={() => { hapticLight(); setShowTabManager(true); }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={[styles.tabBadgeText, { color: colors.text }]}>{tabs.length}</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Tab count badge */}
-          <TouchableOpacity
-            style={[styles.tabBadge, { borderColor: colors.textMuted }]}
-            onPress={() => setShowTabManager(true)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={[styles.tabBadgeText, { color: colors.text }]}>{tabs.length}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>}
+          {/* [10] Find in page bar */}
+          {showFindBar && (
+            <View style={[styles.findBar, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
+              <TextInput
+                style={[styles.findInput, { color: colors.text }]}
+                placeholder="Find in page..."
+                placeholderTextColor={colors.textMuted}
+                value={findQuery}
+                onChangeText={handleFindInPage}
+                autoFocus
+                returnKeyType="search"
+                onSubmitEditing={findNext}
+              />
+              {findQuery ? (
+                <Text style={[styles.findCount, { color: colors.textMuted }]}>
+                  {findMatchCount} match{findMatchCount !== 1 ? 'es' : ''}
+                </Text>
+              ) : null}
+              <TouchableOpacity onPress={findPrev} style={styles.findNavBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="chevron-up" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={findNext} style={styles.findNavBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setShowFindBar(false); setFindQuery(''); }} style={styles.findNavBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          )}
+        </Animated.View>
+      )}
+
+      {/* [3] Page loading progress bar */}
+      <Animated.View style={[
+        styles.progressBar,
+        {
+          opacity: progressOpacity,
+          width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
+        },
+      ]} />
 
       {/* WebView area */}
       <View style={styles.webViewContainer}>
@@ -670,45 +973,108 @@ export function BrowserScreen() {
               style={isActive ? styles.activeWebView : styles.hiddenWebView}
               pointerEvents={isActive ? 'auto' : 'none'}
             >
-              <WebView
-                ref={(ref) => { webViewRefs.current[tab.id] = ref; }}
-                source={{ uri: tab.url }}
-                style={styles.webView}
-                injectedJavaScript={injectedScript}
-                onNavigationStateChange={(navState) => handleNavigationStateChange(tab.id, navState)}
-                onMessage={handleWebViewMessage}
-                allowsBackForwardNavigationGestures
-                allowsInlineMediaPlayback
-                allowsFullscreenVideo
-                mediaPlaybackRequiresUserAction={false}
-                javaScriptEnabled
-                domStorageEnabled
-                startInLoadingState
-                onContentProcessDidTerminate={() => {
-                  webViewRefs.current[tab.id]?.reload();
-                }}
-                {...(Platform.OS === 'android' ? {
-                  onRenderProcessGone: () => {
-                    setIsFullscreen(false);
-                    webViewRefs.current[tab.id]?.reload();
-                  },
-                } : {})}
-                renderLoading={() => (
-                  <View style={[styles.loadingContainer, { backgroundColor: colors.bg }]}>
-                    <Text style={{ color: colors.textMuted }}>Loading...</Text>
+              {/* [8] Custom error page */}
+              {isActive && webViewError ? (
+                <View style={[styles.errorPage, { backgroundColor: colors.bg }]}>
+                  <View style={styles.errorIconWrap}>
+                    <Ionicons name="cloud-offline-outline" size={rs(64)} color={KENTE.gold} />
                   </View>
-                )}
-                onError={(syntheticEvent) => {
-                  const { nativeEvent } = syntheticEvent;
-                  console.warn('WebView error:', nativeEvent.description);
-                }}
-                // Performance: limit background tab resource usage
-                {...(!isActive && Platform.OS === 'android' ? { overScrollMode: 'never' } : {})}
-              />
+                  <Text style={[styles.errorTitle, { color: colors.text }]}>Page couldn't load</Text>
+                  <Text style={[styles.errorDesc, { color: colors.textMuted }]}>
+                    {webViewError.description}
+                  </Text>
+                  <Text style={[styles.errorUrl, { color: colors.textMuted }]} numberOfLines={1}>
+                    {tab.url}
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.errorRetryBtn, { backgroundColor: KENTE.gold }]}
+                    onPress={() => { setWebViewError(null); reload(); }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="reload" size={18} color="#fff" />
+                    <Text style={styles.errorRetryText}>Try Again</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.errorHomeBtn, { borderColor: colors.border }]}
+                    onPress={goHome}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.errorHomeText, { color: colors.textMuted }]}>Go Home</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <WebView
+                  ref={(ref) => { webViewRefs.current[tab.id] = ref; }}
+                  source={{ uri: tab.url }}
+                  style={styles.webView}
+                  injectedJavaScript={injectedScript}
+                  onNavigationStateChange={(navState) => handleNavigationStateChange(tab.id, navState)}
+                  onMessage={handleWebViewMessage}
+                  onLoadProgress={isActive ? handleLoadProgress : undefined}
+                  onScroll={isActive ? handleWebViewScroll : undefined}
+                  allowsBackForwardNavigationGestures
+                  allowsInlineMediaPlayback
+                  allowsFullscreenVideo
+                  pullToRefreshEnabled={Platform.OS === 'android'}
+                  mediaPlaybackRequiresUserAction={false}
+                  javaScriptEnabled
+                  domStorageEnabled
+                  startInLoadingState
+                  onContentProcessDidTerminate={() => {
+                    webViewRefs.current[tab.id]?.reload();
+                  }}
+                  {...(Platform.OS === 'android' ? {
+                    onRenderProcessGone: () => {
+                      setIsFullscreen(false);
+                      webViewRefs.current[tab.id]?.reload();
+                    },
+                  } : {})}
+                  renderLoading={() => (
+                    <View style={[styles.loadingContainer, { backgroundColor: colors.bg }]}>
+                      <Text style={{ color: colors.textMuted }}>Loading...</Text>
+                    </View>
+                  )}
+                  onError={handleWebViewError}
+                  onHttpError={(syntheticEvent) => {
+                    const { nativeEvent } = syntheticEvent;
+                    if (nativeEvent.statusCode >= 400) {
+                      setWebViewError({ code: nativeEvent.statusCode, description: `HTTP Error ${nativeEvent.statusCode}` });
+                    }
+                  }}
+                  {...(!isActive && Platform.OS === 'android' ? { overScrollMode: 'never' } : {})}
+                />
+              )}
             </View>
           );
         })}
       </View>
+
+      {/* [7] Long-press context menu modal */}
+      <Modal visible={!!contextMenu} transparent animationType="fade" onRequestClose={() => setContextMenu(null)}>
+        <TouchableOpacity style={styles.contextMenuBackdrop} activeOpacity={1} onPress={() => setContextMenu(null)}>
+          <View style={[styles.contextMenuCard, { backgroundColor: colors.surface1, borderColor: colors.border }]}>
+            <Text style={[styles.contextMenuUrl, { color: colors.textMuted }]} numberOfLines={2}>
+              {contextMenu?.url}
+            </Text>
+            <TouchableOpacity style={styles.contextMenuItem} onPress={() => handleContextMenuAction('newTab')}>
+              <Ionicons name="add-circle-outline" size={20} color={colors.text} />
+              <Text style={[styles.contextMenuText, { color: colors.text }]}>Open in New Tab</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.contextMenuItem} onPress={() => handleContextMenuAction('copy')}>
+              <Ionicons name="copy-outline" size={20} color={colors.text} />
+              <Text style={[styles.contextMenuText, { color: colors.text }]}>Copy Link</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.contextMenuItem} onPress={() => handleContextMenuAction('share')}>
+              <Ionicons name="share-outline" size={20} color={colors.text} />
+              <Text style={[styles.contextMenuText, { color: colors.text }]}>Share Link</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.contextMenuItem, { borderBottomWidth: 0 }]} onPress={() => setContextMenu(null)}>
+              <Ionicons name="close-circle-outline" size={20} color={colors.textMuted} />
+              <Text style={[styles.contextMenuText, { color: colors.textMuted }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Tab manager overlay */}
       {showTabManager && renderTabManager()}
@@ -723,10 +1089,137 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  // Progress bar
+  progressBar: {
+    height: 3,
+    backgroundColor: KENTE.gold,
+    zIndex: 50,
+  },
+
+  // Find in page bar
+  findBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: rs(40),
+    paddingHorizontal: SPACING.sm,
+    borderTopWidth: 1,
+    gap: 4,
+    marginTop: SPACING.xs,
+  },
+  findInput: {
+    flex: 1,
+    fontSize: FONT_SIZE.sm,
+    height: rs(36),
+    paddingVertical: 0,
+  },
+  findCount: {
+    fontSize: rs(11),
+    marginHorizontal: 4,
+  },
+  findNavBtn: {
+    width: rs(32),
+    height: rs(32),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Error page
+  errorPage: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.xl,
+  },
+  errorIconWrap: {
+    width: rs(100),
+    height: rs(100),
+    borderRadius: rs(50),
+    backgroundColor: KENTE.gold + '12',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: rs(20),
+  },
+  errorTitle: {
+    fontSize: FONT_SIZE.xl,
+    fontWeight: '700',
+    marginBottom: rs(8),
+  },
+  errorDesc: {
+    fontSize: FONT_SIZE.sm,
+    textAlign: 'center',
+    lineHeight: rs(22),
+    marginBottom: rs(8),
+  },
+  errorUrl: {
+    fontSize: rs(11),
+    marginBottom: rs(24),
+    maxWidth: '90%',
+  },
+  errorRetryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: rs(8),
+    paddingHorizontal: rs(28),
+    paddingVertical: rs(14),
+    borderRadius: RADIUS.pill,
+    marginBottom: rs(12),
+  },
+  errorRetryText: {
+    color: '#fff',
+    fontSize: FONT_SIZE.md,
+    fontWeight: '600',
+  },
+  errorHomeBtn: {
+    paddingHorizontal: rs(24),
+    paddingVertical: rs(10),
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+  },
+  errorHomeText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: '500',
+  },
+
+  // Context menu
+  contextMenuBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+    paddingBottom: rs(40),
+    paddingHorizontal: SPACING.md,
+  },
+  contextMenuCard: {
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+    padding: SPACING.md,
+  },
+  contextMenuUrl: {
+    fontSize: rs(12),
+    marginBottom: rs(12),
+    paddingBottom: rs(12),
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  contextMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rs(14),
+    paddingVertical: rs(14),
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  contextMenuText: {
+    fontSize: FONT_SIZE.md,
+    fontWeight: '500',
+  },
+
   // Address bar
   addressBarContainer: {
     paddingHorizontal: SPACING.sm,
     paddingBottom: SPACING.xs,
+    zIndex: 10,
   },
   navRow: {
     flexDirection: 'row',

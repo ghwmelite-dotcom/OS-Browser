@@ -15,6 +15,7 @@
     "expo-build-properties": "~55.0.10",
     "expo-clipboard": "~55.0.9",
     "expo-font": "~55.0.4",
+    "expo-haptics": "~55.0.9",
     "expo-navigation-bar": "~55.0.9",
     "expo-network": "~55.0.9",
     "expo-screen-orientation": "~55.0.9",
