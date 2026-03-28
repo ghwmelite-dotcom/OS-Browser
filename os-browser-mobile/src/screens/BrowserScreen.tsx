@@ -424,6 +424,27 @@ export function BrowserScreen() {
       document.addEventListener('fullscreenchange', notifyFs);
       document.addEventListener('webkitfullscreenchange', notifyFs);
 
+      // Pull-to-refresh detection
+      var ptrStartY = 0;
+      var ptrActive = false;
+      document.addEventListener('touchstart', function(e) {
+        if (window.scrollY === 0 && e.touches.length === 1) {
+          ptrStartY = e.touches[0].clientY;
+          ptrActive = true;
+        } else {
+          ptrActive = false;
+        }
+      }, { passive: true });
+      document.addEventListener('touchmove', function(e) {
+        if (!ptrActive) return;
+        var dy = e.touches[0].clientY - ptrStartY;
+        if (dy > 120 && window.scrollY === 0) {
+          ptrActive = false;
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'pullRefresh' }));
+        }
+      }, { passive: true });
+      document.addEventListener('touchend', function() { ptrActive = false; }, { passive: true });
+
       // Long-press context menu on links
       var longPressTimer = null;
       var longPressTarget = null;
@@ -475,6 +496,10 @@ export function BrowserScreen() {
           } else {
             ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
           }
+          break;
+        case 'pullRefresh':
+          hapticMedium();
+          if (activeTab) webViewRefs.current[activeTab.id]?.reload();
           break;
         case 'contextMenu':
           hapticMedium();
@@ -1015,12 +1040,10 @@ export function BrowserScreen() {
                   allowsBackForwardNavigationGestures
                   allowsInlineMediaPlayback
                   allowsFullscreenVideo
-                  pullToRefreshEnabled
                   mediaPlaybackRequiresUserAction={false}
                   javaScriptEnabled
                   domStorageEnabled
                   startInLoadingState
-                  overScrollMode="always"
                   onContentProcessDidTerminate={() => {
                     webViewRefs.current[tab.id]?.reload();
                   }}
