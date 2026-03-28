@@ -10,10 +10,12 @@ import {
   Keyboard,
   Platform,
   Dimensions,
+  StatusBar,
 } from 'react-native';
 import { WebView, type WebViewNavigation } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { useBrowserStore } from '../store/browser';
 import { useSettingsStore, buildSearchUrl } from '../store/settings';
 import { getAdBlockScript, isVideoHost } from '../services/adblock';
@@ -111,6 +113,7 @@ export function BrowserScreen() {
   const [addressBarText, setAddressBarText] = useState('');
   const [addressBarFocused, setAddressBarFocused] = useState(false);
   const [showTabManager, setShowTabManager] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // WebView refs — one per tab
   const webViewRefs = useRef<Record<string, WebView | null>>({});
@@ -202,18 +205,52 @@ export function BrowserScreen() {
 
   // ── Injected script per tab ───────────────────────────────────────────────
 
-  const getInjectedScript = useCallback(
-    (url: string): string | undefined => {
-      if (!adBlockEnabled || !url) return undefined;
-      try {
-        const host = new URL(url).hostname;
-        return getAdBlockScript(host) ?? undefined;
-      } catch {
-        return undefined;
+  // Fullscreen detection script — notifies RN when video enters/exits fullscreen
+  const FULLSCREEN_DETECT_SCRIPT = `
+    (function() {
+      if (window.__fsDetectInstalled) return;
+      window.__fsDetectInstalled = true;
+      function notify() {
+        var isFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'fullscreen', active: isFull }));
       }
+      document.addEventListener('fullscreenchange', notify);
+      document.addEventListener('webkitfullscreenchange', notify);
+    })();
+    true;
+  `;
+
+  const getInjectedScript = useCallback(
+    (url: string): string => {
+      let script = FULLSCREEN_DETECT_SCRIPT;
+      if (adBlockEnabled && url) {
+        try {
+          const host = new URL(url).hostname;
+          const adScript = getAdBlockScript(host);
+          if (adScript) script += '\n' + adScript;
+        } catch { /* ignore */ }
+      }
+      return script;
     },
     [adBlockEnabled],
   );
+
+  // Handle messages from WebView (fullscreen changes)
+  const handleWebViewMessage = useCallback((event: { nativeEvent: { data: string } }) => {
+    try {
+      const msg = JSON.parse(event.nativeEvent.data);
+      if (msg.type === 'fullscreen') {
+        setIsFullscreen(msg.active);
+        if (msg.active) {
+          // Allow rotation when video is fullscreen
+          ScreenOrientation.unlockAsync();
+        } else {
+          // Lock back to portrait when exiting fullscreen
+          ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+        }
+      }
+    } catch { /* ignore non-JSON messages */ }
+  }, []);
 
   // ── Tab manager overlay ───────────────────────────────────────────────────
 
@@ -287,6 +324,32 @@ export function BrowserScreen() {
 
   // ── New Tab Page ──────────────────────────────────────────────────────────
 
+  // ── Frequent & Recent sites from history ──────────────────────────────────
+
+  const history = useBrowserStore((s) => s.history);
+
+  const frequentSites = useMemo(() => {
+    return [...history]
+      .filter((h) => (h.visitCount || 1) >= 2)
+      .sort((a, b) => (b.visitCount || 1) - (a.visitCount || 1))
+      .slice(0, 8);
+  }, [history]);
+
+  const recentSites = useMemo(() => {
+    // Get last 6 unique-domain visits, excluding internal/blank pages
+    const seen = new Set<string>();
+    const result: typeof history = [];
+    for (const entry of history) {
+      if (!entry.url || entry.url === 'about:blank') continue;
+      const domain = extractHostname(entry.url);
+      if (seen.has(domain)) continue;
+      seen.add(domain);
+      result.push(entry);
+      if (result.length >= 6) break;
+    }
+    return result;
+  }, [history]);
+
   const renderNewTabPage = () => {
     const greeting = getGreeting();
     const pageLoads = useNetworkStore.getState().pageLoads;
@@ -356,6 +419,83 @@ export function BrowserScreen() {
               </Text>
             </View>
           </View>
+        )}
+
+        {/* ── Frequently Visited ── */}
+        {frequentSites.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionDot, { backgroundColor: KENTE.gold }]} />
+              <Text style={[styles.sectionLabel, { color: KENTE.gold }]}>FREQUENTLY VISITED</Text>
+              <Ionicons name="trending-up" size={rs(14)} color={KENTE.gold} style={{ opacity: 0.6 }} />
+            </View>
+            <View style={styles.quickLinksGrid}>
+              {frequentSites.map((site) => (
+                <TouchableOpacity
+                  key={site.id}
+                  style={[styles.quickLink, { backgroundColor: colors.surface1, borderColor: colors.border }]}
+                  onPress={() => handleQuickLinkPress(site.url)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.quickLinkIcon, { backgroundColor: KENTE.gold + '12' }]}>
+                    <Image
+                      source={{ uri: `https://www.google.com/s2/favicons?domain=${extractHostname(site.url)}&sz=64` }}
+                      style={styles.quickLinkFavicon}
+                      defaultSource={require('../../assets/icon.png')}
+                    />
+                  </View>
+                  <Text style={[styles.quickLinkName, { color: colors.text }]} numberOfLines={1}>
+                    {site.title ? site.title.split(/\s*[-–—|:]\s*/)[0].slice(0, 16) : extractHostname(site.url)}
+                  </Text>
+                  <View style={styles.visitBadge}>
+                    <Ionicons name="star" size={rs(9)} color={KENTE.gold} />
+                    <Text style={[styles.visitBadgeText, { color: colors.textMuted }]}>
+                      {site.visitCount || 1}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
+
+        {/* ── Recently Visited ── */}
+        {recentSites.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionDot, { backgroundColor: KENTE.green }]} />
+              <Text style={[styles.sectionLabel, { color: KENTE.green }]}>RECENTLY VISITED</Text>
+              <Ionicons name="time-outline" size={rs(14)} color={KENTE.green} style={{ opacity: 0.6 }} />
+            </View>
+            <View style={[styles.recentList, { backgroundColor: colors.surface1, borderColor: colors.border }]}>
+              {recentSites.map((site, index) => (
+                <TouchableOpacity
+                  key={site.id}
+                  style={[
+                    styles.recentItem,
+                    index < recentSites.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border + '40' },
+                  ]}
+                  onPress={() => handleQuickLinkPress(site.url)}
+                  activeOpacity={0.7}
+                >
+                  <Image
+                    source={{ uri: `https://www.google.com/s2/favicons?domain=${extractHostname(site.url)}&sz=32` }}
+                    style={styles.recentFavicon}
+                    defaultSource={require('../../assets/icon.png')}
+                  />
+                  <View style={styles.recentTextWrap}>
+                    <Text style={[styles.recentTitle, { color: colors.text }]} numberOfLines={1}>
+                      {site.title || extractHostname(site.url)}
+                    </Text>
+                    <Text style={[styles.recentDomain, { color: colors.textMuted }]} numberOfLines={1}>
+                      {extractHostname(site.url)}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={rs(16)} color={colors.textMuted} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
         )}
 
         {/* ── Quick Sites ── */}
@@ -447,8 +587,11 @@ export function BrowserScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
-      {/* Address bar */}
-      <View style={[styles.addressBarContainer, { backgroundColor: colors.surface1, paddingTop: insets.top + SPACING.xs }]}>
+      {/* Hide system status bar in fullscreen */}
+      <StatusBar hidden={isFullscreen} />
+
+      {/* Address bar — hidden during fullscreen video */}
+      {!isFullscreen && <View style={[styles.addressBarContainer, { backgroundColor: colors.surface1, paddingTop: insets.top + SPACING.xs }]}>
         {/* Nav buttons row */}
         <View style={styles.navRow}>
           <TouchableOpacity style={styles.navBtn} onPress={goBack} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -501,7 +644,7 @@ export function BrowserScreen() {
             <Text style={[styles.tabBadgeText, { color: colors.text }]}>{tabs.length}</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </View>}
 
       {/* WebView area */}
       <View style={styles.webViewContainer}>
@@ -533,12 +676,23 @@ export function BrowserScreen() {
                 style={styles.webView}
                 injectedJavaScript={injectedScript}
                 onNavigationStateChange={(navState) => handleNavigationStateChange(tab.id, navState)}
+                onMessage={handleWebViewMessage}
                 allowsBackForwardNavigationGestures
                 allowsInlineMediaPlayback
+                allowsFullscreenVideo
                 mediaPlaybackRequiresUserAction={false}
                 javaScriptEnabled
                 domStorageEnabled
                 startInLoadingState
+                onContentProcessDidTerminate={() => {
+                  webViewRefs.current[tab.id]?.reload();
+                }}
+                {...(Platform.OS === 'android' ? {
+                  onRenderProcessGone: () => {
+                    setIsFullscreen(false);
+                    webViewRefs.current[tab.id]?.reload();
+                  },
+                } : {})}
                 renderLoading={() => (
                   <View style={[styles.loadingContainer, { backgroundColor: colors.bg }]}>
                     <Text style={{ color: colors.textMuted }}>Loading...</Text>
@@ -823,6 +977,50 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.xs,
     fontWeight: '600',
     textAlign: 'center',
+  },
+
+  // Visit badge on frequent tiles
+  visitBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rs(3),
+    marginTop: rs(2),
+  },
+  visitBadgeText: {
+    fontSize: rs(10),
+  },
+
+  // Recently visited list
+  recentList: {
+    width: '100%',
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: rs(28),
+    zIndex: 1,
+  },
+  recentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: rs(12),
+    paddingHorizontal: rs(14),
+    gap: rs(12),
+  },
+  recentFavicon: {
+    width: rs(20),
+    height: rs(20),
+    borderRadius: rs(4),
+  },
+  recentTextWrap: {
+    flex: 1,
+    gap: rs(1),
+  },
+  recentTitle: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: '500',
+  },
+  recentDomain: {
+    fontSize: rs(11),
   },
 
   // GovPlay banner
