@@ -19,6 +19,7 @@ export interface HistoryEntry {
   title: string;
   favicon: string;
   visitedAt: number;
+  visitCount?: number;
 }
 
 export interface Bookmark {
@@ -132,13 +133,32 @@ export const useBrowserStore = create<BrowserState>()(
 
       addHistoryEntry: (entry) => {
         set((state) => {
+          // Check if this URL already exists in history
+          const existingIndex = state.history.findIndex(
+            (h) => h.url === entry.url
+          );
+
+          if (existingIndex >= 0) {
+            // Bump visit count, update timestamp & title, move to front
+            const existing = state.history[existingIndex];
+            const updated: HistoryEntry = {
+              ...existing,
+              title: entry.title || existing.title,
+              visitedAt: Date.now(),
+              visitCount: (existing.visitCount || 1) + 1,
+            };
+            const rest = state.history.filter((_, i) => i !== existingIndex);
+            return { history: [updated, ...rest].slice(0, MAX_HISTORY) };
+          }
+
+          // New entry
           const newEntry: HistoryEntry = {
             ...entry,
             id: generateId(),
             visitedAt: Date.now(),
+            visitCount: 1,
           };
-          const updated = [newEntry, ...state.history].slice(0, MAX_HISTORY);
-          return { history: updated };
+          return { history: [newEntry, ...state.history].slice(0, MAX_HISTORY) };
         });
       },
 
