@@ -268,7 +268,7 @@ export function TabBar() {
   return (
     <div
       className="h-9 flex items-end shrink-0 relative z-[50] select-none kente-tab-bar"
-      style={{ background: 'var(--kente-tab-bg, var(--color-bg))', WebkitAppRegion: 'drag' } as React.CSSProperties}
+      style={{ background: 'var(--kente-tab-bg, var(--color-bg))', borderBottom: '1px solid var(--color-border-1)', WebkitAppRegion: 'drag' } as React.CSSProperties}
       role="tablist"
     >
       <div className="flex-1 relative overflow-hidden flex items-end">
@@ -361,8 +361,10 @@ export function TabBar() {
 
                 {/* Member tabs (hidden when collapsed) */}
                 {!isCollapsed &&
-                  memberTabs.map((tab) => {
+                  memberTabs.map((tab, mIdx) => {
                     const idx = globalIndex++;
+                    const prevTab = mIdx > 0 ? memberTabs[mIdx - 1] : null;
+                    const nextTab = mIdx < memberTabs.length - 1 ? memberTabs[mIdx + 1] : null;
                     return (
                       <div
                         key={tab.id}
@@ -383,6 +385,8 @@ export function TabBar() {
                           isSelected={selectedTabIds.includes(tab.id)}
                           isSuspended={suspendedTabIds.has(tab.id)}
                           groupColor={group.color}
+                          isNextToActive={nextTab?.id === activeTabId}
+                          isPrevToActive={prevTab?.id === activeTabId}
                           index={idx}
                           tabCount={unpinnedCount + pinnedCount}
                           containerWidth={containerWidth}
@@ -398,8 +402,10 @@ export function TabBar() {
           })}
 
           {/* ── Ungrouped tabs ── */}
-          {ungroupedTabs.map((tab) => {
+          {ungroupedTabs.map((tab, uIdx) => {
             const idx = globalIndex++;
+            const prevTab = uIdx > 0 ? ungroupedTabs[uIdx - 1] : null;
+            const nextTab = uIdx < ungroupedTabs.length - 1 ? ungroupedTabs[uIdx + 1] : null;
             return (
               <div
                 key={tab.id}
@@ -420,6 +426,8 @@ export function TabBar() {
                   isSelected={selectedTabIds.includes(tab.id)}
                   isSuspended={suspendedTabIds.has(tab.id)}
                   groupColor={null}
+                  isNextToActive={nextTab?.id === activeTabId}
+                  isPrevToActive={prevTab?.id === activeTabId}
                   index={idx}
                   tabCount={unpinnedCount + pinnedCount}
                   containerWidth={containerWidth}

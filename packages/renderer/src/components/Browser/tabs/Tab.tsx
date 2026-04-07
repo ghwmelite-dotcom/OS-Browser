@@ -17,6 +17,8 @@ interface TabProps {
   isSelected?: boolean;
   isSuspended?: boolean;
   groupColor?: string | null;
+  isNextToActive?: boolean;
+  isPrevToActive?: boolean;
   index: number;
   tabCount: number;
   containerWidth: number;
@@ -70,6 +72,8 @@ export function Tab({
   isSelected,
   isSuspended,
   groupColor,
+  isNextToActive,
+  isPrevToActive,
   index,
   tabCount,
   containerWidth,
@@ -157,12 +161,12 @@ export function Tab({
       {...dragAttributes}
       {...dragListeners}
       className={`
-        group relative flex items-center h-[34px] cursor-pointer overflow-hidden
-        transition-all duration-200 ease-out rounded-t-lg mx-[1px]
+        group relative flex items-center h-[34px] cursor-pointer
+        transition-all duration-200 ease-out
         ${isPinned ? 'justify-center px-1' : isCompact ? 'px-1.5 gap-1' : 'px-3 gap-2.5'}
         ${isClosing ? 'tab-closing' : ''}
         ${isSelected ? 'ring-1 ring-white/20 ring-inset' : ''}
-        ${isDragging ? 'border-dashed border border-white/20' : ''}
+        ${isDragging ? 'opacity-50' : ''}
       `}
       style={{
         ...dragStyle,
@@ -173,16 +177,27 @@ export function Tab({
         borderTop: isActive ? `2px solid ${color.accent}` : '2px solid transparent',
         borderLeft: isActive ? `1px solid ${color.border}` : '1px solid transparent',
         borderRight: isActive ? `1px solid ${color.border}` : '1px solid transparent',
-        borderBottom: groupColor ? `2px solid ${groupColor}` : '2px solid transparent',
+        borderBottom: isActive ? 'none' : groupColor ? `2px solid ${groupColor}` : '2px solid transparent',
+        clipPath: isPinned ? 'none' : 'polygon(12px 0%, calc(100% - 12px) 0%, 100% 100%, 0% 100%)',
+        marginRight: isPinned ? undefined : '-16px',
+        zIndex: isActive ? 3 : isHovered ? 2 : 1,
       }}
       role="tab"
       aria-selected={isActive}
       title={title}
       data-tab-id={id}
     >
-      {/* Separator between inactive tabs */}
-      {!isActive && !isHovered && (
+      {/* Separator between inactive tabs — hide when adjacent to active or hovered */}
+      {!isActive && !isHovered && !isNextToActive && !isPrevToActive && (
         <div className="absolute right-0 top-[8px] bottom-[8px] w-px bg-border-1/40" />
+      )}
+
+      {/* Active tab bottom cover — connects tab to content area */}
+      {isActive && (
+        <div
+          className="absolute bottom-0 left-0 right-0 h-[2px]"
+          style={{ background: color.bg || 'var(--color-bg)', zIndex: 4 }}
+        />
       )}
 
       {/* Favicon or loading spinner */}
