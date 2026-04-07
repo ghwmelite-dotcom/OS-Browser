@@ -9,6 +9,7 @@ import { Tab, getTabColor } from './Tab';
 import { PinnedTab } from './PinnedTab';
 import { NewTabButton } from './NewTabButton';
 import { TabDragOverlay } from './TabDragOverlay';
+import { useTabKeyboardShortcuts } from '@/hooks/useTabKeyboardShortcuts';
 
 interface ContextMenuState {
   x: number;
@@ -44,6 +45,8 @@ export function TabBar() {
     isGloballyPinned,
     getTabWorkspace,
   } = useWorkspaceStore();
+
+  useTabKeyboardShortcuts();
 
   const visibleTabIds = getVisibleTabIds();
   const anyWorkspaceHasTabs = workspaces.some((w) => w.tabIds.length > 0);
