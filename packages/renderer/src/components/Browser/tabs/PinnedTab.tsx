@@ -68,7 +68,7 @@ export function PinnedTab({
       onMouseLeave={() => setIsHovered(false)}
       {...dragAttributes}
       {...dragListeners}
-      className={`group relative flex items-center justify-center h-[34px] cursor-pointer overflow-hidden rounded-t-lg mx-[1px] ${isDragging ? 'border-dashed border border-white/20' : ''}`}
+      className={`group relative flex items-center justify-center h-[34px] cursor-pointer overflow-hidden rounded-t-lg ${isDragging ? 'opacity-50' : ''}`}
       style={{
         ...dragStyle,
         width: `${PINNED_TAB_WIDTH}px`,
@@ -87,6 +87,7 @@ export function PinnedTab({
         borderRight: isActive
           ? `1px solid ${borderActive}`
           : '1px solid transparent',
+        zIndex: isActive ? 3 : isHovered ? 2 : 1,
       }}
       role="tab"
       aria-selected={isActive}
