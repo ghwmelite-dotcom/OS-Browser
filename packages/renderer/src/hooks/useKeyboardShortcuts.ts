@@ -25,33 +25,7 @@ export function useKeyboardShortcuts(callbacks: {
 
       // Ctrl+T — New tab
       if (ctrl && key === 't' && !shift) { e.preventDefault(); createTab(); }
-      // Ctrl+W — Close tab
-      else if (ctrl && key === 'w' && !shift) { e.preventDefault(); if (activeTabId) closeTab(activeTabId); }
-      // Ctrl+Tab — Next tab
-      else if (ctrl && key === 'tab' && !shift) {
-        e.preventDefault();
-        const idx = tabs.findIndex(t => t.id === activeTabId);
-        const next = tabs[(idx + 1) % tabs.length];
-        if (next) switchTab(next.id);
-      }
-      // Ctrl+Shift+Tab — Prev tab
-      else if (ctrl && key === 'tab' && shift) {
-        e.preventDefault();
-        const idx = tabs.findIndex(t => t.id === activeTabId);
-        const prev = tabs[(idx - 1 + tabs.length) % tabs.length];
-        if (prev) switchTab(prev.id);
-      }
-      // Ctrl+9 — Always jump to LAST tab (Chrome behavior)
-      else if (ctrl && key === '9' && !shift) {
-        e.preventDefault();
-        if (tabs.length > 0) switchTab(tabs[tabs.length - 1].id);
-      }
-      // Ctrl+1-8 — Switch to tab N
-      else if (ctrl && key >= '1' && key <= '8' && !shift) {
-        e.preventDefault();
-        const idx = parseInt(key) - 1;
-        if (tabs[idx]) switchTab(tabs[idx].id);
-      }
+      // Tab switching shortcuts (Ctrl+W, Ctrl+Tab, Ctrl+1-9, Ctrl+Shift+T) handled by useTabKeyboardShortcuts
       // Ctrl+Shift+PageUp — Move tab left
       else if (ctrl && shift && key === 'pageup') {
         e.preventDefault();
@@ -62,18 +36,12 @@ export function useKeyboardShortcuts(callbacks: {
         e.preventDefault();
         if (activeTabId) moveTabRight(activeTabId);
       }
-      // Ctrl+N — New window
-      else if (ctrl && key === 'n' && !shift) {
-        e.preventDefault();
-        window.osBrowser?.newWindow?.();
-      }
+      // Ctrl+N, Ctrl+Shift+T handled by useTabKeyboardShortcuts
       // Ctrl+Shift+W — Close window
       else if (ctrl && shift && key === 'w') {
         e.preventDefault();
         window.osBrowser?.close?.();
       }
-      // Ctrl+Shift+T — Reopen closed tab
-      else if (ctrl && shift && key === 't') { e.preventDefault(); reopenLastClosed(); }
       // Ctrl+L / Alt+D / F6 — Focus URL bar
       else if ((ctrl && key === 'l' && !shift) || (alt && key === 'd' && !ctrl) || key === 'f6') {
         e.preventDefault();
