@@ -101,7 +101,17 @@ export function Tab({
     e.stopPropagation();
     if (isClosing) return;
     setIsClosing(true);
-    setTimeout(() => onClose(), 150);
+    const el = tabRef.current;
+    if (el) {
+      el.style.transition = 'width 200ms ease-out, opacity 150ms ease-out, margin 200ms ease-out, padding 200ms ease-out';
+      el.style.width = '0px';
+      el.style.opacity = '0';
+      el.style.paddingLeft = '0px';
+      el.style.paddingRight = '0px';
+      el.style.marginRight = '0px';
+      el.style.overflow = 'hidden';
+    }
+    setTimeout(() => onClose(), 200);
   };
 
   const handleMuteToggle = (e: React.MouseEvent) => {
@@ -119,10 +129,14 @@ export function Tab({
     if (!el) return;
     el.style.width = '0px';
     el.style.opacity = '0';
+    el.style.overflow = 'hidden';
     requestAnimationFrame(() => {
       el.style.transition = 'width 250ms ease-out, opacity 200ms ease-out';
       el.style.width = `${dynamicWidth}px`;
       el.style.opacity = '1';
+      setTimeout(() => {
+        if (el) el.style.overflow = '';
+      }, 260);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
