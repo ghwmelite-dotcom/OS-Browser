@@ -196,7 +196,7 @@ export function Tab({
       {isActive && (
         <div
           className="absolute bottom-0 left-0 right-0 h-[2px]"
-          style={{ background: color.bg || 'var(--color-bg)', zIndex: 4 }}
+          style={{ background: 'var(--color-bg)', zIndex: 4 }}
         />
       )}
 
