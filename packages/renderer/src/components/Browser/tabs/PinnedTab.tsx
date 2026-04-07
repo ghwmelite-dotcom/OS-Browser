@@ -12,6 +12,7 @@ interface PinnedTabProps {
   isMuted?: boolean;
   accentColor: string;
   onSwitch: () => void;
+  onClose: () => void;
   onContextMenu: (e: React.MouseEvent) => void;
 }
 
@@ -27,6 +28,7 @@ export function PinnedTab({
   isMuted,
   accentColor,
   onSwitch,
+  onClose,
   onContextMenu,
 }: PinnedTabProps) {
   const { attributes: dragAttributes, listeners: dragListeners, setNodeRef: setDragRef, style: dragStyle, isDragging } = useTabDrag(id);
@@ -64,6 +66,13 @@ export function PinnedTab({
       ref={mergedRef}
       onClick={onSwitch}
       onContextMenu={onContextMenu}
+      onAuxClick={(e) => {
+        if (e.button === 1) {
+          e.preventDefault();
+          e.stopPropagation();
+          onClose();
+        }
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       {...dragAttributes}
