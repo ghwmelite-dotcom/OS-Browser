@@ -160,6 +160,13 @@ export function Tab({
       ref={mergedRef}
       onClick={onSwitch}
       onContextMenu={onContextMenu}
+      onAuxClick={(e) => {
+        if (e.button === 1) {
+          e.preventDefault();
+          e.stopPropagation();
+          onClose();
+        }
+      }}
       onMouseEnter={() => {
         setIsHovered(true);
         const timer = setTimeout(() => {

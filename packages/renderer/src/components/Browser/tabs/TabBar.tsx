@@ -306,6 +306,15 @@ export function TabBar() {
           onWheel={(e) => {
             if (scrollRef.current) scrollRef.current.scrollLeft += e.deltaY;
           }}
+          onAuxClick={(e) => {
+            if (e.button === 1) {
+              e.preventDefault();
+              const target = e.target as HTMLElement;
+              if (!target.closest('[data-tab-id]')) {
+                createTab();
+              }
+            }
+          }}
           onClick={(e) => {
             // Handle click modifiers at scroll container level
             // Individual tabs handle their own clicks
@@ -339,6 +348,7 @@ export function TabBar() {
                   isMuted={!!tab.is_muted}
                   accentColor={color.accent}
                   onSwitch={() => {}}
+                  onClose={() => closeTab(tab.id)}
                   onContextMenu={(e) => handleTabContextMenu(e, tab.id)}
                 />
               </div>
