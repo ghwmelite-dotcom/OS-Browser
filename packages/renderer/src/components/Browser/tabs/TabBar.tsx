@@ -59,6 +59,8 @@ export function TabBar() {
   const [collapsedGroupIds, setCollapsedGroupIds] = useState<Set<string>>(new Set());
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [suspendedTabIds, setSuspendedTabIds] = useState<Set<string>>(new Set());
+  const [isClosingMode, setIsClosingMode] = useState(false);
+  const [frozenTabWidth, setFrozenTabWidth] = useState<number | null>(null);
 
   // DnD sensors with 5px activation distance to prevent accidental drags
   const sensors = useSensors(
@@ -185,6 +187,17 @@ export function TabBar() {
     setContextMenu({ x: e.clientX, y: e.clientY, tabId });
   }, []);
 
+  const handleCloseViaButton = useCallback((tabId: string) => {
+    if (!isClosingMode) {
+      const firstTab = scrollRef.current?.querySelector('[data-tab-id]:not([data-pinned])') as HTMLElement;
+      if (firstTab) {
+        setFrozenTabWidth(firstTab.getBoundingClientRect().width);
+      }
+      setIsClosingMode(true);
+    }
+    closeTab(tabId);
+  }, [isClosingMode, closeTab]);
+
   // ── Group collapse toggle ──
   const toggleGroupCollapse = useCallback(
     (groupId: string) => {
@@ -270,6 +283,12 @@ export function TabBar() {
       className="h-9 flex items-end shrink-0 relative z-[50] select-none kente-tab-bar"
       style={{ background: 'var(--kente-tab-bg, var(--color-bg))', borderBottom: '1px solid var(--color-border-1)', WebkitAppRegion: 'drag' } as React.CSSProperties}
       role="tablist"
+      onMouseLeave={() => {
+        if (isClosingMode) {
+          setIsClosingMode(false);
+          setFrozenTabWidth(null);
+        }
+      }}
     >
       <div className="flex-1 relative overflow-hidden flex items-end">
         {showFadeLeft && (
@@ -390,8 +409,9 @@ export function TabBar() {
                           index={idx}
                           tabCount={unpinnedCount + pinnedCount}
                           containerWidth={containerWidth}
+                          overrideWidth={isClosingMode ? frozenTabWidth : null}
                           onSwitch={() => {}}
-                          onClose={() => closeTab(tab.id)}
+                          onClose={() => handleCloseViaButton(tab.id)}
                           onContextMenu={(e) => handleTabContextMenu(e, tab.id)}
                         />
                       </div>
@@ -431,8 +451,9 @@ export function TabBar() {
                   index={idx}
                   tabCount={unpinnedCount + pinnedCount}
                   containerWidth={containerWidth}
+                  overrideWidth={isClosingMode ? frozenTabWidth : null}
                   onSwitch={() => {}}
-                  onClose={() => closeTab(tab.id)}
+                  onClose={() => handleCloseViaButton(tab.id)}
                   onContextMenu={(e) => handleTabContextMenu(e, tab.id)}
                 />
               </div>

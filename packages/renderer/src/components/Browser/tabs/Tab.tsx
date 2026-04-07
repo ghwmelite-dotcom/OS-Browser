@@ -22,6 +22,7 @@ interface TabProps {
   index: number;
   tabCount: number;
   containerWidth: number;
+  overrideWidth?: number | null;
   onSwitch: () => void;
   onClose: () => void;
   onContextMenu: (e: React.MouseEvent) => void;
@@ -77,6 +78,7 @@ export function Tab({
   index,
   tabCount,
   containerWidth,
+  overrideWidth,
   onSwitch,
   onClose,
   onContextMenu,
@@ -92,8 +94,11 @@ export function Tab({
   const tabRef = useRef<HTMLDivElement>(null);
   const color = useMemo(() => getTabColor(index), [index]);
   const dynamicWidth = useMemo(
-    () => (isPinned ? PINNED_TAB_WIDTH : calcTabWidth(tabCount, 0, containerWidth)),
-    [tabCount, containerWidth, isPinned],
+    () => {
+      if (overrideWidth && !isPinned) return overrideWidth;
+      return isPinned ? PINNED_TAB_WIDTH : calcTabWidth(tabCount, 0, containerWidth);
+    },
+    [tabCount, containerWidth, isPinned, overrideWidth],
   );
   const isCompact = dynamicWidth < 100;
 
