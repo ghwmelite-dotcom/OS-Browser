@@ -44,11 +44,6 @@ export default function ImportBanner({ onClose }: ImportBannerProps) {
   const [result, setResult] = useState<ImportResult | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  /* ── Hide web views so banner is visible above native content ── */
-  useEffect(() => {
-    (window as any).osBrowser?.hideWebViews?.();
-    return () => { (window as any).osBrowser?.showWebViews?.(); };
-  }, []);
 
   /* ── Detect browsers on mount ── */
   useEffect(() => {
