@@ -15,6 +15,7 @@ export interface Tab {
   is_muted: number;
   is_loading?: boolean;
   is_audio_playing?: boolean;
+  lifecycle_state?: 'active' | 'throttled' | 'frozen' | 'discarded';
   group_id: string | null;
 }
 

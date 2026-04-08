@@ -16,6 +16,7 @@ interface TabProps {
   isMuted?: boolean;
   isSelected?: boolean;
   isSuspended?: boolean;
+  lifecycleState?: 'active' | 'throttled' | 'frozen' | 'discarded';
   groupColor?: string | null;
   isNextToActive?: boolean;
   isPrevToActive?: boolean;
@@ -72,6 +73,7 @@ export function Tab({
   isMuted,
   isSelected,
   isSuspended,
+  lifecycleState,
   groupColor,
   isNextToActive,
   isPrevToActive,
@@ -227,7 +229,12 @@ export function Tab({
       )}
 
       {/* Favicon or loading spinner */}
-      <div className="relative w-[16px] h-[16px] shrink-0 flex items-center justify-center" style={{ opacity: isSuspended ? 0.5 : 1 }}>
+      <div className="relative w-[16px] h-[16px] shrink-0 flex items-center justify-center" style={{
+        opacity: lifecycleState === 'discarded' ? 0.4
+          : lifecycleState === 'frozen' ? 0.6
+          : isSuspended ? 0.5
+          : 1
+      }}>
         {isLoading ? (
           <div
             className="w-[14px] h-[14px] border-[1.5px] border-t-transparent rounded-full animate-spin"
@@ -243,7 +250,18 @@ export function Tab({
             {title.charAt(0).toUpperCase()}
           </div>
         )}
-        {isSuspended && (
+        {lifecycleState === 'frozen' && (
+          <div style={{
+            position: 'absolute', bottom: -1, right: -1,
+            width: 10, height: 10, borderRadius: '50%',
+            background: '#60A5FA',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '6px', lineHeight: 1,
+          }}>
+            ❄
+          </div>
+        )}
+        {(lifecycleState === 'discarded' || (isSuspended && lifecycleState !== 'frozen')) && (
           <div style={{
             position: 'absolute', bottom: -1, right: -1,
             width: 10, height: 10, borderRadius: '50%',
