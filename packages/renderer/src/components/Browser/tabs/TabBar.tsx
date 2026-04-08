@@ -55,8 +55,8 @@ export function TabBar() {
     : tabs;
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [showFadeLeft, setShowFadeLeft] = useState(false);
-  const [showFadeRight, setShowFadeRight] = useState(false);
+  const [showScrollLeft, setShowScrollLeft] = useState(false);
+  const [showScrollRight, setShowScrollRight] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [containerWidth, setContainerWidth] = useState(800);
   const [collapsedGroupIds, setCollapsedGroupIds] = useState<Set<string>>(new Set());
@@ -106,27 +106,27 @@ export function TabBar() {
   const unpinnedCount = unpinnedTabs.length;
   const pinnedCount = pinnedTabs.length;
 
-  // ── Scroll fades + container width ──
-  const updateFades = useCallback(() => {
+  // ── Scroll arrows + container width ──
+  const updateScrollArrows = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    setShowFadeLeft(el.scrollLeft > 4);
-    setShowFadeRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+    setShowScrollLeft(el.scrollLeft > 4);
+    setShowScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
     setContainerWidth(el.clientWidth);
   }, []);
 
   useEffect(() => {
-    updateFades();
+    updateScrollArrows();
     const el = scrollRef.current;
     if (!el) return;
-    el.addEventListener('scroll', updateFades, { passive: true });
-    const ro = new ResizeObserver(updateFades);
+    el.addEventListener('scroll', updateScrollArrows, { passive: true });
+    const ro = new ResizeObserver(updateScrollArrows);
     ro.observe(el);
     return () => {
-      el.removeEventListener('scroll', updateFades);
+      el.removeEventListener('scroll', updateScrollArrows);
       ro.disconnect();
     };
-  }, [visibleTabs.length, updateFades]);
+  }, [visibleTabs.length, updateScrollArrows]);
 
   // Auto-scroll active tab into view
   useEffect(() => {
@@ -294,8 +294,30 @@ export function TabBar() {
       }}
     >
       <div className="flex-1 relative overflow-hidden flex items-end">
-        {showFadeLeft && (
-          <div className="absolute left-0 top-0 bottom-0 w-6 z-30 pointer-events-none bg-gradient-to-r from-bg to-transparent" />
+        {showScrollLeft && (
+          <button
+            className="absolute left-0 top-0 bottom-0 w-7 z-30 flex items-center justify-center hover:bg-surface-2/80 transition-colors"
+            style={{ background: 'var(--kente-tab-bg, var(--color-bg))' }}
+            onClick={() => {
+              if (scrollRef.current) {
+                const tabWidth = scrollRef.current.querySelector('[data-tab-id]')?.getBoundingClientRect().width || 200;
+                scrollRef.current.scrollBy({ left: -tabWidth, behavior: 'smooth' });
+              }
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              const el = scrollRef.current;
+              if (!el) return;
+              const scrollInterval = setInterval(() => { el.scrollBy({ left: -3 }); }, 16);
+              const stop = () => { clearInterval(scrollInterval); document.removeEventListener('mouseup', stop); };
+              document.addEventListener('mouseup', stop);
+            }}
+            aria-label="Scroll tabs left"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-text-muted">
+              <path d="M8 2L4 6L8 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
         )}
 
         <div
@@ -483,8 +505,30 @@ export function TabBar() {
           </div>
         </div>
 
-        {showFadeRight && (
-          <div className="absolute right-0 top-0 bottom-0 w-6 z-30 pointer-events-none bg-gradient-to-l from-bg to-transparent" />
+        {showScrollRight && (
+          <button
+            className="absolute right-0 top-0 bottom-0 w-7 z-30 flex items-center justify-center hover:bg-surface-2/80 transition-colors"
+            style={{ background: 'var(--kente-tab-bg, var(--color-bg))' }}
+            onClick={() => {
+              if (scrollRef.current) {
+                const tabWidth = scrollRef.current.querySelector('[data-tab-id]')?.getBoundingClientRect().width || 200;
+                scrollRef.current.scrollBy({ left: tabWidth, behavior: 'smooth' });
+              }
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              const el = scrollRef.current;
+              if (!el) return;
+              const scrollInterval = setInterval(() => { el.scrollBy({ left: 3 }); }, 16);
+              const stop = () => { clearInterval(scrollInterval); document.removeEventListener('mouseup', stop); };
+              document.addEventListener('mouseup', stop);
+            }}
+            aria-label="Scroll tabs right"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-text-muted">
+              <path d="M4 2L8 6L4 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
         )}
       </div>
 
