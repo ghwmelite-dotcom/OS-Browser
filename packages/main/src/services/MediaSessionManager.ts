@@ -72,20 +72,29 @@ export async function tryAutoPiP(outgoingTabId: string, isMuted: boolean): Promi
       })()
     `);
 
+    console.log('[MediaSession] Auto-PiP check:', { outgoingTabId, hasPlayingVideo, isMuted });
     if (!hasPlayingVideo) return false;
 
     // Enter PiP — userGesture: true bypasses the gesture requirement
-    await view.webContents.executeJavaScript(`
+    const pipResult = await view.webContents.executeJavaScript(`
       (async () => {
         const videos = document.querySelectorAll('video');
         for (const v of videos) {
           if (!v.paused && !v.ended && v.readyState > 2) {
-            try { await v.requestPictureInPicture(); } catch {}
-            break;
+            try {
+              await v.requestPictureInPicture();
+              return { success: true };
+            } catch (e) {
+              return { success: false, error: e.message || String(e) };
+            }
           }
         }
+        return { success: false, error: 'no eligible video' };
       })()
     `, true);
+
+    console.log('[MediaSession] Auto-PiP result:', pipResult);
+    if (!pipResult?.success) return false;
 
     // Inject Media Session action handlers for skip controls
     await view.webContents.executeJavaScript(`
