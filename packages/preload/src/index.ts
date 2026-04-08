@@ -17,6 +17,12 @@ const IPC = {
   GROUP_REMOVE_TAB: 'group:remove-tab', GROUP_UPDATE: 'group:update',
   GROUP_COLLAPSE: 'group:collapse', GROUP_EXPAND: 'group:expand',
   GROUP_DELETE: 'group:delete',
+  MEDIA_PLAY_PAUSE: 'media:play-pause',
+  MEDIA_SKIP_FORWARD: 'media:skip-forward',
+  MEDIA_SKIP_BACKWARD: 'media:skip-backward',
+  MEDIA_GET_STATE: 'media:get-state',
+  MEDIA_START_PROGRESS: 'media:start-progress',
+  MEDIA_STOP_PROGRESS: 'media:stop-progress',
   HISTORY_LIST: 'history:list', HISTORY_ADD: 'history:add',
   HISTORY_DELETE: 'history:delete', HISTORY_CLEAR: 'history:clear',
   HISTORY_SEARCH: 'history:search',
@@ -141,6 +147,31 @@ contextBridge.exposeInMainWorld('osBrowser', {
       const listener = (_e: any, data: any) => callback(data);
       ipcRenderer.on('tab:lifecycle-changed', listener);
       return () => ipcRenderer.removeListener('tab:lifecycle-changed', listener);
+    },
+  },
+
+  media: {
+    playPause: (tabId: string) => ipcRenderer.invoke(IPC.MEDIA_PLAY_PAUSE, tabId),
+    skipForward: (tabId: string) => ipcRenderer.invoke(IPC.MEDIA_SKIP_FORWARD, tabId),
+    skipBackward: (tabId: string) => ipcRenderer.invoke(IPC.MEDIA_SKIP_BACKWARD, tabId),
+    getState: () => ipcRenderer.invoke(IPC.MEDIA_GET_STATE),
+    startProgress: (tabId: string) => ipcRenderer.invoke(IPC.MEDIA_START_PROGRESS, tabId),
+    stopProgress: () => ipcRenderer.invoke(IPC.MEDIA_STOP_PROGRESS),
+    reEnterPiP: (tabId: string) => ipcRenderer.invoke('media:re-enter-pip', tabId),
+    onMetadataUpdated: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('media:metadata-updated', listener);
+      return () => ipcRenderer.removeListener('media:metadata-updated', listener);
+    },
+    onProgressUpdated: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('media:progress-updated', listener);
+      return () => ipcRenderer.removeListener('media:progress-updated', listener);
+    },
+    onPipStateChanged: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('media:pip-state-changed', listener);
+      return () => ipcRenderer.removeListener('media:pip-state-changed', listener);
     },
   },
 
