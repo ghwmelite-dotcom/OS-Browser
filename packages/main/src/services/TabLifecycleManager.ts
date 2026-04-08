@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import { getDatabase } from '../db/database';
 import { getAllTabViews, getTabView, destroyTabView } from '../tabs/TabWebContents';
 
@@ -105,8 +105,10 @@ async function checkLifecycle(): Promise<void> {
 
       let memoryBytes = 0;
       try {
-        const info = await view.webContents.getProcessMemoryInfo();
-        memoryBytes = (info.private || 0) * 1024;
+        const pid = view.webContents.getOSProcessId();
+        const metrics = app.getAppMetrics();
+        const proc = metrics.find(m => m.pid === pid);
+        memoryBytes = proc ? (proc.memory.workingSetSize * 1024) : 0;
       } catch {}
 
       destroyTabView(tab.id, mainWindowRef);
