@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useMediaPlayerStore, initMediaPlayerListeners } from '@/store/media-player';
 import { AudioPopover } from './AudioPopover';
 
@@ -87,8 +88,9 @@ export function AudioWidget() {
         `}</style>
       </button>
 
-      {isPopoverOpen && widgetRef.current && (
-        <AudioPopover anchorEl={widgetRef.current} />
+      {isPopoverOpen && widgetRef.current && createPortal(
+        <AudioPopover anchorEl={widgetRef.current} />,
+        document.body,
       )}
     </>
   );
