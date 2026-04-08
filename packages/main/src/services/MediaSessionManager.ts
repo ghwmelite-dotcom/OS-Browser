@@ -72,7 +72,6 @@ export async function tryAutoPiP(outgoingTabId: string, isMuted: boolean): Promi
       })()
     `);
 
-    console.log('[MediaSession] Auto-PiP check:', { outgoingTabId, hasPlayingVideo, isMuted });
     if (!hasPlayingVideo) return false;
 
     // Enter PiP — userGesture: true bypasses the gesture requirement
@@ -93,7 +92,6 @@ export async function tryAutoPiP(outgoingTabId: string, isMuted: boolean): Promi
       })()
     `, true);
 
-    console.log('[MediaSession] Auto-PiP result:', pipResult);
     if (!pipResult?.success) return false;
 
     // Inject Media Session action handlers for skip controls
