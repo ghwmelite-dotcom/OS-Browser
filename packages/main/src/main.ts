@@ -367,8 +367,6 @@ app.whenReady().then(async () => {
     if (ALLOWED_PERMISSIONS.includes(permission)) {
       callback(true);
     } else {
-      // Log denied permissions for debugging
-      console.log('[Permission] Denied:', permission);
       callback(false);
     }
   });
