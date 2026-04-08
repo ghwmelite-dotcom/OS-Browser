@@ -2,6 +2,7 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Settings, Plus, X } from 'lucide-react';
 import type { FeatureDefinition, FeatureCategory } from '@/features/registry';
 import { useWorkspaceStore } from '@/store/workspaces';
+import { AudioWidget } from '@/components/MediaPlayer/AudioWidget';
 
 interface IconRailProps {
   features: FeatureDefinition[];
@@ -484,6 +485,20 @@ export function IconRail({
             ))}
           </React.Fragment>
         ))}
+      </div>
+
+      {/* Media player widget — appears when any tab plays audio */}
+      <div
+        style={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0,
+          paddingTop: 4,
+          paddingBottom: 4,
+        }}
+      >
+        <AudioWidget />
       </div>
 
       {/* Settings gear pinned to bottom */}
