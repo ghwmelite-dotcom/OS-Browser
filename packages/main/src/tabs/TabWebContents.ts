@@ -47,6 +47,20 @@ export function destroyTabView(tabId: string, mainWindow: BrowserWindow): void {
   tabViews.delete(tabId);
 }
 
+export function detachTabView(tabId: string, sourceWindow: BrowserWindow): WebContentsView | undefined {
+  const view = tabViews.get(tabId);
+  if (!view) return undefined;
+  sourceWindow.contentView.removeChildView(view);
+  tabViews.delete(tabId);
+  return view;
+}
+
+export function attachTabView(tabId: string, view: WebContentsView, targetWindow: BrowserWindow): void {
+  targetWindow.contentView.addChildView(view);
+  resizeView(view, targetWindow);
+  tabViews.set(tabId, view);
+}
+
 // ── Visibility ──────────────────────────────────────────────────────────
 
 export function showTabView(tabId: string): void {

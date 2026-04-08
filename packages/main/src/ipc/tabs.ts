@@ -12,7 +12,7 @@ import { getAdBlockService } from '../services/adblock-engine';
 import { isGovCaptureDomain, captureCurrentPage } from '../services/interaction-vault';
 import { TabManager } from '../tabs/TabManager';
 import { TabSessionManager } from '../tabs/TabSessionManager';
-import { getTabView, getAllTabViews, resizeAllViews, hideAllTabViews } from '../tabs/TabWebContents';
+import { getTabView, getAllTabViews, resizeAllViews, hideAllTabViews, detachTabView } from '../tabs/TabWebContents';
 
 function isAllowedUrl(url: string): boolean {
   if (!url) return false;
@@ -681,6 +681,25 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle(IPC.TAB_UNMUTE, (_e, id: string) => tabManager.unmuteTab(id));
   ipcMain.handle(IPC.TAB_REOPEN_CLOSED, () => tabManager.reopenClosedTab());
   ipcMain.handle(IPC.TAB_GET_STATE, () => tabManager.getState());
+
+  ipcMain.handle(IPC.TAB_DETACH, async (_event, tabId: string, screenX: number, screenY: number) => {
+    const tab = tabManager.getTab(tabId);
+    if (!tab) return null;
+
+    // Detach the WebContentsView from the current window
+    const view = detachTabView(tabId, mainWindow);
+    if (!view) return null;
+
+    // Remove tab from current window's database
+    const db = getDatabase();
+    db.prepare('DELETE FROM tabs WHERE id = ?').run(tabId);
+
+    // Broadcast update to source window
+    broadcastState();
+
+    return { success: true, tabId, url: tab.url };
+  });
+
   ipcMain.handle(IPC.GROUP_CREATE, (_e, tabIds: string[], name?: string) => tabManager.createGroup(tabIds, name));
   ipcMain.handle(IPC.GROUP_ADD_TAB, (_e, tabId: string, groupId: string) => tabManager.addTabToGroup(tabId, groupId));
   ipcMain.handle(IPC.GROUP_REMOVE_TAB, (_e, tabId: string) => tabManager.removeTabFromGroup(tabId));
@@ -784,6 +803,27 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     }
     // Note: Cross-domain navigation is allowed — this is a web browser.
     // Ad redirect hijacking is already blocked by the isAdPopupUrl check above.
+
+    // Intercept navigations to downloadable file URLs — convert to actual downloads.
+    // Some sites (OBS, SourceForge, GitHub releases) redirect through JS to a file URL.
+    // Without this, the browser navigates to the file URL instead of downloading it.
+    const DOWNLOAD_EXTENSIONS = [
+      '.exe', '.msi', '.dmg', '.pkg', '.deb', '.rpm', '.AppImage', '.snap',
+      '.zip', '.7z', '.rar', '.tar', '.tar.gz', '.tgz', '.tar.bz2', '.tar.xz',
+      '.iso', '.img',
+      '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+      '.mp4', '.mkv', '.avi', '.mov', '.mp3', '.wav', '.flac',
+      '.apk', '.aab', '.ipa',
+    ];
+    try {
+      const navUrl = new URL(url);
+      const pathname = navUrl.pathname.toLowerCase();
+      if (DOWNLOAD_EXTENSIONS.some(ext => pathname.endsWith(ext))) {
+        event.preventDefault();
+        wc.downloadURL(url);
+        return;
+      }
+    } catch { /* URL parsing failed — let navigation proceed */ }
   });
 
   // Handle target="_blank" links, window.open(), and middle-click
