@@ -950,8 +950,8 @@ export function App() {
         }} />
       )}
 
-      {/* Browser Import Banner */}
-      {showImportBanner && (
+      {/* Browser Import Banner — only shown on internal pages (no WebContentsView covering it) */}
+      {showImportBanner && useNavigationStore.getState().currentUrl.startsWith('os-browser://') && (
         <React.Suspense fallback={null}>
           <ImportBanner onClose={() => {
             setShowImportBanner(false);
