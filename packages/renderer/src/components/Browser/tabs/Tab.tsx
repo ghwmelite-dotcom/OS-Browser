@@ -46,7 +46,7 @@ function getTabColor(index: number) {
 }
 
 // Chrome-style tab width: fills available space, shrinks as tabs increase
-const MIN_TAB_WIDTH = 48;
+const MIN_TAB_WIDTH = 80;
 const MAX_TAB_WIDTH = 280;
 const PINNED_TAB_WIDTH = 34;
 const NEW_TAB_BTN_WIDTH = 36;
@@ -191,7 +191,7 @@ export function Tab({
       className={`
         group relative flex items-center h-[34px] cursor-pointer
         transition-all duration-200 ease-out
-        ${isPinned ? 'justify-center px-1' : isCompact ? 'px-1.5 gap-1' : 'px-3 gap-2.5'}
+        ${isPinned ? 'justify-center px-1' : isCompact ? 'px-1 gap-0.5' : 'px-2 gap-1.5'}
         ${isClosing ? 'tab-closing' : ''}
         ${isSelected ? 'ring-1 ring-white/20 ring-inset' : ''}
         ${isDragging ? 'opacity-50' : ''}
@@ -206,8 +206,8 @@ export function Tab({
         borderLeft: isActive ? `1px solid ${color.border}` : '1px solid transparent',
         borderRight: isActive ? `1px solid ${color.border}` : '1px solid transparent',
         borderBottom: isActive ? 'none' : groupColor ? `2px solid ${groupColor}` : '2px solid transparent',
-        clipPath: isPinned ? 'none' : 'polygon(12px 0%, calc(100% - 12px) 0%, 100% 100%, 0% 100%)',
-        marginRight: isPinned ? undefined : '-16px',
+        clipPath: isPinned ? 'none' : 'polygon(6px 0%, calc(100% - 6px) 0%, 100% 100%, 0% 100%)',
+        marginRight: isPinned ? undefined : '-8px',
         zIndex: isActive ? 3 : isHovered ? 2 : 1,
       }}
       role="tab"
@@ -273,8 +273,8 @@ export function Tab({
         )}
       </div>
 
-      {/* Title -- hidden when tab is too compact */}
-      {!isPinned && !isCompact && (
+      {/* Title -- always shown for unpinned tabs, truncated naturally */}
+      {!isPinned && (
         <div className="flex-1 min-w-0 relative overflow-hidden">
           <span
             className={`
@@ -286,7 +286,7 @@ export function Tab({
           </span>
           {/* Gradient fade-out mask */}
           <div
-            className="absolute top-0 right-0 h-full w-10 pointer-events-none"
+            className="absolute top-0 right-0 h-full w-6 pointer-events-none"
             style={{
               background: isActive
                 ? `linear-gradient(to left, ${color.bg}, transparent)`
@@ -319,7 +319,7 @@ export function Tab({
         <button
           onClick={handleClose}
           className={`
-            w-[20px] h-[20px] flex items-center justify-center rounded shrink-0
+            w-[16px] h-[16px] flex items-center justify-center rounded shrink-0
             transition-all duration-100
             hover:bg-[rgba(255,255,255,0.1)] active:bg-[rgba(255,255,255,0.15)]
             focus:outline-none
