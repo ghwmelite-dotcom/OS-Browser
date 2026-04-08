@@ -103,6 +103,7 @@ export function Tab({
     [tabCount, containerWidth, isPinned, overrideWidth],
   );
   const isCompact = dynamicWidth < 54;
+  const isNarrow = dynamicWidth < 130;
 
   const handleClose = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -149,7 +150,8 @@ export function Tab({
   }, []);
 
   // Show audio indicator between title and close button
-  const showAudioIndicator = !isPinned && !isCompact && (isAudioPlaying || isMuted);
+  // Hide audio indicator on narrow tabs to make room for title (Chrome behavior)
+  const showAudioIndicator = !isPinned && !isNarrow && (isAudioPlaying || isMuted);
 
   // Merge refs: tabRef for internal logic + setDragRef for @dnd-kit sortable
   const mergedRef = (node: HTMLDivElement | null) => {
@@ -314,7 +316,7 @@ export function Tab({
         </button>
       )}
 
-      {/* Close button -- always visible normally, hover-only when compact */}
+      {/* Close button -- hover-only on narrow tabs, visible on wide tabs (Chrome behavior) */}
       {!isPinned && (
         <button
           onClick={handleClose}
@@ -323,7 +325,7 @@ export function Tab({
             transition-all duration-100
             hover:bg-[rgba(255,255,255,0.1)] active:bg-[rgba(255,255,255,0.15)]
             focus:outline-none
-            ${isCompact
+            ${isNarrow
               ? (isHovered ? 'opacity-80' : 'opacity-0 w-0 overflow-hidden')
               : (isHovered || isActive ? 'opacity-60 hover:opacity-100' : 'opacity-0')
             }
