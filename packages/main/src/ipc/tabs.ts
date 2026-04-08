@@ -45,6 +45,7 @@ const oauthTabOrigins = new Map<string, { openerTabId: string; openerHost: strin
 // Reads encrypted credentials from disk — if none exist, does nothing (no disruption).
 import fs from 'fs';
 import { decryptCredential } from '../services/credential-encryption';
+import { reactivateTab } from '../services/TabLifecycleManager';
 
 const GOVCHAT_CRED_FILE = path.join(app.getPath('userData'), '.govchat-credentials');
 
@@ -198,6 +199,31 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
         memorySavedBytes: suspendInfo?.memorySavedBytes || 0,
       });
     }
+
+    // Restore scroll position and form data after discarded tab reactivation
+    const lifecycleInfo = reactivateTab(id);
+    if (lifecycleInfo && lifecycleInfo.state === 'discarded') {
+      const view = getTabView(id);
+      if (view) {
+        view.webContents.once('did-finish-load', () => {
+          const scrollY = lifecycleInfo.savedScrollY || 0;
+          const formData = lifecycleInfo.savedFormData || {};
+          if (scrollY > 0) {
+            view.webContents.executeJavaScript(`window.scrollTo(0, ${scrollY})`).catch(() => {});
+          }
+          if (Object.keys(formData).length > 0) {
+            const formScript = Object.entries(formData)
+              .map(([key, value]) => {
+                const escaped = (value as string).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                return `(document.getElementById('${key}') || document.querySelector('[name="${key}"]') || {}).value = '${escaped}';`;
+              })
+              .join('\n');
+            view.webContents.executeJavaScript(formScript).catch(() => {});
+          }
+        });
+      }
+    }
+
     return result;
   });
 
