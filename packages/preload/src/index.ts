@@ -137,6 +137,11 @@ contextBridge.exposeInMainWorld('osBrowser', {
       ipcRenderer.on('tab:restored', listener);
       return () => ipcRenderer.removeListener('tab:restored', listener);
     },
+    onLifecycleChanged: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('tab:lifecycle-changed', listener);
+      return () => ipcRenderer.removeListener('tab:lifecycle-changed', listener);
+    },
   },
 
   groups: {

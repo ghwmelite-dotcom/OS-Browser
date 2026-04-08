@@ -64,6 +64,7 @@ export function TabBar() {
   const [isDraggingOutside, setIsDraggingOutside] = useState(false);
   const tabBarRef = useRef<HTMLDivElement>(null);
   const [suspendedTabIds, setSuspendedTabIds] = useState<Set<string>>(new Set());
+  const [tabLifecycleStates, setTabLifecycleStates] = useState<Map<string, string>>(new Map());
   const [isClosingMode, setIsClosingMode] = useState(false);
   const [frozenTabWidth, setFrozenTabWidth] = useState<number | null>(null);
 
@@ -165,6 +166,28 @@ export function TabBar() {
             next.delete(data.id);
             return next;
           });
+        }));
+      }
+      if (window.osBrowser?.memorySaver?.onLifecycleChanged) {
+        cleanups.push(window.osBrowser.memorySaver.onLifecycleChanged((data: any) => {
+          setTabLifecycleStates(prev => {
+            const next = new Map(prev);
+            if (data.state === 'active') {
+              next.delete(data.id);
+            } else {
+              next.set(data.id, data.state);
+            }
+            return next;
+          });
+          if (data.state === 'discarded') {
+            setSuspendedTabIds(prev => new Set([...prev, data.id]));
+          } else if (data.state === 'active') {
+            setSuspendedTabIds(prev => {
+              const next = new Set(prev);
+              next.delete(data.id);
+              return next;
+            });
+          }
         }));
       }
     } catch {}
@@ -464,6 +487,7 @@ export function TabBar() {
                           isMuted={!!tab.is_muted}
                           isSelected={selectedTabIds.includes(tab.id)}
                           isSuspended={suspendedTabIds.has(tab.id)}
+                          lifecycleState={(tabLifecycleStates.get(tab.id) as any) || 'active'}
                           groupColor={group.color}
                           isNextToActive={nextTab?.id === activeTabId}
                           isPrevToActive={prevTab?.id === activeTabId}
@@ -506,6 +530,7 @@ export function TabBar() {
                   isMuted={!!tab.is_muted}
                   isSelected={selectedTabIds.includes(tab.id)}
                   isSuspended={suspendedTabIds.has(tab.id)}
+                  lifecycleState={(tabLifecycleStates.get(tab.id) as any) || 'active'}
                   groupColor={null}
                   isNextToActive={nextTab?.id === activeTabId}
                   isPrevToActive={prevTab?.id === activeTabId}
