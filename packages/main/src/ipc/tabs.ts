@@ -1160,6 +1160,8 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
 
   wc.on('did-navigate-in-page', (_e, url) => {
     if (wc.isDestroyed() || mainWindow.isDestroyed()) return;
+    // Persist SPA navigation URL to database so tab restore uses the correct URL
+    try { db.prepare('UPDATE tabs SET url = ? WHERE id = ?').run(url, tabId); } catch {}
     try { mainWindow.webContents.send('tab:url-updated', { id: tabId, url, canGoBack: wc.canGoBack(), canGoForward: wc.canGoForward() }); } catch {}
 
     // Apply cosmetic filters + YouTube ad blocking (YouTube is a SPA)
