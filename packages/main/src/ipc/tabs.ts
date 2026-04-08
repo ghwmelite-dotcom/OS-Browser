@@ -318,7 +318,7 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
             return { success: true, action: 'entered' };
           } catch (e) { return { success: false, error: e.message || 'PiP not supported' }; }
         })()
-      `);
+      `, true);
       return result;
     } catch (err: any) {
       return { success: false, error: err.message || 'Failed to execute PiP' };
