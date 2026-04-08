@@ -61,6 +61,8 @@ export function TabBar() {
   const [containerWidth, setContainerWidth] = useState(800);
   const [collapsedGroupIds, setCollapsedGroupIds] = useState<Set<string>>(new Set());
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [isDraggingOutside, setIsDraggingOutside] = useState(false);
+  const tabBarRef = useRef<HTMLDivElement>(null);
   const [suspendedTabIds, setSuspendedTabIds] = useState<Set<string>>(new Set());
   const [isClosingMode, setIsClosingMode] = useState(false);
   const [frozenTabWidth, setFrozenTabWidth] = useState<number | null>(null);
@@ -244,20 +246,33 @@ export function TabBar() {
     return ids;
   }, [pinnedTabs, activeGroups, groupedTabs, ungroupedTabs, collapsedGroupIds]);
 
-  // Handle drag end — reorder tab to the new position
+  // Handle drag end — reorder tab or detach to new window
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
+      const draggedId = event.active.id as string;
       setActiveDragId(null);
-      const { active, over } = event;
-      if (!over || active.id === over.id) return;
+      setIsDraggingOutside(false);
 
-      const oldIndex = allVisibleTabIds.indexOf(active.id as string);
+      if (isDraggingOutside) {
+        // Detach tab to new window
+        const pointerEvent = event.activatorEvent as PointerEvent;
+        const x = pointerEvent.screenX + (event.delta?.x || 0);
+        const y = pointerEvent.screenY + (event.delta?.y || 0);
+        window.osBrowser?.tabs?.detach?.(draggedId, x, y);
+        return;
+      }
+
+      // Existing reorder logic
+      const { over } = event;
+      if (!over || draggedId === over.id) return;
+
+      const oldIndex = allVisibleTabIds.indexOf(draggedId);
       const newIndex = allVisibleTabIds.indexOf(over.id as string);
       if (oldIndex !== -1 && newIndex !== -1) {
-        reorderTab(active.id as string, newIndex);
+        reorderTab(draggedId, newIndex);
       }
     },
-    [allVisibleTabIds, reorderTab],
+    [allVisibleTabIds, reorderTab, isDraggingOutside],
   );
 
   // Active drag tab info for overlay
@@ -283,6 +298,7 @@ export function TabBar() {
 
   return (
     <div
+      ref={tabBarRef}
       className="h-9 flex items-end shrink-0 relative z-[50] select-none kente-tab-bar"
       style={{ background: 'var(--kente-tab-bg, var(--color-bg))', borderBottom: '1px solid var(--color-border-1)', WebkitAppRegion: 'drag' } as React.CSSProperties}
       role="tablist"
@@ -349,8 +365,18 @@ export function TabBar() {
            sensors={sensors}
            collisionDetection={closestCenter}
            onDragStart={(event) => setActiveDragId(event.active.id as string)}
+           onDragMove={(event) => {
+             if (!tabBarRef.current || !event.active) return;
+             const rect = tabBarRef.current.getBoundingClientRect();
+             const pointerY = (event.activatorEvent as PointerEvent)?.clientY;
+             if (pointerY !== undefined) {
+               const currentY = pointerY + (event.delta?.y || 0);
+               const outside = currentY < rect.top - 40 || currentY > rect.bottom + 40;
+               setIsDraggingOutside(outside);
+             }
+           }}
            onDragEnd={handleDragEnd}
-           onDragCancel={() => setActiveDragId(null)}
+           onDragCancel={() => { setActiveDragId(null); setIsDraggingOutside(false); }}
          >
           <SortableContext items={allVisibleTabIds} strategy={horizontalListSortingStrategy}>
           {/* ── Pinned tabs ── */}
@@ -496,7 +522,7 @@ export function TabBar() {
           })}
 
           </SortableContext>
-          <TabDragOverlay activeTab={activeDragTab} accentColor={activeDragColor} />
+          <TabDragOverlay activeTab={activeDragTab} accentColor={activeDragColor} isDetaching={isDraggingOutside} />
          </DndContext>
 
           {/* ── New tab button — inline right after last tab (Chrome-style) ── */}

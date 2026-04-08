@@ -4,9 +4,10 @@ import { DragOverlay } from '@dnd-kit/core';
 interface TabDragOverlayProps {
   activeTab: { id: string; title: string; favicon: string | null } | null;
   accentColor: string;
+  isDetaching?: boolean;
 }
 
-export function TabDragOverlay({ activeTab, accentColor }: TabDragOverlayProps) {
+export function TabDragOverlay({ activeTab, accentColor, isDetaching }: TabDragOverlayProps) {
   if (!activeTab) return null;
 
   return (
@@ -18,7 +19,9 @@ export function TabDragOverlay({ activeTab, accentColor }: TabDragOverlayProps) 
           background: 'var(--color-surface-1)',
           opacity: 0.9,
           borderColor: accentColor,
-          boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.3)',
+          boxShadow: isDetaching ? '0 8px 32px rgba(0,0,0,0.4)' : '0 8px 24px -4px rgba(0, 0, 0, 0.3)',
+          transform: isDetaching ? 'scale(1.05)' : undefined,
+          transition: 'transform 150ms ease-out, box-shadow 150ms ease-out',
         }}
       >
         {/* Favicon */}
