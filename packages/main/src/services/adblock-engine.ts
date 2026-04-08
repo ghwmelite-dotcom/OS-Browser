@@ -1889,9 +1889,11 @@ export class AdBlockService {
     // ── Platform-specific video ad blocking ──
 
     // YouTube + YouTube Music
-    if (['www.youtube.com', 'youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(hostname)) {
-      wc.executeJavaScript(YOUTUBE_AD_BLOCK_SCRIPT).catch(() => {});
-    }
+    // DISABLED: YouTube's anti-ad-blocker detects fetch/XHR response tampering and breaks the video player
+    // ("Something went wrong. Refresh or try again later."). Network-level blocking via Ghostery still works.
+    // if (['www.youtube.com', 'youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(hostname)) {
+    //   wc.executeJavaScript(YOUTUBE_AD_BLOCK_SCRIPT).catch(() => {});
+    // }
 
     // Twitch
     if (['www.twitch.tv', 'twitch.tv', 'm.twitch.tv'].includes(hostname)) {
