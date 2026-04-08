@@ -205,14 +205,14 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
   });
 
   ipcMain.handle(IPC.TAB_SWITCH, async (_event, id: string) => {
-    // Auto-PiP: if outgoing tab has playing video, pop it into PiP
+    // Auto-PiP: if outgoing tab has playing video, pop it into PiP (non-blocking)
     const currentActive = tabManager.getActiveTab();
     if (currentActive && currentActive.id !== id) {
-      await tryAutoPiP(currentActive.id, !!currentActive.is_muted);
+      tryAutoPiP(currentActive.id, !!currentActive.is_muted).catch(() => {});
     }
 
-    // Auto-exit PiP if switching back to PiP source tab
-    await tryAutoExitPiP(id);
+    // Auto-exit PiP if switching back to PiP source tab (non-blocking)
+    tryAutoExitPiP(id).catch(() => {});
 
     // Check if tab was suspended BEFORE activating (activation recreates the view)
     const wasSuspended = isTabSuspended(id);
@@ -1414,7 +1414,8 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
   // ── Audio indicator ───────────────────────────────────────────────
   wc.on('media-started-playing', () => {
     _tabManager.setAudioPlaying(tabId, true);
-    extractMediaMetadata(tabId);
+    // Delay metadata extraction to avoid interfering with player initialization
+    setTimeout(() => extractMediaMetadata(tabId), 2000);
   });
 
   wc.on('media-paused', () => {
