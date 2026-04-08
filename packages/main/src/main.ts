@@ -362,10 +362,13 @@ app.whenReady().then(async () => {
       'pointerLock',        // Pointer lock for games
       'idle-detection',     // Idle detection API
       'identity-credentials-get', // FedCM — Google Sign-In, Microsoft login, etc.
+      'window-management',  // Window placement API (PiP windows)
     ];
     if (ALLOWED_PERMISSIONS.includes(permission)) {
       callback(true);
     } else {
+      // Log denied permissions for debugging
+      console.log('[Permission] Denied:', permission);
       callback(false);
     }
   });
@@ -374,6 +377,7 @@ app.whenReady().then(async () => {
     const ALLOWED_PERMISSIONS = [
       'media', 'notifications', 'clipboard-read', 'clipboard-sanitized-write',
       'fullscreen', 'pointerLock', 'idle-detection', 'identity-credentials-get',
+      'window-management',
     ];
     return ALLOWED_PERMISSIONS.includes(permission);
   });
