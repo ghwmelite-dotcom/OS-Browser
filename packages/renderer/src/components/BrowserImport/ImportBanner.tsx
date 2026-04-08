@@ -227,8 +227,8 @@ export default function ImportBanner({ onClose }: ImportBannerProps) {
 
   return (
     <div style={{
-      position: 'fixed', top: 56, left: '50%', transform: 'translateX(-50%)',
-      zIndex: 9999, padding: '14px 18px', borderRadius: 14,
+      position: 'fixed', top: 80, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 99999, padding: '14px 18px', borderRadius: 14,
       background: 'var(--color-surface-1)', border: '1px solid var(--color-border-1)',
       boxShadow: '0 8px 32px rgba(0,0,0,0.18)', width: 380, maxWidth: '92vw',
       animation: 'fadeUp 0.3s ease-out',
