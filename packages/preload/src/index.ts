@@ -11,6 +11,8 @@ const IPC = {
   TAB_PIN: 'tab:pin', TAB_UNPIN: 'tab:unpin',
   TAB_MUTE: 'tab:mute', TAB_UNMUTE: 'tab:unmute',
   TAB_REOPEN_CLOSED: 'tab:reopen-closed', TAB_GET_STATE: 'tab:get-state',
+  TAB_DETACH: 'tab:detach', TAB_ATTACH: 'tab:attach',
+  WINDOW_CREATE_FROM_TAB: 'window:create-from-tab',
   GROUP_CREATE: 'group:create', GROUP_ADD_TAB: 'group:add-tab',
   GROUP_REMOVE_TAB: 'group:remove-tab', GROUP_UPDATE: 'group:update',
   GROUP_COLLAPSE: 'group:collapse', GROUP_EXPAND: 'group:expand',
@@ -110,6 +112,7 @@ contextBridge.exposeInMainWorld('osBrowser', {
     unmute: (id: string) => ipcRenderer.invoke(IPC.TAB_UNMUTE, id),
     reopenClosed: () => ipcRenderer.invoke(IPC.TAB_REOPEN_CLOSED),
     getState: () => ipcRenderer.invoke(IPC.TAB_GET_STATE),
+    detach: (tabId: string, x: number, y: number) => ipcRenderer.invoke(IPC.TAB_DETACH, tabId, x, y),
     printToPdf: (id: string) => ipcRenderer.invoke('tab:print-to-pdf', id),
     onStateUpdated: (callback: (data: any) => void) => {
       const listener = (_e: any, data: any) => callback(data);
