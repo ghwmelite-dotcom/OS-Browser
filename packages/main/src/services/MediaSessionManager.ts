@@ -74,18 +74,18 @@ export async function tryAutoPiP(outgoingTabId: string, isMuted: boolean): Promi
 
     if (!hasPlayingVideo) return false;
 
-    // Enter PiP
+    // Enter PiP — userGesture: true bypasses the gesture requirement
     await view.webContents.executeJavaScript(`
-      (() => {
+      (async () => {
         const videos = document.querySelectorAll('video');
         for (const v of videos) {
           if (!v.paused && !v.ended && v.readyState > 2) {
-            v.requestPictureInPicture().catch(() => {});
+            try { await v.requestPictureInPicture(); } catch {}
             break;
           }
         }
       })()
-    `);
+    `, true);
 
     // Inject Media Session action handlers for skip controls
     await view.webContents.executeJavaScript(`
@@ -151,17 +151,16 @@ export async function reEnterPiP(tabId: string): Promise<boolean> {
 
   try {
     const entered: boolean = await view.webContents.executeJavaScript(`
-      (() => {
+      (async () => {
         const videos = document.querySelectorAll('video');
         for (const v of videos) {
           if (!v.paused && !v.ended && v.readyState > 2) {
-            v.requestPictureInPicture().catch(() => {});
-            return true;
+            try { await v.requestPictureInPicture(); return true; } catch { return false; }
           }
         }
         return false;
       })()
-    `);
+    `, true);
 
     if (entered) {
       pipSourceTabId = tabId;

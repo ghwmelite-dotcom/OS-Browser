@@ -32,7 +32,12 @@ export function setTabView(tabId: string, view: WebContentsView): void {
 // ── View lifecycle ──────────────────────────────────────────────────────
 
 export function createTabView(tabId: string, mainWindow: BrowserWindow): WebContentsView {
-  const view = new WebContentsView();
+  const view = new WebContentsView({
+    webPreferences: {
+      sandbox: false,
+      contextIsolation: true,
+    },
+  });
   mainWindow.contentView.addChildView(view);
   resizeView(view, mainWindow);
   tabViews.set(tabId, view);
