@@ -46,7 +46,7 @@ function getTabColor(index: number) {
 }
 
 // Chrome-style tab width: fills available space, shrinks as tabs increase
-const MIN_TAB_WIDTH = 60;
+const MIN_TAB_WIDTH = 48;
 const MAX_TAB_WIDTH = 280;
 const PINNED_TAB_WIDTH = 34;
 const NEW_TAB_BTN_WIDTH = 36;
@@ -102,7 +102,7 @@ export function Tab({
     },
     [tabCount, containerWidth, isPinned, overrideWidth],
   );
-  const isCompact = dynamicWidth < 100;
+  const isCompact = dynamicWidth < 54;
 
   const handleClose = (e: React.MouseEvent) => {
     e.stopPropagation();
