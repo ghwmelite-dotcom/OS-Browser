@@ -46,6 +46,20 @@ const oauthTabOrigins = new Map<string, { openerTabId: string; openerHost: strin
 import fs from 'fs';
 import { decryptCredential } from '../services/credential-encryption';
 import { reactivateTab } from '../services/TabLifecycleManager';
+import {
+  initMediaSession,
+  tryAutoPiP,
+  tryAutoExitPiP,
+  extractMediaMetadata,
+  clearMediaState,
+  mediaPlayPause,
+  mediaSkipForward,
+  mediaSkipBackward,
+  startProgressPolling,
+  stopProgressPolling,
+  getMediaState,
+  reEnterPiP,
+} from '../services/MediaSessionManager';
 
 const GOVCHAT_CRED_FILE = path.join(app.getPath('userData'), '.govchat-credentials');
 
@@ -146,6 +160,9 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
   tabManager.setupViewEventsFn = (view, tabId, win) => setupViewEvents(view, tabId, win);
   _tabManager = tabManager;
 
+  // ── Media Session ──────────────────────────────────────────────────
+  initMediaSession(mainWindow);
+
   // ── Session save/restore ──────────────────────────────────────────────
   const sessionManager = new TabSessionManager();
   sessionManager.startAutoSave(tabManager);
@@ -170,6 +187,15 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle('memory-saver:exclude-remove', (_e, domain: string) => removeExcludedDomain(domain));
   ipcMain.handle('memory-saver:exclude-list', () => getExcludedDomains());
 
+  // ── Media control IPC ──────────────────────────────────────────────
+  ipcMain.handle(IPC.MEDIA_PLAY_PAUSE, (_e, tabId: string) => mediaPlayPause(tabId));
+  ipcMain.handle(IPC.MEDIA_SKIP_FORWARD, (_e, tabId: string) => mediaSkipForward(tabId));
+  ipcMain.handle(IPC.MEDIA_SKIP_BACKWARD, (_e, tabId: string) => mediaSkipBackward(tabId));
+  ipcMain.handle(IPC.MEDIA_GET_STATE, () => getMediaState());
+  ipcMain.handle(IPC.MEDIA_START_PROGRESS, (_e, tabId: string) => startProgressPolling(tabId));
+  ipcMain.handle(IPC.MEDIA_STOP_PROGRESS, () => stopProgressPolling());
+  ipcMain.handle('media:re-enter-pip', (_e, tabId: string) => reEnterPiP(tabId));
+
   ipcMain.handle(IPC.TAB_CREATE, (_event, url?: string) => {
     return tabManager.createTab(url);
   });
@@ -178,7 +204,16 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     return tabManager.closeTab(id);
   });
 
-  ipcMain.handle(IPC.TAB_SWITCH, (_event, id: string) => {
+  ipcMain.handle(IPC.TAB_SWITCH, async (_event, id: string) => {
+    // Auto-PiP: if outgoing tab has playing video, pop it into PiP
+    const currentActive = tabManager.getActiveTab();
+    if (currentActive && currentActive.id !== id) {
+      await tryAutoPiP(currentActive.id, !!currentActive.is_muted);
+    }
+
+    // Auto-exit PiP if switching back to PiP source tab
+    await tryAutoExitPiP(id);
+
     // Check if tab was suspended BEFORE activating (activation recreates the view)
     const wasSuspended = isTabSuspended(id);
     let suspendInfo: any = null;
@@ -1379,10 +1414,12 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
   // ── Audio indicator ───────────────────────────────────────────────
   wc.on('media-started-playing', () => {
     _tabManager.setAudioPlaying(tabId, true);
+    extractMediaMetadata(tabId);
   });
 
   wc.on('media-paused', () => {
     _tabManager.setAudioPlaying(tabId, false);
+    clearMediaState(tabId);
   });
 
   // Page caching disabled — was caching every page load including potentially sensitive content
