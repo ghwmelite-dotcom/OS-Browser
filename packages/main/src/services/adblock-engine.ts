@@ -2080,30 +2080,68 @@ export class AdBlockService {
     }
 
     if (this.blocker) {
-      // Enable network-level blocking on the default session
-      try {
-        this.blocker.enableBlockingInSession(session.defaultSession);
-        console.log('[AdBlock] Network blocking enabled via session');
-      } catch {
-        console.warn('[AdBlock] Network blocking unavailable (requires Electron 35+). Cosmetic filtering and video ad blocking are still active.');
-      }
+      // YouTube domains to whitelist from network blocking (video streams use googlevideo.com)
+      const YOUTUBE_WHITELIST = new Set([
+        'www.youtube.com', 'youtube.com', 'm.youtube.com', 'music.youtube.com',
+        'youtu.be', 'www.youtube-nocookie.com',
+      ]);
 
+      // Manual network blocking with YouTube whitelist
+      // We DON'T use enableBlockingInSession because it blocks YouTube CDN requests
+      // that share domains with legitimate video streams (googlevideo.com, ytimg.com)
       try {
-        this.blocker.on('request-blocked', (request: any) => {
-          this.totalBlocked++;
-          // Estimate bytes saved based on resource type
-          const type = request?.type || '';
-          const estimatedBytes = type === 'script' ? 45_000
-            : type === 'image' ? 150_000
-            : type === 'media' ? 2_000_000
-            : type === 'xmlhttprequest' || type === 'ping' ? 5_000
-            : type === 'stylesheet' ? 30_000
-            : type === 'font' ? 80_000
-            : 20_000;
-          this.totalBytesSaved += estimatedBytes;
-          this.sessionBytesSaved += estimatedBytes;
+        const blocker = this.blocker;
+        const self = this;
+        session.defaultSession.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, (details, callback) => {
+          // Skip if ad blocking is globally disabled
+          if (!self.enabled) { callback({}); return; }
+          // Skip main frame requests (page navigations)
+          if (details.resourceType === 'mainFrame') { callback({}); return; }
+
+          // Whitelist YouTube: allow ALL requests that originate from YouTube pages
+          try {
+            const referrerHost = details.referrer ? new URL(details.referrer).hostname : '';
+            const requestHost = new URL(details.url).hostname;
+            if (YOUTUBE_WHITELIST.has(referrerHost) || YOUTUBE_WHITELIST.has(requestHost) ||
+                requestHost.endsWith('.googlevideo.com') || requestHost.endsWith('.ytimg.com') ||
+                requestHost.endsWith('.youtube.com') || requestHost.endsWith('.ggpht.com')) {
+              callback({});
+              return;
+            }
+          } catch {}
+
+          // Check against filter engine
+          try {
+            const { Request } = require('@ghostery/adblocker');
+            const request = Request.fromRawDetails({
+              url: details.url,
+              sourceUrl: details.referrer || '',
+              type: (details.resourceType || 'other') as any,
+            });
+            const { match } = blocker.match(request);
+            if (match) {
+              self.totalBlocked++;
+              const type = details.resourceType || '';
+              const estimatedBytes = type === 'script' ? 45_000
+                : type === 'image' ? 150_000
+                : type === 'media' ? 2_000_000
+                : type === 'xhr' || type === 'ping' ? 5_000
+                : type === 'stylesheet' ? 30_000
+                : type === 'font' ? 80_000
+                : 20_000;
+              self.totalBytesSaved += estimatedBytes;
+              self.sessionBytesSaved += estimatedBytes;
+              callback({ cancel: true });
+              return;
+            }
+          } catch {}
+
+          callback({});
         });
-      } catch {}
+        console.log('[AdBlock] Network blocking enabled with YouTube whitelist');
+      } catch {
+        console.warn('[AdBlock] Network blocking unavailable. Cosmetic filtering and video ad blocking are still active.');
+      }
     }
 
     // Register IPC handlers
@@ -2141,13 +2179,6 @@ export class AdBlockService {
     // Skip internal pages
     if (url.startsWith('os-browser://') || url.startsWith('about:') || url.startsWith('data:') || url.startsWith('chrome:')) return;
 
-    // DIAGNOSTIC: Skip ALL ad blocking on YouTube to isolate root cause
-    try {
-      const testHost = new URL(url).hostname;
-      if (['www.youtube.com', 'youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(testHost)) {
-        return; // Skip ALL filtering — cosmetic, scripts, everything
-      }
-    } catch {}
 
     let hostname: string;
     try {
@@ -2184,11 +2215,10 @@ export class AdBlockService {
 
     // ── Platform-specific video ad blocking ──
 
-    // YouTube + YouTube Music — TEMPORARILY FULLY DISABLED for root cause investigation
-    // If YouTube STILL breaks with this disabled, the ad blocker is NOT the cause.
-    // if (['www.youtube.com', 'youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(hostname)) {
-    //   wc.executeJavaScript(YOUTUBE_MINIMAL_SCRIPT).catch(() => {});
-    // }
+    // YouTube + YouTube Music — CSS cosmetic hiding + auto-skip only
+    if (['www.youtube.com', 'youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(hostname)) {
+      wc.executeJavaScript(YOUTUBE_MINIMAL_SCRIPT).catch(() => {});
+    }
 
     // Twitch
     if (['www.twitch.tv', 'twitch.tv', 'm.twitch.tv'].includes(hostname)) {
@@ -2295,13 +2325,7 @@ export class AdBlockService {
 
     ipcMain.handle('adblock:toggle-global', () => {
       this.enabled = !this.enabled;
-      if (this.blocker) {
-        if (this.enabled) {
-          this.blocker.enableBlockingInSession(session.defaultSession);
-        } else {
-          this.blocker.disableBlockingInSession(session.defaultSession);
-        }
-      }
+      // Network blocking uses our custom onBeforeRequest handler which checks this.enabled
       return { enabled: this.enabled };
     });
 
@@ -2348,7 +2372,7 @@ export class AdBlockService {
     }
     if (this.blocker) {
       try {
-        this.blocker.disableBlockingInSession(session.defaultSession);
+        session.defaultSession.webRequest.onBeforeRequest(null);
       } catch {}
       this.blocker = null;
     }
