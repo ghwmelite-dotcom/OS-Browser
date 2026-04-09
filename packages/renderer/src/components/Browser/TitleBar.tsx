@@ -189,6 +189,15 @@ function TitleBarNotifications() {
   const bellRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // Hide/show WebContentsView when notification panel opens/closes
+  useEffect(() => {
+    if (open) {
+      (window as any).osBrowser?.hideWebViews?.();
+    } else {
+      (window as any).osBrowser?.showWebViews?.();
+    }
+  }, [open]);
+
   // Close on outside click
   useEffect(() => {
     if (!open) return;
