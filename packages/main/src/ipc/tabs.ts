@@ -1043,7 +1043,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
         createTabFromMain(mainWindow, `view-source:${wc.getURL()}`);
       }}));
       menu.append(new MenuItem({ label: 'Inspect Element', accelerator: 'Ctrl+Shift+I', click: () => {
-        wc.openDevTools();
+        wc.openDevTools({ mode: 'detach' });
         wc.devToolsWebContents?.focus();
       }}));
     }
@@ -1056,7 +1056,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     if (wc.isDestroyed()) return;
     if (input.type !== 'keyDown') return;
     if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
-      wc.openDevTools();
+      wc.openDevTools({ mode: 'detach' });
     }
   });
 
