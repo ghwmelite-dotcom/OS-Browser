@@ -45,21 +45,23 @@ function getTabColor(index: number) {
   return TAB_COLORS[index % TAB_COLORS.length];
 }
 
-// Chrome-style tab width: fills available space, shrinks as tabs increase
-const MIN_TAB_WIDTH = 80;
-const MAX_TAB_WIDTH = 280;
+// Chrome-exact tab sizing (from Chromium source tab_style.cc)
+const MIN_TAB_WIDTH = 36;       // Minimum: favicon only
+const MIN_ACTIVE_TAB_WIDTH = 54; // Active tab always shows close button
+const MAX_TAB_WIDTH = 240;      // Chrome standard max (includes overlap region)
 const PINNED_TAB_WIDTH = 34;
 const NEW_TAB_BTN_WIDTH = 36;
 
-function calcTabWidth(tabCount: number, pinnedCount: number, containerWidth: number): number {
+function calcTabWidth(tabCount: number, pinnedCount: number, containerWidth: number, isActive?: boolean): number {
   const unpinnedCount = tabCount - pinnedCount;
   if (unpinnedCount <= 0) return MAX_TAB_WIDTH;
   const availableWidth = containerWidth - (pinnedCount * PINNED_TAB_WIDTH) - NEW_TAB_BTN_WIDTH;
   const width = Math.floor(availableWidth / unpinnedCount);
-  return Math.max(MIN_TAB_WIDTH, Math.min(MAX_TAB_WIDTH, width));
+  const min = isActive ? MIN_ACTIVE_TAB_WIDTH : MIN_TAB_WIDTH;
+  return Math.max(min, Math.min(MAX_TAB_WIDTH, width));
 }
 
-export { TAB_COLORS, getTabColor, calcTabWidth, MIN_TAB_WIDTH, MAX_TAB_WIDTH, PINNED_TAB_WIDTH, NEW_TAB_BTN_WIDTH };
+export { TAB_COLORS, getTabColor, calcTabWidth, MIN_TAB_WIDTH, MIN_ACTIVE_TAB_WIDTH, MAX_TAB_WIDTH, PINNED_TAB_WIDTH, NEW_TAB_BTN_WIDTH };
 
 export function Tab({
   id,
@@ -98,9 +100,9 @@ export function Tab({
   const dynamicWidth = useMemo(
     () => {
       if (overrideWidth && !isPinned) return overrideWidth;
-      return isPinned ? PINNED_TAB_WIDTH : calcTabWidth(tabCount, 0, containerWidth);
+      return isPinned ? PINNED_TAB_WIDTH : calcTabWidth(tabCount, 0, containerWidth, isActive);
     },
-    [tabCount, containerWidth, isPinned, overrideWidth],
+    [tabCount, containerWidth, isPinned, overrideWidth, isActive],
   );
   const isCompact = dynamicWidth < 54;
   const isNarrow = dynamicWidth < 130;
@@ -192,8 +194,8 @@ export function Tab({
       {...dragListeners}
       className={`
         group relative flex items-center h-[34px] cursor-pointer
-        transition-all duration-200 ease-out
-        ${isPinned ? 'justify-center px-1' : isCompact ? 'px-1 gap-0.5' : 'px-2 gap-1.5'}
+        transition-all duration-150 ease-out
+        ${isPinned ? 'justify-center px-1' : 'px-2 gap-1.5'}
         ${isClosing ? 'tab-closing' : ''}
         ${isSelected ? 'ring-1 ring-white/20 ring-inset' : ''}
         ${isDragging ? 'opacity-50' : ''}
@@ -201,15 +203,15 @@ export function Tab({
       style={{
         ...dragStyle,
         width: `${dynamicWidth}px`,
-        minWidth: isPinned ? `${PINNED_TAB_WIDTH}px` : `${MIN_TAB_WIDTH}px`,
+        minWidth: isPinned ? `${PINNED_TAB_WIDTH}px` : `${isActive ? MIN_ACTIVE_TAB_WIDTH : MIN_TAB_WIDTH}px`,
         maxWidth: `${MAX_TAB_WIDTH}px`,
-        background: isActive ? color.bg : isHovered ? 'var(--color-surface-2)' : 'transparent',
-        borderTop: isActive ? `2px solid ${color.accent}` : '2px solid transparent',
-        borderLeft: isActive ? `1px solid ${color.border}` : '1px solid transparent',
-        borderRight: isActive ? `1px solid ${color.border}` : '1px solid transparent',
-        borderBottom: isActive ? 'none' : groupColor ? `2px solid ${groupColor}` : '2px solid transparent',
-        clipPath: isPinned ? 'none' : 'polygon(6px 0%, calc(100% - 6px) 0%, 100% 100%, 0% 100%)',
-        marginRight: isPinned ? undefined : '-8px',
+        borderRadius: '8px 8px 0 0',
+        background: isActive
+          ? 'var(--color-surface-1)'
+          : isHovered
+            ? 'var(--color-surface-2)'
+            : 'transparent',
+        borderBottom: isActive ? 'none' : groupColor ? `2px solid ${groupColor}` : 'none',
         zIndex: isActive ? 3 : isHovered ? 2 : 1,
       }}
       role="tab"
@@ -217,16 +219,19 @@ export function Tab({
       title={title}
       data-tab-id={id}
     >
-      {/* Separator between inactive tabs — hide when adjacent to active or hovered */}
-      {!isActive && !isHovered && !isNextToActive && !isPrevToActive && (
-        <div className="absolute right-0 top-[8px] bottom-[8px] w-px bg-border-1/40" />
+      {/* Chrome-style separator — 1px, 20px tall, hidden near active/hovered tabs */}
+      {!isActive && !isHovered && !isNextToActive && !isPrevToActive && !isPinned && (
+        <div
+          className="absolute right-0 w-px pointer-events-none"
+          style={{ top: 7, bottom: 7, background: 'var(--color-border-1)', opacity: 0.5 }}
+        />
       )}
 
-      {/* Active tab bottom cover — connects tab to content area */}
+      {/* Active tab bottom cover — connects tab to content area (Chrome style) */}
       {isActive && (
         <div
-          className="absolute bottom-0 left-0 right-0 h-[2px]"
-          style={{ background: 'var(--color-bg)', zIndex: 4 }}
+          className="absolute bottom-[-1px] left-0 right-0 h-[2px]"
+          style={{ background: 'var(--color-surface-1)', zIndex: 4 }}
         />
       )}
 
@@ -316,24 +321,28 @@ export function Tab({
         </button>
       )}
 
-      {/* Close button -- hover-only on narrow tabs, visible on wide tabs (Chrome behavior) */}
+      {/* Close button — Chrome rules: always on active, hover on inactive (if wide enough), never on pinned */}
       {!isPinned && (
         <button
           onClick={handleClose}
           className={`
-            w-[16px] h-[16px] flex items-center justify-center rounded shrink-0
+            w-[18px] h-[18px] flex items-center justify-center rounded-sm shrink-0
             transition-all duration-100
-            hover:bg-[rgba(255,255,255,0.1)] active:bg-[rgba(255,255,255,0.15)]
+            hover:bg-[rgba(255,255,255,0.15)] active:bg-[rgba(255,255,255,0.2)]
             focus:outline-none
-            ${isNarrow
-              ? (isHovered ? 'opacity-80' : 'opacity-0 w-0 overflow-hidden')
-              : (isHovered || isActive ? 'opacity-60 hover:opacity-100' : 'opacity-0')
+            ${isActive
+              ? 'opacity-70 hover:opacity-100'
+              : isNarrow
+                ? 'opacity-0 w-0 overflow-hidden'
+                : isHovered
+                  ? 'opacity-60 hover:opacity-100'
+                  : 'opacity-0 w-0 overflow-hidden'
             }
           `}
           aria-label={`Close ${title}`}
           tabIndex={isHovered || isActive ? 0 : -1}
         >
-          <X size={11} className="text-text-muted" />
+          <X size={12} className="text-text-muted" />
         </button>
       )}
 
