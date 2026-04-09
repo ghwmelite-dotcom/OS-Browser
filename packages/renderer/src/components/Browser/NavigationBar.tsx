@@ -194,15 +194,18 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
     totalBlocked: number;
     hostname: string;
   }>({ enabled: true, siteEnabled: true, isGovSite: false, isUserWhitelisted: false, totalBlocked: 0, hostname: '' });
+  const [dataSavings, setDataSavings] = useState<{ sessionBytes: number; totalBytes: number }>({ sessionBytes: 0, totalBytes: 0 });
 
   const refreshShieldStatus = useCallback(async () => {
     try {
       const osBrowser = (window as any).osBrowser;
       if (!osBrowser?.adblock) return;
-      const [status, countResult] = await Promise.all([
+      const [status, countResult, savings] = await Promise.all([
         osBrowser.adblock.getStatus(),
         osBrowser.adblock.getBlockedCount(),
+        osBrowser.adblock.getDataSavings?.() || { sessionBytesSaved: 0, totalBytesSaved: 0 },
       ]);
+      setDataSavings({ sessionBytes: savings.sessionBytesSaved || 0, totalBytes: savings.totalBytesSaved || 0 });
       let hostname = '';
       let siteInfo = { enabled: true, isGovSite: false, isUserWhitelisted: false };
       if (currentUrl && !currentUrl.startsWith('os-browser://')) {
@@ -424,8 +427,39 @@ export function NavigationBar({ onOpenHistory, onOpenBookmarks, onOpenSettings, 
                   )}
                 </div>
 
+                {/* Data Savings */}
+                {(dataSavings.sessionBytes > 0 || dataSavings.totalBytes > 0) && (
+                  <div className="px-5 py-3" style={{ background: 'var(--color-surface-2)', borderTop: '1px solid var(--color-border-1)' }}>
+                    <p className="text-[11px] font-semibold text-text-primary mb-2">Data Saved</p>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-text-muted">This session</span>
+                      <span className="text-text-primary font-medium">
+                        {dataSavings.sessionBytes >= 1_073_741_824
+                          ? `${(dataSavings.sessionBytes / 1_073_741_824).toFixed(1)} GB`
+                          : `${(dataSavings.sessionBytes / 1_048_576).toFixed(1)} MB`}
+                        {' '}
+                        <span className="text-[10px]" style={{ color: '#FCD116' }}>
+                          (~GH₵{((dataSavings.sessionBytes / 1_073_741_824) * 12).toFixed(2)})
+                        </span>
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-[11px] mt-1">
+                      <span className="text-text-muted">All time</span>
+                      <span className="text-text-primary font-medium">
+                        {dataSavings.totalBytes >= 1_073_741_824
+                          ? `${(dataSavings.totalBytes / 1_073_741_824).toFixed(1)} GB`
+                          : `${(dataSavings.totalBytes / 1_048_576).toFixed(1)} MB`}
+                        {' '}
+                        <span className="text-[10px]" style={{ color: '#FCD116' }}>
+                          (~GH₵{((dataSavings.totalBytes / 1_073_741_824) * 12).toFixed(2)})
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Footer */}
-                <div className="px-5 pb-4">
+                <div className="px-5 pb-4 pt-3">
                   <p className="text-[10px] text-text-muted text-center mb-1">
                     Reload page for changes to take effect
                   </p>
