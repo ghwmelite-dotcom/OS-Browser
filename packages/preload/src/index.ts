@@ -325,6 +325,7 @@ contextBridge.exposeInMainWorld('osBrowser', {
     toggleSite: (hostname: string) => ipcRenderer.invoke('adblock:toggle-site', hostname),
     isSiteEnabled: (hostname: string) => ipcRenderer.invoke('adblock:is-site-enabled', hostname),
     getBlockedCount: () => ipcRenderer.invoke('adblock:get-blocked-count'),
+    getDataSavings: () => ipcRenderer.invoke('adblock:get-data-savings'),
   },
 
   downloads: {

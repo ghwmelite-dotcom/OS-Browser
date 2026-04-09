@@ -1971,6 +1971,8 @@ export class AdBlockService {
   private enabled = true;
   private whitelistedSites = new Set<string>();
   private totalBlocked = 0;
+  private totalBytesSaved = 0;
+  private sessionBytesSaved = 0;
   private updateTimer: ReturnType<typeof setInterval> | null = null;
   private cachePath: string = '';
 
@@ -2011,8 +2013,19 @@ export class AdBlockService {
       }
 
       try {
-        this.blocker.on('request-blocked', () => {
+        this.blocker.on('request-blocked', (request: any) => {
           this.totalBlocked++;
+          // Estimate bytes saved based on resource type
+          const type = request?.type || '';
+          const estimatedBytes = type === 'script' ? 45_000
+            : type === 'image' ? 150_000
+            : type === 'media' ? 2_000_000
+            : type === 'xmlhttprequest' || type === 'ping' ? 5_000
+            : type === 'stylesheet' ? 30_000
+            : type === 'font' ? 80_000
+            : 20_000;
+          this.totalBytesSaved += estimatedBytes;
+          this.sessionBytesSaved += estimatedBytes;
         });
       } catch {}
     }
@@ -2236,6 +2249,14 @@ export class AdBlockService {
     ipcMain.handle('adblock:get-blocked-count', () => {
       return { totalBlocked: this.totalBlocked };
     });
+
+    ipcMain.handle('adblock:get-data-savings', () => {
+      return {
+        totalBlocked: this.totalBlocked,
+        sessionBytesSaved: this.sessionBytesSaved,
+        totalBytesSaved: this.totalBytesSaved,
+      };
+    });
   }
 
   destroy(): void {
@@ -2254,6 +2275,7 @@ export class AdBlockService {
     ipcMain.removeHandler('adblock:toggle-site');
     ipcMain.removeHandler('adblock:is-site-enabled');
     ipcMain.removeHandler('adblock:get-blocked-count');
+    ipcMain.removeHandler('adblock:get-data-savings');
   }
 }
 
