@@ -493,6 +493,7 @@ export function TabBar() {
                           isPrevToActive={prevTab?.id === activeTabId}
                           index={idx}
                           tabCount={unpinnedCount + pinnedCount}
+                          pinnedCount={pinnedCount}
                           containerWidth={containerWidth}
                           overrideWidth={isClosingMode ? frozenTabWidth : null}
                           onSwitch={() => {}}
@@ -536,6 +537,7 @@ export function TabBar() {
                   isPrevToActive={prevTab?.id === activeTabId}
                   index={idx}
                   tabCount={unpinnedCount + pinnedCount}
+                  pinnedCount={pinnedCount}
                   containerWidth={containerWidth}
                   overrideWidth={isClosingMode ? frozenTabWidth : null}
                   onSwitch={() => {}}
