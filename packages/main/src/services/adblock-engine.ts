@@ -2141,6 +2141,14 @@ export class AdBlockService {
     // Skip internal pages
     if (url.startsWith('os-browser://') || url.startsWith('about:') || url.startsWith('data:') || url.startsWith('chrome:')) return;
 
+    // DIAGNOSTIC: Skip ALL ad blocking on YouTube to isolate root cause
+    try {
+      const testHost = new URL(url).hostname;
+      if (['www.youtube.com', 'youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(testHost)) {
+        return; // Skip ALL filtering — cosmetic, scripts, everything
+      }
+    } catch {}
+
     let hostname: string;
     try {
       hostname = new URL(url).hostname;
@@ -2176,11 +2184,11 @@ export class AdBlockService {
 
     // ── Platform-specific video ad blocking ──
 
-    // YouTube + YouTube Music — CSS cosmetic hiding + auto-skip only
-    // NO JavaScript interception (fetch, XHR, createElement) — YouTube detects ALL of it.
-    if (['www.youtube.com', 'youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(hostname)) {
-      wc.executeJavaScript(YOUTUBE_MINIMAL_SCRIPT).catch(() => {});
-    }
+    // YouTube + YouTube Music — TEMPORARILY FULLY DISABLED for root cause investigation
+    // If YouTube STILL breaks with this disabled, the ad blocker is NOT the cause.
+    // if (['www.youtube.com', 'youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(hostname)) {
+    //   wc.executeJavaScript(YOUTUBE_MINIMAL_SCRIPT).catch(() => {});
+    // }
 
     // Twitch
     if (['www.twitch.tv', 'twitch.tv', 'm.twitch.tv'].includes(hostname)) {
