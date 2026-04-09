@@ -386,6 +386,82 @@ const YOUTUBE_AD_BLOCK_SCRIPT = `
 // YOUTUBE SAFE AD BLOCKER (no response tampering — safe from anti-adblock)
 // Uses only: auto-skip, MutationObserver, CSS cosmetic hiding, ad script blocking
 // ══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
+// YOUTUBE MINIMAL AD BLOCKER — CSS + auto-skip ONLY, zero JS interception
+// This is the only approach YouTube doesn't detect and break.
+// ══════════════════════════════════════════════════════════════════════════════
+const YOUTUBE_MINIMAL_SCRIPT = `
+(function() {
+  'use strict';
+  if (window.__osBrowserYTMinimal) return;
+  window.__osBrowserYTMinimal = true;
+
+  // ── CSS cosmetic hiding — hide all ad UI elements ──
+  const style = document.createElement('style');
+  style.textContent = [
+    'ytd-ad-slot-renderer', 'ytd-banner-promo-renderer', 'ytd-companion-slot-renderer',
+    'ytd-display-ad-renderer', 'ytd-in-feed-ad-layout-renderer', 'ytd-promoted-sparkles-web-renderer',
+    'ytd-promoted-sparkles-text-search-renderer', 'ytd-promoted-video-renderer',
+    'ytd-statement-banner-renderer', 'ytd-video-masthead-ad-v3-renderer',
+    'ytd-player-legacy-desktop-watch-ads-renderer',
+    'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"]',
+    'ytd-merch-shelf-renderer', 'ytd-action-companion-ad-renderer',
+    'ytd-movie-offer-module-renderer', 'ytd-brand-video-singleton-renderer',
+    'ytd-brand-video-shelf-renderer', '#player-ads', '#masthead-ad',
+    '.ytp-ad-overlay-container', '.ytp-ad-progress', '.ytp-ad-progress-list',
+    'tp-yt-paper-dialog:has(yt-mealbar-promo-renderer)',
+    'div#player-ads.style-scope.ytd-watch-flexy',
+    '[layout="compact-promoted-item"]',
+    'ytd-reel-video-renderer[is-ad]', 'ytd-reel-video-renderer:has(ytd-ad-slot-renderer)',
+    'ytmusic-mealbar-promo-renderer', 'ytmusic-statement-banner-renderer',
+    'ytd-mealbar-promo-renderer', 'tp-yt-paper-dialog:has(#mealbar-promo-renderer)',
+    'ytd-popup-container:has(a[href*="premium"])', 'ytd-enforcement-message-view-model',
+  ].join(', ') + ' { display: none !important; }';
+  document.head.appendChild(style);
+
+  // ── Auto-skip ads + mute/fast-forward unskippable ──
+  let wasInAd = false;
+  let contentMutedByUs = false;
+
+  const adSkipper = setInterval(() => {
+    try {
+      const player = document.querySelector('#movie_player');
+      const video = document.querySelector('video');
+      const isAdShowing = player && (
+        player.classList.contains('ad-showing') ||
+        !!document.querySelector('.ytp-ad-player-overlay')
+      );
+
+      if (isAdShowing && video) {
+        wasInAd = true;
+        // Try skip button first
+        const skipBtn = document.querySelector('.ytp-skip-ad-button, .ytp-ad-skip-button, .ytp-ad-skip-button-modern, button.ytp-skip-ad-button');
+        if (skipBtn instanceof HTMLElement && skipBtn.offsetParent !== null) {
+          skipBtn.click();
+        } else {
+          // Mute + speed through unskippable ads
+          if (!contentMutedByUs) { video.muted = true; contentMutedByUs = true; }
+          video.playbackRate = 16;
+          if (video.duration && isFinite(video.duration) && video.duration > 0.5) {
+            video.currentTime = video.duration - 0.1;
+          }
+        }
+        // Close overlay ads
+        const closeBtn = document.querySelector('.ytp-ad-overlay-close-button');
+        if (closeBtn instanceof HTMLElement) closeBtn.click();
+      } else if (wasInAd && video) {
+        wasInAd = false;
+        video.playbackRate = 1;
+        if (contentMutedByUs) { video.muted = false; contentMutedByUs = false; }
+        if (video.paused && !video.ended) video.play().catch(() => {});
+      }
+    } catch {}
+  }, 300);
+
+  window.addEventListener('unload', () => clearInterval(adSkipper), { once: true });
+})();
+`;
+
 const YOUTUBE_SAFE_AD_BLOCK_SCRIPT = `
 (function() {
   'use strict';
@@ -2100,12 +2176,10 @@ export class AdBlockService {
 
     // ── Platform-specific video ad blocking ──
 
-    // YouTube + YouTube Music — SAFE layers only (auto-skip, cosmetic, script blocking)
-    // NOTE: Layers 1-3 (fetch/XHR/initial response tampering) are DISABLED because
-    // YouTube's anti-ad-blocker detects response modifications and breaks the player.
-    // The safe script uses only: auto-skip ads, MutationObserver, CSS hiding, and ad script blocking.
+    // YouTube + YouTube Music — CSS cosmetic hiding + auto-skip only
+    // NO JavaScript interception (fetch, XHR, createElement) — YouTube detects ALL of it.
     if (['www.youtube.com', 'youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(hostname)) {
-      wc.executeJavaScript(YOUTUBE_SAFE_AD_BLOCK_SCRIPT).catch(() => {});
+      wc.executeJavaScript(YOUTUBE_MINIMAL_SCRIPT).catch(() => {});
     }
 
     // Twitch
