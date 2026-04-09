@@ -152,6 +152,15 @@ function createWindow() {
   });
 
   // Right-click context menu for the browser chrome (UI layer)
+  // Prevent Ctrl+Shift+I / F12 from opening DevTools for the main renderer window
+  // (it opens behind the WebContentsView). The tab's own handler opens detached DevTools instead.
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown') return;
+    if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
+      event.preventDefault();
+    }
+  });
+
   mainWindow.webContents.on('context-menu', (_e, params) => {
     const menu = new Menu();
 
