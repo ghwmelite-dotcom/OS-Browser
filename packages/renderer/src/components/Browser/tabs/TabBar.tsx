@@ -115,7 +115,9 @@ export function TabBar() {
     if (!el) return;
     setShowScrollLeft(el.scrollLeft > 4);
     setShowScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
-    setContainerWidth(el.clientWidth);
+    // Measure from the parent (flex-1 container) which has the correct available width
+    const parentWidth = el.parentElement?.clientWidth || el.clientWidth;
+    setContainerWidth(parentWidth);
   }, []);
 
   useEffect(() => {
@@ -361,7 +363,7 @@ export function TabBar() {
 
         <div
           ref={scrollRef}
-          className="flex items-end overflow-x-auto overflow-y-hidden scrollbar-none h-full"
+          className="flex items-end overflow-x-auto overflow-y-hidden scrollbar-none h-full w-full"
           style={{
             WebkitAppRegion: 'no-drag',
             scrollbarWidth: 'none',
