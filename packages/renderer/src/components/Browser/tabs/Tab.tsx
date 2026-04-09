@@ -22,6 +22,7 @@ interface TabProps {
   isPrevToActive?: boolean;
   index: number;
   tabCount: number;
+  pinnedCount: number;
   containerWidth: number;
   overrideWidth?: number | null;
   onSwitch: () => void;
@@ -81,6 +82,7 @@ export function Tab({
   isPrevToActive,
   index,
   tabCount,
+  pinnedCount,
   containerWidth,
   overrideWidth,
   onSwitch,
@@ -100,9 +102,9 @@ export function Tab({
   const dynamicWidth = useMemo(
     () => {
       if (overrideWidth && !isPinned) return overrideWidth;
-      return isPinned ? PINNED_TAB_WIDTH : calcTabWidth(tabCount, 0, containerWidth, isActive);
+      return isPinned ? PINNED_TAB_WIDTH : calcTabWidth(tabCount, pinnedCount, containerWidth, isActive);
     },
-    [tabCount, containerWidth, isPinned, overrideWidth, isActive],
+    [tabCount, pinnedCount, containerWidth, isPinned, overrideWidth, isActive],
   );
   const isCompact = dynamicWidth < 54;
   const isNarrow = dynamicWidth < 130;
@@ -296,7 +298,7 @@ export function Tab({
             className="absolute top-0 right-0 h-full w-6 pointer-events-none"
             style={{
               background: isActive
-                ? `linear-gradient(to left, ${color.bg}, transparent)`
+                ? 'linear-gradient(to left, var(--color-surface-1), transparent)'
                 : isHovered
                   ? 'linear-gradient(to left, var(--color-surface-2), transparent)'
                   : 'linear-gradient(to left, var(--color-bg), transparent)',
