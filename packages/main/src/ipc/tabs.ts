@@ -1060,10 +1060,11 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
   });
 
   // Keyboard shortcut: F12 or Ctrl+Shift+I opens DevTools for the page
-  wc.on('before-input-event', (_event, input) => {
+  wc.on('before-input-event', (event, input) => {
     if (wc.isDestroyed()) return;
     if (input.type !== 'keyDown') return;
     if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
+      event.preventDefault(); // Stop Chromium's default docked DevTools from opening
       wc.openDevTools({ mode: 'detach' });
       setTimeout(() => {
         const dtWc = wc.devToolsWebContents;
