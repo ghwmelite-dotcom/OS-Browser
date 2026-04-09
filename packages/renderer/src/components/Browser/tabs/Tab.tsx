@@ -107,11 +107,6 @@ export function Tab({
     [tabCount, pinnedCount, containerWidth, isPinned, overrideWidth, isActive],
   );
   const isCompact = dynamicWidth < 54;
-
-  // DIAGNOSTIC — remove after debugging
-  if (!isPinned) {
-    console.log(`[TAB DEBUG] "${title}" width=${dynamicWidth} tabCount=${tabCount} pinnedCount=${pinnedCount} containerWidth=${containerWidth} isActive=${isActive} overrideWidth=${overrideWidth}`);
-  }
   const isNarrow = dynamicWidth < 130;
 
   const handleClose = (e: React.MouseEvent) => {
