@@ -1044,7 +1044,15 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
       }}));
       menu.append(new MenuItem({ label: 'Inspect Element', accelerator: 'Ctrl+Shift+I', click: () => {
         wc.openDevTools({ mode: 'detach' });
-        wc.devToolsWebContents?.focus();
+        setTimeout(() => {
+          const dtWc = wc.devToolsWebContents;
+          if (dtWc) {
+            const allWindows = BrowserWindow.getAllWindows();
+            const dtWin = allWindows.find(w => w.webContents.id === dtWc.id);
+            if (dtWin) { dtWin.setAlwaysOnTop(true); dtWin.focus(); setTimeout(() => dtWin.setAlwaysOnTop(false), 500); }
+            else dtWc.focus();
+          }
+        }, 300);
       }}));
     }
 
@@ -1057,6 +1065,15 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     if (input.type !== 'keyDown') return;
     if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
       wc.openDevTools({ mode: 'detach' });
+      setTimeout(() => {
+        const dtWc = wc.devToolsWebContents;
+        if (dtWc) {
+          const allWindows = BrowserWindow.getAllWindows();
+          const dtWin = allWindows.find(w => w.webContents.id === dtWc.id);
+          if (dtWin) { dtWin.setAlwaysOnTop(true); dtWin.focus(); setTimeout(() => dtWin.setAlwaysOnTop(false), 500); }
+          else dtWc.focus();
+        }
+      }, 300);
     }
   });
 
