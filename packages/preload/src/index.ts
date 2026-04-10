@@ -1,5 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
+// Forward main process logs to renderer console for debugging
+ipcRenderer.on('console-log', (_e: any, msg: string) => console.log(msg));
+
 const IPC = {
   TAB_CREATE: 'tab:create', TAB_CLOSE: 'tab:close', TAB_SWITCH: 'tab:switch',
   TAB_UPDATE: 'tab:update', TAB_LIST: 'tab:list', TAB_NAVIGATE: 'tab:navigate',
