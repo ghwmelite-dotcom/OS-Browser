@@ -61,7 +61,8 @@ function stateLabel(state: string): string {
 // ── Single download row ──────────────────────────────────────────────
 const DownloadRow: React.FC<{ item: DownloadItem; stripColor: string }> = ({ item, stripColor }) => {
   const { pauseDownload, resumeDownload, cancelDownload, retryDownload } = useDownloadStore();
-  const pct = item.totalBytes > 0 ? Math.round((item.receivedBytes / item.totalBytes) * 100) : 0;
+  const knownSize = item.totalBytes > 0;
+  const pct = knownSize ? Math.round((item.receivedBytes / item.totalBytes) * 100) : 0;
   const isActive = item.state === 'downloading' || item.state === 'paused';
   const isFailed = item.state === 'failed' || item.state === 'cancelled';
 
@@ -115,15 +116,28 @@ const DownloadRow: React.FC<{ item: DownloadItem; stripColor: string }> = ({ ite
           overflow: 'hidden',
         }}
       >
-        <div
-          style={{
-            height: '100%',
-            width: `${pct}%`,
-            borderRadius: '2px',
-            background: stateColor(item.state),
-            transition: 'width 0.3s ease',
-          }}
-        />
+        {knownSize || !isActive ? (
+          <div
+            style={{
+              height: '100%',
+              width: `${item.state === 'completed' ? 100 : pct}%`,
+              borderRadius: '2px',
+              background: stateColor(item.state),
+              transition: 'width 0.3s ease',
+            }}
+          />
+        ) : (
+          /* Indeterminate animated bar for unknown-size downloads */
+          <div
+            style={{
+              height: '100%',
+              width: '40%',
+              borderRadius: '2px',
+              background: stateColor(item.state),
+              animation: 'download-indeterminate 1.5s ease-in-out infinite',
+            }}
+          />
+        )}
       </div>
 
       {/* Info line: size, speed, ETA */}
@@ -138,8 +152,7 @@ const DownloadRow: React.FC<{ item: DownloadItem; stripColor: string }> = ({ ite
       >
         <span>
           {formatBytes(item.receivedBytes)}
-          {item.totalBytes > 0 ? ` / ${formatBytes(item.totalBytes)}` : ''}
-          {item.totalBytes > 0 ? ` (${pct}%)` : ''}
+          {knownSize ? ` / ${formatBytes(item.totalBytes)} (${pct}%)` : isActive ? ' (size unknown)' : ''}
         </span>
         <span>
           {item.state === 'downloading' && (
@@ -197,11 +210,28 @@ const ActionBtn: React.FC<{ icon: React.ElementType; label: string; onClick: () 
   </button>
 );
 
+// ── Indeterminate animation CSS ──────────────────────────────────────
+const ANIM_STYLE_ID = 'download-indeterminate-css';
+function injectIndeterminateCSS(): void {
+  if (document.getElementById(ANIM_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = ANIM_STYLE_ID;
+  style.textContent = `
+    @keyframes download-indeterminate {
+      0% { transform: translateX(-100%); }
+      50% { transform: translateX(150%); }
+      100% { transform: translateX(-100%); }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 // ── Main Panel ───────────────────────────────────────────────────────
 const DownloadPanel: React.FC<SidebarPanelProps> = ({ width, stripColor, onClose }) => {
   const { downloads, clearCompleted, init } = useDownloadStore();
 
   useEffect(() => {
+    injectIndeterminateCSS();
     const cleanup = init();
     return cleanup;
   }, [init]);
