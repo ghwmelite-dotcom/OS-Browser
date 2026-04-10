@@ -205,14 +205,15 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
   });
 
   ipcMain.handle(IPC.TAB_SWITCH, async (_event, id: string) => {
-    // Auto-PiP: if outgoing tab has playing video, pop it into PiP (non-blocking)
+    // Auto-PiP: if outgoing tab has playing video, enter PiP BEFORE hiding the view
+    // Must be awaited — requestPictureInPicture() requires a visible document
     const currentActive = tabManager.getActiveTab();
     if (currentActive && currentActive.id !== id) {
-      tryAutoPiP(currentActive.id, !!currentActive.is_muted).catch(() => {});
+      try { await tryAutoPiP(currentActive.id, !!currentActive.is_muted); } catch {}
     }
 
-    // Auto-exit PiP if switching back to PiP source tab (non-blocking)
-    tryAutoExitPiP(id).catch(() => {});
+    // Auto-exit PiP if switching back to PiP source tab
+    try { await tryAutoExitPiP(id); } catch {};
 
     // Check if tab was suspended BEFORE activating (activation recreates the view)
     const wasSuspended = isTabSuspended(id);
