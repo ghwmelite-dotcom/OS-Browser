@@ -2284,16 +2284,23 @@ export class AdBlockService {
       wc.executeJavaScript(DAILYMOTION_AD_BLOCK_SCRIPT).catch(() => {});
     }
 
-    // ── Universal video ad blocker — ONLY on video/content platforms ──
-    // Kept off general sites to avoid breaking login flows, OAuth, and APIs
-    if (VIDEO_PLATFORM_HOSTS.has(hostname) || hostname.endsWith('tiktok.com')) {
+    // ── Universal video ad blocker — on video platforms EXCEPT YouTube ──
+    // YouTube gets its own minimal script (CSS + auto-skip only).
+    // The universal script overrides fetch/XHR and injects Google IMA stubs which
+    // cause infinite recursion and trigger YouTube's anti-tamper detection.
+    const isYouTube = hostname.endsWith('youtube.com') || hostname.endsWith('youtu.be');
+    if (!isYouTube && (VIDEO_PLATFORM_HOSTS.has(hostname) || hostname.endsWith('tiktok.com'))) {
       wc.executeJavaScript(UNIVERSAL_VIDEO_AD_BLOCK_SCRIPT).catch(() => {});
       wc.executeJavaScript(NEWSLETTER_POPUP_BLOCK_SCRIPT).catch(() => {});
     }
 
     // ── Lightweight privacy protection (safe on ALL sites, Brave-level) ──
+    // Skip fingerprint protection on YouTube — the Canvas/WebGL/Audio overrides
+    // can interfere with YouTube's video player and media pipeline
     wc.executeJavaScript(COOKIE_CONSENT_BLOCK_SCRIPT).catch(() => {});
-    wc.executeJavaScript(FINGERPRINT_PROTECTION_SCRIPT).catch(() => {});
+    if (!isYouTube) {
+      wc.executeJavaScript(FINGERPRINT_PROTECTION_SCRIPT).catch(() => {});
+    }
     wc.executeJavaScript(CRYPTO_MINER_BLOCK_SCRIPT).catch(() => {});
     wc.executeJavaScript(WEBRTC_LEAK_PREVENTION_SCRIPT).catch(() => {});
   }
