@@ -1,5 +1,5 @@
 import { BrowserWindow } from 'electron';
-import { getTabView } from '../tabs/TabWebContents';
+import { getTabView, enterPiPMode, exitPiPMode, getPipTabId } from '../tabs/TabWebContents';
 
 // ── Types ────────────────────────────────────────────────────────
 export interface MediaInfo {
@@ -56,14 +56,13 @@ function broadcastPipState(active: boolean, sourceTabId: string | null): void {
 // playing, unmuted video, enter PiP automatically.
 
 export async function tryAutoPiP(outgoingTabId: string, isMuted: boolean): Promise<boolean> {
-  const log = (msg: string) => { console.log(msg); mainWindowRef?.webContents?.send?.('console-log', msg); };
-  if (isMuted) { log('[AutoPiP] Skipped: tab is muted'); return false; }
+  if (!mainWindowRef || isMuted) return false;
 
   const view = getTabView(outgoingTabId);
-  if (!view) { log('[AutoPiP] Skipped: no view for tab ' + outgoingTabId); return false; }
-  if (view.webContents.isDestroyed()) { log('[AutoPiP] Skipped: webContents destroyed'); return false; }
+  if (!view || view.webContents.isDestroyed()) return false;
 
   try {
+    // Check if the outgoing tab has a playing video
     const hasPlayingVideo: boolean = await view.webContents.executeJavaScript(`
       (() => {
         const videos = document.querySelectorAll('video');
@@ -74,45 +73,12 @@ export async function tryAutoPiP(outgoingTabId: string, isMuted: boolean): Promi
       })()
     `);
 
-    log('[AutoPiP] hasPlayingVideo: ' + hasPlayingVideo);
     if (!hasPlayingVideo) return false;
 
-    // Enter PiP — userGesture: true bypasses the gesture requirement
-    const pipResult = await view.webContents.executeJavaScript(`
-      (async () => {
-        const videos = document.querySelectorAll('video');
-        for (const v of videos) {
-          if (!v.paused && !v.ended && v.readyState > 2) {
-            try {
-              await v.requestPictureInPicture();
-              return { success: true };
-            } catch (e) {
-              return { success: false, error: e.message || String(e) };
-            }
-          }
-        }
-        return { success: false, error: 'no eligible video' };
-      })()
-    `, true);
-
-    log('[AutoPiP] PiP result: ' + JSON.stringify(pipResult));
-    if (!pipResult?.success) return false;
-
-    // Inject Media Session action handlers for skip controls
-    await view.webContents.executeJavaScript(`
-      (() => {
-        if ('mediaSession' in navigator) {
-          navigator.mediaSession.setActionHandler('previoustrack', () => {
-            const v = document.querySelector('video');
-            if (v) v.currentTime = Math.max(0, v.currentTime - 10);
-          });
-          navigator.mediaSession.setActionHandler('nexttrack', () => {
-            const v = document.querySelector('video');
-            if (v) v.currentTime = Math.min(v.duration || Infinity, v.currentTime + 10);
-          });
-        }
-      })()
-    `);
+    // Use native Electron PiP: resize the view to a small floating rectangle
+    // instead of calling requestPictureInPicture() which has gesture restrictions
+    const success = enterPiPMode(outgoingTabId, mainWindowRef);
+    if (!success) return false;
 
     pipSourceTabId = outgoingTabId;
     pipDismissIntent = false;
@@ -130,21 +96,10 @@ export async function tryAutoPiP(outgoingTabId: string, isMuted: boolean): Promi
 
 export async function tryAutoExitPiP(incomingTabId: string): Promise<boolean> {
   if (!pipSourceTabId || pipSourceTabId !== incomingTabId) return false;
+  if (!mainWindowRef) return false;
 
-  const view = getTabView(incomingTabId);
-  if (!view) return false;
-
-  try {
-    await view.webContents.executeJavaScript(`
-      (() => {
-        if (document.pictureInPictureElement) {
-          document.exitPictureInPicture().catch(() => {});
-        }
-      })()
-    `);
-  } catch {
-    // webContents may be destroyed — that's fine
-  }
+  // Exit native PiP — restore the view to normal size (showTabView will handle it)
+  exitPiPMode(mainWindowRef);
 
   pipSourceTabId = null;
   pipDismissIntent = false;
@@ -157,31 +112,15 @@ export async function tryAutoExitPiP(incomingTabId: string): Promise<boolean> {
 // For "Back to Video" button — re-enter PiP on the given tab.
 
 export async function reEnterPiP(tabId: string): Promise<boolean> {
-  const view = getTabView(tabId);
-  if (!view) return false;
+  if (!mainWindowRef) return false;
 
-  try {
-    const entered: boolean = await view.webContents.executeJavaScript(`
-      (async () => {
-        const videos = document.querySelectorAll('video');
-        for (const v of videos) {
-          if (!v.paused && !v.ended && v.readyState > 2) {
-            try { await v.requestPictureInPicture(); return true; } catch { return false; }
-          }
-        }
-        return false;
-      })()
-    `, true);
-
-    if (entered) {
-      pipSourceTabId = tabId;
-      pipDismissIntent = false;
-      broadcastPipState(true, tabId);
-    }
-    return entered;
-  } catch {
-    return false;
+  const success = enterPiPMode(tabId, mainWindowRef);
+  if (success) {
+    pipSourceTabId = tabId;
+    pipDismissIntent = false;
+    broadcastPipState(true, tabId);
   }
+  return success;
 }
 
 // ── Dismiss PiP ──────────────────────────────────────────────────

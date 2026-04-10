@@ -63,16 +63,72 @@ export function attachTabView(tabId: string, view: WebContentsView, targetWindow
 
 // ── Visibility ──────────────────────────────────────────────────────────
 
+let pipTabId: string | null = null;
+
 export function showTabView(tabId: string): void {
   for (const [id, view] of tabViews) {
-    view.setVisible(id === tabId);
+    if (id === tabId) {
+      view.setVisible(true);
+    } else if (id === pipTabId) {
+      // PiP tab stays visible but in mini size — don't hide it
+      view.setVisible(true);
+    } else {
+      view.setVisible(false);
+    }
   }
 }
 
 export function hideAllTabViews(): void {
-  for (const view of tabViews.values()) {
+  for (const [id, view] of tabViews) {
+    if (id === pipTabId) continue; // Keep PiP view visible
     view.setVisible(false);
   }
+}
+
+/**
+ * Enter PiP mode: resize a tab's view to a small floating rectangle in the bottom-right.
+ * The view stays visible and on top while the user browses other tabs.
+ */
+export function enterPiPMode(tabId: string, mainWindow: BrowserWindow): boolean {
+  const view = tabViews.get(tabId);
+  if (!view) return false;
+
+  const [winW, winH] = mainWindow.getContentSize();
+  const pipW = 400;
+  const pipH = 225; // 16:9 aspect ratio
+  const margin = 16;
+  const x = winW - pipW - margin;
+  const y = winH - pipH - margin - 30; // 30px above status bar
+
+  view.setBounds({ x, y, width: pipW, height: pipH });
+  view.setVisible(true);
+
+  // Bring PiP view to front by re-adding it as the last child
+  try {
+    mainWindow.contentView.removeChildView(view);
+    mainWindow.contentView.addChildView(view);
+  } catch {}
+
+  pipTabId = tabId;
+  return true;
+}
+
+/**
+ * Exit PiP mode: restore the tab's view to full size or hide it.
+ */
+export function exitPiPMode(mainWindow: BrowserWindow): void {
+  if (!pipTabId) return;
+  const view = tabViews.get(pipTabId);
+  if (view) {
+    // Check if this tab is the active one — if so, resize to full, otherwise hide
+    view.setVisible(false);
+    resizeView(view, mainWindow);
+  }
+  pipTabId = null;
+}
+
+export function getPipTabId(): string | null {
+  return pipTabId;
 }
 
 // ── Sizing ──────────────────────────────────────────────────────────────
