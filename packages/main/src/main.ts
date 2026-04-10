@@ -305,9 +305,12 @@ app.whenReady().then(async () => {
   // Strip full referrer for cross-origin requests, keep origin-only
   try {
     const OAUTH_REFERRER_EXEMPT = [
-      'accounts.google.com', 'login.microsoftonline.com', 'login.live.com',
-      'appleid.apple.com', 'github.com', 'auth0.com', 'facebook.com',
-      'api.twitter.com', 'discord.com', 'slack.com',
+      'accounts.google.com', 'accounts.youtube.com', 'login.microsoftonline.com',
+      'login.live.com', 'appleid.apple.com', 'github.com', 'auth0.com',
+      'facebook.com', 'api.twitter.com', 'discord.com', 'slack.com',
+      // YouTube/Google cross-domain requests need full referrer
+      'youtube.com', 'googlevideo.com', 'ytimg.com', 'google.com',
+      'gstatic.com', 'ggpht.com', 'googleusercontent.com',
     ];
     session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
       const headers = { ...details.requestHeaders };
@@ -372,6 +375,8 @@ app.whenReady().then(async () => {
       'idle-detection',     // Idle detection API
       'identity-credentials-get', // FedCM — Google Sign-In, Microsoft login, etc.
       'window-management',  // Window placement API (PiP windows)
+      'storage-access',     // Storage Access API — cross-site cookie access (YouTube, Google)
+      'top-level-storage-access', // Top-level storage access (YouTube RotateCookies)
     ];
     if (ALLOWED_PERMISSIONS.includes(permission)) {
       callback(true);
@@ -384,7 +389,7 @@ app.whenReady().then(async () => {
     const ALLOWED_PERMISSIONS = [
       'media', 'notifications', 'clipboard-read', 'clipboard-sanitized-write',
       'fullscreen', 'pointerLock', 'idle-detection', 'identity-credentials-get',
-      'window-management',
+      'window-management', 'storage-access', 'top-level-storage-access',
     ];
     return ALLOWED_PERMISSIONS.includes(permission);
   });
