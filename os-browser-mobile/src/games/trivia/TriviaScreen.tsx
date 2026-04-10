@@ -172,7 +172,7 @@ export default function TriviaScreen({ onBack }: Props) {
       } else {
         setAnswerState('wrong');
         setWrongCount((w) => w + 1);
-        Vibration.vibrate(100);
+        Vibration.vibrate([0, 50, 50, 50]); // double buzz for wrong
       }
 
       showFunFactThenAdvance();
@@ -566,6 +566,15 @@ export default function TriviaScreen({ onBack }: Props) {
           })}
         </View>
 
+        {/* Answer result label */}
+        {answerState !== 'idle' && (
+          <View style={[styles.resultLabelContainer, { backgroundColor: answerState === 'correct' ? '#22c55e20' : '#EF444420', borderColor: answerState === 'correct' ? '#22c55e' : '#EF4444' }]}>
+            <Text style={[styles.resultLabelText, { color: answerState === 'correct' ? '#22c55e' : '#EF4444' }]}>
+              {answerState === 'correct' ? 'Correct!' : answerState === 'timeout' ? "Time's up!" : `Wrong! Answer: ${question.options[question.correctIndex]}`}
+            </Text>
+          </View>
+        )}
+
         {/* Fun fact card */}
         {showFunFact && question.funFact && (
           <TouchableOpacity onPress={dismissFunFact} activeOpacity={0.8}>
@@ -732,6 +741,21 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.md,
     flex: 1,
     lineHeight: rs(22),
+  },
+
+  // Result label
+  resultLabelContainer: {
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    padding: SPACING.sm,
+    marginTop: SPACING.sm,
+    alignItems: 'center',
+  },
+  resultLabelText: {
+    fontSize: FONT_SIZE.md,
+    fontFamily: FONT_FAMILY_BOLD,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 
   // Fun fact

@@ -521,9 +521,12 @@ const WORD_BANK: WordEntry[] = [
 
 function launchWordScramble(container: HTMLElement): () => void {
   let timer: ReturnType<typeof setInterval> | null = null;
+  let running = true;
+  const WORDS_PER_ROUND = 10;
   const scoreSpan = h('span', { style: { color: '#D4A017', fontWeight: '700', fontSize: '16px' } }, 'Score: 0');
 
   const cleanup = () => {
+    running = false;
     if (timer) clearInterval(timer);
     overlay.remove();
   };
@@ -536,6 +539,8 @@ function launchWordScramble(container: HTMLElement): () => void {
   let revealed: Set<number> = new Set();
   let timeLeft = 60;
   let usedWords: Set<string> = new Set();
+  let wordsCompleted = 0;
+  let wordsCorrect = 0;
 
   // DOM elements
   const timerEl = h('div', { style: { textAlign: 'center', fontSize: '18px', fontWeight: '700', color: '#CE1126', marginBottom: '8px' } }, '60s');
@@ -585,17 +590,25 @@ function launchWordScramble(container: HTMLElement): () => void {
     },
   }, '💡 Hint');
 
+  const roundEl = h('div', { style: { textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' } }, `Word 1 of ${WORDS_PER_ROUND}`);
+
   const skipBtn = h('button', {
-    onClick: () => nextWord(),
+    onClick: () => {
+      if (!running) return;
+      totalScore = Math.max(0, totalScore - 25);
+      scoreSpan.textContent = `Score: ${totalScore}`;
+      showToast(`Skipped! -25 pts. The word was ${currentWord}`, 'error');
+      advanceWord();
+    },
     style: {
       display: 'block', margin: '12px auto 0', background: 'none',
       border: 'none', color: 'rgba(255,255,255,0.4)',
       padding: '10px 24px', fontSize: '14px', cursor: 'pointer', minHeight: '44px',
     },
-  }, 'Skip →');
+  }, 'Skip (-25pts) →');
 
   const wrapper = h('div', { style: { padding: '24px 16px' } },
-    timerEl, categoryEl, scrambledEl, hintEl,
+    roundEl, timerEl, categoryEl, scrambledEl, hintEl,
     h('div', { style: { maxWidth: '320px', margin: '0 auto' } }, inputEl),
     submitBtn, hintBtn, skipBtn,
   );
@@ -614,12 +627,24 @@ function launchWordScramble(container: HTMLElement): () => void {
     return result === w ? scrambleWord(w) : result;
   }
 
-  function nextWord() {
-    // Find unused word
-    const available = WORD_BANK.filter(w => !usedWords.has(w.word));
-    if (!available.length) { usedWords.clear(); return nextWord(); }
+  function advanceWord() {
+    wordsCompleted++;
+    if (wordsCompleted >= WORDS_PER_ROUND) {
+      if (timer) clearInterval(timer);
+      showFinalResults();
+      return;
+    }
+    loadNextWord();
+  }
 
-    const entry = available[Math.floor(Math.random() * available.length)];
+  function loadNextWord() {
+    if (!running) return;
+    const available = WORD_BANK.filter(w => !usedWords.has(w.word));
+    if (!available.length) usedWords.clear();
+    const pool = WORD_BANK.filter(w => !usedWords.has(w.word));
+    if (!pool.length) return;
+
+    const entry = pool[Math.floor(Math.random() * pool.length)];
     usedWords.add(entry.word);
     currentWord = entry.word;
     scrambled = scrambleWord(currentWord);
@@ -627,6 +652,7 @@ function launchWordScramble(container: HTMLElement): () => void {
     revealed = new Set();
     timeLeft = 60;
 
+    roundEl.textContent = `Word ${wordsCompleted + 1} of ${WORDS_PER_ROUND}`;
     scrambledEl.textContent = scrambled;
     categoryEl.textContent = `Category: ${entry.category}`;
     inputEl.value = '';
@@ -635,12 +661,13 @@ function launchWordScramble(container: HTMLElement): () => void {
 
     if (timer) clearInterval(timer);
     timer = setInterval(() => {
+      if (!running) { if (timer) clearInterval(timer); return; }
       timeLeft--;
       timerEl.textContent = `${timeLeft}s`;
       timerEl.style.color = timeLeft <= 10 ? '#CE1126' : 'rgba(255,255,255,0.6)';
       if (timeLeft <= 0) {
         showToast(`Time's up! The word was ${currentWord}`, 'error');
-        nextWord();
+        advanceWord();
       }
     }, 1000);
   }
@@ -672,20 +699,52 @@ function launchWordScramble(container: HTMLElement): () => void {
       const hintPenalty = hintsUsed * 15;
       const pts = Math.max(10, 100 + bonus - hintPenalty);
       totalScore += pts;
+      wordsCorrect++;
       scoreSpan.textContent = `Score: ${totalScore}`;
-      showToast(`✅ Correct! +${pts} points`, 'success');
-
-      const isRecord = saveScore('wordScramble', totalScore);
-      if (isRecord) showToast('🎉 New Record!', 'success');
-      nextWord();
+      showToast(`Correct! +${pts} points`, 'success');
+      advanceWord();
     } else {
-      showToast('❌ Try again!', 'error');
+      showToast('Try again!', 'error');
       inputEl.value = '';
       inputEl.focus();
     }
   }
 
-  nextWord();
+  function showFinalResults() {
+    if (timer) clearInterval(timer);
+    const isRecord = saveScore('wordScramble', totalScore);
+    if (isRecord) showToast('New Record!', 'success');
+
+    const resultsEl = h('div', {
+      style: {
+        position: 'absolute', inset: '0', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.9)', zIndex: '5',
+        padding: '24px',
+      },
+    },
+      h('div', { style: { fontSize: '36px', marginBottom: '8px' } }, '🔤'),
+      h('div', { style: { fontSize: '24px', fontWeight: '800', color: '#D4A017', fontFamily: 'var(--font-display)', marginBottom: '8px' } }, 'Round Complete!'),
+      h('div', { style: { fontSize: '18px', color: '#fff', marginBottom: '4px' } }, `Score: ${totalScore}`),
+      h('div', { style: { fontSize: '16px', color: 'rgba(255,255,255,0.5)', marginBottom: '24px' } }, `${wordsCorrect}/${WORDS_PER_ROUND} correct`),
+      h('button', {
+        onClick: () => {
+          resultsEl.remove();
+          totalScore = 0; wordsCompleted = 0; wordsCorrect = 0;
+          usedWords.clear();
+          scoreSpan.textContent = 'Score: 0';
+          loadNextWord();
+        },
+        style: {
+          background: 'linear-gradient(135deg, #006B3F, #00a85f)', border: 'none',
+          color: '#fff', padding: '14px 36px', borderRadius: '12px', fontSize: '16px',
+          fontWeight: '700', cursor: 'pointer', minHeight: '48px',
+        },
+      }, 'Play Again'),
+    );
+    body.appendChild(resultsEl);
+  }
+
+  loadNextWord();
   return cleanup;
 }
 
@@ -816,81 +875,98 @@ function launchOware(container: HTMLElement): () => void {
     scoreSpan.textContent = `${captured[0]} - ${captured[1]}`;
   }
 
+  // Advance one pit counterclockwise
+  function nextPit(r: number, c: number): [number, number] {
+    if (r === 1) { c++; if (c >= 6) { r = 0; c = 5; } }
+    else { c--; if (c < 0) { r = 1; c = 0; } }
+    return [r, c];
+  }
+
   // Sow seeds and return last pit [row, col]
-  function sow(row: number, col: number): [number, number] {
-    let seeds = board[row][col];
-    board[row][col] = 0;
+  function sow(b: number[][], row: number, col: number): [number, number] {
+    let seeds = b[row][col];
+    b[row][col] = 0;
 
     let r = row, c = col;
     while (seeds > 0) {
-      // Move counterclockwise
-      if (r === 1) {
-        // Player row, move right
-        c++;
-        if (c >= 6) { r = 0; c = 5; } // go to AI row right end
-      } else {
-        // AI row, move left
-        c--;
-        if (c < 0) { r = 1; c = 0; } // go to Player row left end
-      }
-      // Skip starting pit
-      if (r === row && c === col && seeds > 1) { continue; }
-      if (r === row && c === col && seeds === 1) {
-        // Move to next
-        if (r === 1) { c++; if (c >= 6) { r = 0; c = 5; } }
-        else { c--; if (c < 0) { r = 1; c = 0; } }
-      }
-      board[r][c]++;
+      [r, c] = nextPit(r, c);
+      // Skip origin pit when 12+ seeds wrap around
+      if (r === row && c === col) { [r, c] = nextPit(r, c); }
+      b[r][c]++;
       seeds--;
     }
     return [r, c];
   }
 
-  // Capture from opponent's side
-  function capture(sower: number, lastR: number, lastC: number) {
+  // Capture from opponent's side — returns captured count
+  function capture(b: number[][], cap: number[], sower: number, lastR: number, lastC: number): number {
     const opponent = sower === 1 ? 0 : 1;
-    if (lastR !== opponent) return; // Last seed must land on opponent's side
+    const scorer = sower === 1 ? 1 : 0;
+    if (lastR !== opponent) return 0; // Last seed must land on opponent's side
 
+    // Calculate what would be captured (backwards chain)
+    const toCapture: [number, number][] = [];
     let r = lastR, c = lastC;
-    // Capture backwards while count is 2 or 3
     while (true) {
       if (r !== opponent) break;
-      if (board[r][c] !== 2 && board[r][c] !== 3) break;
-      captured[sower === 1 ? 1 : 0] += board[r][c];
-      board[r][c] = 0;
+      if (b[r][c] !== 2 && b[r][c] !== 3) break;
+      toCapture.push([r, c]);
       // Move backward (clockwise, opposite of sowing)
-      if (r === 0) {
-        c++;
-        if (c >= 6) break; // reached end of opponent row
-      } else {
-        c--;
-        if (c < 0) break;
-      }
+      if (r === 0) { c++; if (c >= 6) break; }
+      else { c--; if (c < 0) break; }
     }
 
-    // Ensure we don't capture everything — opponent must have at least 1 seed
-    const opponentSeeds = board[opponent].reduce((a, b) => a + b, 0);
-    if (opponentSeeds === 0) {
-      // Undo all captures by restoring (simplified: just give back)
-      // Actually in Oware, if capturing all seeds, the capture is invalid
-      // For simplicity, we skip capture check above
+    if (toCapture.length === 0) return 0;
+
+    // Grand Slam check: if capturing ALL opponent seeds, capture is void
+    let totalCapture = 0;
+    for (const [cr, cc] of toCapture) totalCapture += b[cr][cc];
+    const opponentTotal = b[opponent].reduce((a, v) => a + v, 0);
+    if (totalCapture === opponentTotal) return 0; // Grand slam — no capture
+
+    // Execute capture
+    for (const [cr, cc] of toCapture) {
+      cap[scorer] += b[cr][cc];
+      b[cr][cc] = 0;
     }
+    return totalCapture;
   }
 
-  function hasValidMove(row: number): boolean {
-    return board[row].some(v => v > 0);
+  // Check if a move from (row, col) feeds the opponent (delivers seeds to their side)
+  function moveFeedsOpponent(row: number, col: number): boolean {
+    const simB = board.map(r => [...r]);
+    const seeds = simB[row][col];
+    if (seeds === 0) return false;
+    sow(simB, row, col);
+    const opponent = row === 1 ? 0 : 1;
+    return simB[opponent].some(v => v > 0);
+  }
+
+  // Get valid moves for a row, respecting feeding obligation
+  function getValidMoves(row: number): number[] {
+    const opponent = row === 1 ? 0 : 1;
+    const opponentEmpty = board[opponent].every(v => v === 0);
+    const nonEmpty: number[] = [];
+    for (let c = 0; c < 6; c++) if (board[row][c] > 0) nonEmpty.push(c);
+
+    if (!opponentEmpty) return nonEmpty; // No feeding obligation
+
+    // Opponent is empty — must play a move that feeds them
+    const feedingMoves = nonEmpty.filter(c => moveFeedsOpponent(row, c));
+    return feedingMoves; // Empty array = no valid moves, game ends
   }
 
   function checkEnd(): boolean {
     if (captured[0] >= 25 || captured[1] >= 25) return true;
-    if (!hasValidMove(0) && !hasValidMove(1)) return true;
-    // If current player has no moves, remaining seeds go to other player
-    if (playerTurn && !hasValidMove(1)) {
-      for (let c = 0; c < 6; c++) { captured[0] += board[0][c]; board[0][c] = 0; }
-      return true;
-    }
-    if (!playerTurn && !hasValidMove(0)) {
-      for (let c = 0; c < 6; c++) { captured[1] += board[1][c]; board[1][c] = 0; }
+
+    const currentRow = playerTurn ? 1 : 0;
+    const otherRow = playerTurn ? 0 : 1;
+    const moves = getValidMoves(currentRow);
+
+    if (moves.length === 0) {
+      // Current player can't move — remaining seeds go to other player
+      for (let c = 0; c < 6; c++) { captured[otherRow === 0 ? 0 : 1] += board[otherRow][c]; board[otherRow][c] = 0; }
+      for (let c = 0; c < 6; c++) { captured[currentRow === 0 ? 0 : 1] += board[currentRow][c]; board[currentRow][c] = 0; }
       return true;
     }
     return false;
@@ -925,10 +1001,12 @@ function launchOware(container: HTMLElement): () => void {
   }
 
   function playerMove(col: number) {
-    if (!playerTurn || gameOverFlag || board[1][col] === 0) return;
+    if (!playerTurn || gameOverFlag) return;
+    const valid = getValidMoves(1);
+    if (!valid.includes(col)) return;
 
-    const [lr, lc] = sow(1, col);
-    capture(1, lr, lc);
+    const [lr, lc] = sow(board, 1, col);
+    capture(board, captured, 1, lr, lc);
     refreshBoard();
 
     if (checkEnd()) { endOware(); return; }
@@ -946,37 +1024,18 @@ function launchOware(container: HTMLElement): () => void {
   }
 
   function aiMove() {
-    // Greedy: pick pit that captures the most
+    const validMoves = getValidMoves(0);
+    if (validMoves.length === 0) return;
+
+    // Greedy: simulate each valid move on a clone, pick highest capture
     let bestCol = -1;
     let bestCapture = -1;
 
-    for (let c = 0; c < 6; c++) {
-      if (board[0][c] === 0) continue;
-
-      // Simulate
-      const simBoard = board.map(r => [...r]);
-      const simCaptured = [...captured];
-
-      // Sow
-      let seeds = board[0][c];
-      const origBoard = board.map(r => [...r]);
-      const [lr, lc] = sow(0, c);
-
-      // Count potential captures
-      let capCount = 0;
-      let tr = lr, tc = lc;
-      if (tr === 1) { // Opponent's side
-        while (true) {
-          if (tr !== 1) break;
-          if (board[tr][tc] !== 2 && board[tr][tc] !== 3) break;
-          capCount += board[tr][tc];
-          tc--;
-          if (tc < 0) break;
-        }
-      }
-
-      // Restore board
-      board = origBoard.map(r => [...r]);
+    for (const c of validMoves) {
+      const simB = board.map(r => [...r]);
+      const simCap = [...captured];
+      const [lr, lc] = sow(simB, 0, c);
+      const capCount = capture(simB, simCap, 0, lr, lc);
 
       if (capCount > bestCapture) {
         bestCapture = capCount;
@@ -984,16 +1043,13 @@ function launchOware(container: HTMLElement): () => void {
       }
     }
 
-    // If no captures, pick random non-empty
+    // If no captures found, pick random valid move
     if (bestCol === -1 || bestCapture === 0) {
-      const options = [];
-      for (let c = 0; c < 6; c++) if (board[0][c] > 0) options.push(c);
-      if (!options.length) return;
-      bestCol = options[Math.floor(Math.random() * options.length)];
+      bestCol = validMoves[Math.floor(Math.random() * validMoves.length)];
     }
 
-    const [lr, lc] = sow(0, bestCol);
-    capture(0, lr, lc);
+    const [lr, lc] = sow(board, 0, bestCol);
+    capture(board, captured, 0, lr, lc);
   }
 
   function resetOware() {
@@ -1242,8 +1298,13 @@ function launchChess(container: HTMLElement): () => void {
     // Promotion
     const promoRow = p.color === 'w' ? 0 : 7;
     if (p.type === 'P' && tr === promoRow) {
-      showPromotionDialog(p.color, tr, tc);
-      return;
+      if (p.color === 'b') {
+        // AI auto-promotes to queen
+        board[tr][tc] = { type: 'Q', color: 'b' };
+      } else {
+        showPromotionDialog(p.color, tr, tc);
+        return;
+      }
     }
 
     afterMove();
@@ -1276,10 +1337,36 @@ function launchChess(container: HTMLElement): () => void {
     body.appendChild(dialog);
   }
 
+  function isInsufficientMaterial(): boolean {
+    const pieces: { type: PieceType; color: PieceColor }[] = [];
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+      const p = board[r][c];
+      if (p) pieces.push({ type: p.type, color: p.color });
+    }
+    // K vs K
+    if (pieces.length === 2) return true;
+    // K+B vs K or K+N vs K
+    if (pieces.length === 3) {
+      const nonKing = pieces.find(p => p.type !== 'K');
+      if (nonKing && (nonKing.type === 'B' || nonKing.type === 'N')) return true;
+    }
+    return false;
+  }
+
   function afterMove() {
     turn = turn === 'w' ? 'b' : 'w';
     selected = null;
     validMoves = [];
+
+    // Check insufficient material draw
+    if (isInsufficientMaterial()) {
+      gameOverFlag = true;
+      statusEl.textContent = 'Draw — Insufficient material!';
+      statusEl.style.color = '#D4A017';
+      showEndOverlay();
+      refreshChessBoard();
+      return;
+    }
 
     const inCheck = isInCheck(board, turn);
     const hasMove = hasAnyLegalMove(turn);
@@ -2745,6 +2832,7 @@ function launchSolitaire(container: HTMLElement): () => void {
   let moves = 0;
   let selectedSource: { type: 'tableau' | 'waste' | 'foundation'; col?: number; cardIdx?: number } | null = null;
   let gameWon = false;
+  let drawCount = 1; // 1 or 3
 
   function createDeck(): Card[] {
     const deck: Card[] = [];
@@ -2848,14 +2936,17 @@ function launchSolitaire(container: HTMLElement): () => void {
     if (gameWon) return;
     if (stock.length === 0) {
       // Recycle waste to stock
-      stock = waste.reverse();
+      stock = [...waste].reverse();
       stock.forEach(c => c.faceUp = false);
       waste = [];
     } else {
-      // Draw 1
-      const card = stock.pop()!;
-      card.faceUp = true;
-      waste.push(card);
+      // Draw 1 or 3
+      const count = Math.min(drawCount, stock.length);
+      for (let i = 0; i < count; i++) {
+        const card = stock.pop()!;
+        card.faceUp = true;
+        waste.push(card);
+      }
     }
     selectedSource = null;
     moves++;
@@ -3097,16 +3188,34 @@ function launchSolitaire(container: HTMLElement): () => void {
   const boardArea = h('div', { style: { overflowX: 'auto', overflowY: 'auto' } });
   body.appendChild(boardArea);
 
-  // New game button
-  body.appendChild(h('button', {
-    onClick: () => { initSolitaire(); renderSolitaire(); },
+  // Draw mode toggle + New game
+  const drawToggle = h('button', {
+    onClick: () => {
+      drawCount = drawCount === 1 ? 3 : 1;
+      drawToggle.textContent = `Draw: ${drawCount}`;
+      initSolitaire(); renderSolitaire();
+    },
     style: {
-      display: 'block', margin: '12px auto', background: 'rgba(255,255,255,0.08)',
+      display: 'inline-block', margin: '12px 6px 12px 0', background: 'rgba(255,255,255,0.08)',
       border: '1px solid rgba(255,255,255,0.12)', color: '#D4A017',
-      padding: '10px 24px', borderRadius: '10px', fontSize: '14px', fontWeight: '600',
+      padding: '10px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: '600',
       cursor: 'pointer', minHeight: '44px',
     },
-  }, 'New Game'));
+  }, `Draw: ${drawCount}`);
+
+  const btnRow = h('div', { style: { display: 'flex', justifyContent: 'center' } },
+    drawToggle,
+    h('button', {
+      onClick: () => { initSolitaire(); renderSolitaire(); },
+      style: {
+        display: 'inline-block', margin: '12px 0 12px 6px', background: 'rgba(255,255,255,0.08)',
+        border: '1px solid rgba(255,255,255,0.12)', color: '#D4A017',
+        padding: '10px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: '600',
+        cursor: 'pointer', minHeight: '44px',
+      },
+    }, 'New Game'),
+  );
+  body.appendChild(btnRow);
 
   initSolitaire();
   renderSolitaire();
@@ -3313,6 +3422,9 @@ function launchGhanaTrivia(container: HTMLElement): () => void {
       correctCount++;
       scoreSpan.textContent = `Score: ${totalScore}`;
       showToast(`Correct! +${pts}`, 'success');
+    } else {
+      const correctOpt = shuffledOpts.find(so => so.isCorrect);
+      showToast(`Incorrect! Answer: ${correctOpt?.opt}`, 'error');
     }
 
     funFactEl.textContent = currentQ!.funFact;
@@ -3391,6 +3503,7 @@ function launchTypingSpeed(container: HTMLElement): () => void {
   let startTime = 0;
   let elapsed = 0;
   let duration = 60; // seconds
+  let usedPassages: Set<number> = new Set();
 
   // Duration selector
   const durRow = h('div', { style: { display: 'flex', justifyContent: 'center', gap: '8px', padding: '12px' } });
@@ -3458,12 +3571,21 @@ function launchTypingSpeed(container: HTMLElement): () => void {
   inputEl.autocapitalize = 'off';
   inputEl.spellcheck = false;
 
+  function pickPassage(): string {
+    if (usedPassages.size >= TYPING_PASSAGES.length) usedPassages.clear();
+    let idx: number;
+    do { idx = Math.floor(Math.random() * TYPING_PASSAGES.length); } while (usedPassages.has(idx));
+    usedPassages.add(idx);
+    return TYPING_PASSAGES[idx];
+  }
+
   function initTyping() {
-    passage = TYPING_PASSAGES[Math.floor(Math.random() * TYPING_PASSAGES.length)];
+    passage = pickPassage();
     typed = '';
     started = false;
     finished = false;
     elapsed = 0;
+    usedPassages.clear();
     inputEl.value = '';
     inputEl.disabled = false;
     renderPassage();
@@ -3559,14 +3681,16 @@ function launchTypingSpeed(container: HTMLElement): () => void {
         const timeEl = body.querySelector('.typing-time') as HTMLElement;
         if (timeEl) timeEl.textContent = String(Math.ceil(remaining));
 
-        // Live WPM
+        // Live WPM — same formula as endTyping (grossWPM - errors/min)
         if (elapsed > 2) {
           const elapsedMin = elapsed / 60;
           let correct = 0;
           for (let i = 0; i < typed.length && i < passage.length; i++) {
             if (typed[i] === passage[i]) correct++;
           }
-          const netWPM = Math.max(0, (correct / 5) / elapsedMin);
+          const grossWPM = (typed.length / 5) / elapsedMin;
+          const errors = typed.length - correct;
+          const netWPM = Math.max(0, grossWPM - (errors / elapsedMin));
           const accuracy = typed.length > 0 ? (correct / typed.length) * 100 : 100;
           updateStats(netWPM, accuracy);
         }
@@ -3577,10 +3701,11 @@ function launchTypingSpeed(container: HTMLElement): () => void {
 
     renderPassage();
 
-    // Check if typed entire passage
+    // Chain next passage when current one is fully typed
     if (typed.length >= passage.length) {
-      elapsed = (Date.now() - startTime) / 1000;
-      endTyping();
+      const nextPassage = pickPassage();
+      passage = passage + ' ' + nextPassage;
+      renderPassage();
     }
   });
 

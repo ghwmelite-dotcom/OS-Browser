@@ -49,6 +49,14 @@ import Game2048Screen from './src/games/game2048/Game2048Screen';
 import SnakeScreen from './src/games/snake/SnakeScreen';
 import MinesweeperScreen from './src/games/minesweeper/MinesweeperScreen';
 import TriviaScreen from './src/games/trivia/TriviaScreen';
+import SudokuScreen from './src/games/sudoku/SudokuScreen';
+import SolitaireScreen from './src/games/solitaire/SolitaireScreen';
+import WordScrambleScreen from './src/games/wordscramble/WordScrambleScreen';
+import TypingSpeedScreen from './src/games/typing/TypingSpeedScreen';
+import OwareScreen from './src/games/oware/OwareScreen';
+import ChessScreen from './src/games/chess/ChessScreen';
+import CheckersScreen from './src/games/checkers/CheckersScreen';
+import LudoScreen from './src/games/ludo/LudoScreen';
 import { useNotificationStore } from './src/store/notifications';
 import { ToastBanner } from './src/components/ToastBanner';
 
@@ -317,6 +325,14 @@ const GAME_SCREENS: Record<string, React.ComponentType<{ onBack: () => void }>> 
   'snake': SnakeScreen as any,
   'minesweeper': MinesweeperScreen as any,
   'trivia': TriviaScreen as any,
+  'sudoku': SudokuScreen as any,
+  'solitaire': SolitaireScreen as any,
+  'word-scramble': WordScrambleScreen as any,
+  'typing': TypingSpeedScreen as any,
+  'oware': OwareScreen as any,
+  'chess': ChessScreen as any,
+  'checkers': CheckersScreen as any,
+  'ludo': LudoScreen as any,
 };
 
 function MainApp() {

@@ -343,7 +343,7 @@ export default function GovHubScreen({ isDark, onOpenUrl }: GovHubScreenProps) {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.momoName, { color: theme.text }]}>Open GovPlay</Text>
-            <Text style={[styles.momoDesc, { color: theme.textMuted }]}>Play 2048, Snake, Minesweeper, Ghana Trivia & more</Text>
+            <Text style={[styles.momoDesc, { color: theme.textMuted }]}>12 games — Chess, Oware, Ludo, Sudoku & more</Text>
           </View>
         </TouchableOpacity>
         <View style={styles.gameGrid}>
