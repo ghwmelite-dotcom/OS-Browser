@@ -56,10 +56,11 @@ function broadcastPipState(active: boolean, sourceTabId: string | null): void {
 // playing, unmuted video, enter PiP automatically.
 
 export async function tryAutoPiP(outgoingTabId: string, isMuted: boolean): Promise<boolean> {
-  if (isMuted) return false;
+  if (isMuted) { console.log('[AutoPiP] Skipped: tab is muted'); return false; }
 
   const view = getTabView(outgoingTabId);
-  if (!view) return false;
+  if (!view) { console.log('[AutoPiP] Skipped: no view for tab', outgoingTabId); return false; }
+  if (view.webContents.isDestroyed()) { console.log('[AutoPiP] Skipped: webContents destroyed'); return false; }
 
   try {
     const hasPlayingVideo: boolean = await view.webContents.executeJavaScript(`
@@ -72,6 +73,7 @@ export async function tryAutoPiP(outgoingTabId: string, isMuted: boolean): Promi
       })()
     `);
 
+    console.log('[AutoPiP] hasPlayingVideo:', hasPlayingVideo);
     if (!hasPlayingVideo) return false;
 
     // Enter PiP — userGesture: true bypasses the gesture requirement
@@ -92,6 +94,7 @@ export async function tryAutoPiP(outgoingTabId: string, isMuted: boolean): Promi
       })()
     `, true);
 
+    console.log('[AutoPiP] PiP result:', JSON.stringify(pipResult));
     if (!pipResult?.success) return false;
 
     // Inject Media Session action handlers for skip controls
