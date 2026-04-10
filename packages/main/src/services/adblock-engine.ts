@@ -423,23 +423,57 @@ const YOUTUBE_MINIMAL_SCRIPT = `
   let wasInAd = false;
   let contentMutedByUs = false;
 
+  function tryClickSkip() {
+    // Comprehensive skip button selectors for YouTube 2024-2026 UI
+    const selectors = [
+      '.ytp-skip-ad-button',
+      '.ytp-ad-skip-button',
+      '.ytp-ad-skip-button-modern',
+      '.ytp-ad-skip-button-slot button',
+      '.ytp-ad-skip-button-slot .ytp-ad-skip-button-container',
+      'button.ytp-skip-ad-button',
+      '.videoAdUiSkipButton',
+      '[id^="skip-button"] button',
+      'button[id^="skip-button"]',
+      '.ytp-ad-skip-button-modern__label',
+    ];
+    for (const sel of selectors) {
+      const btn = document.querySelector(sel);
+      if (btn instanceof HTMLElement && btn.offsetParent !== null) {
+        btn.click();
+        return true;
+      }
+    }
+    // Fallback: find any visible button containing "Skip" text in the ad area
+    const adArea = document.querySelector('.ytp-ad-module, .video-ads, .ytp-ad-player-overlay-skip-or-preview');
+    if (adArea) {
+      const buttons = adArea.querySelectorAll('button, [role="button"], .ytp-ad-skip-button-container');
+      for (const btn of buttons) {
+        if (btn instanceof HTMLElement && btn.offsetParent !== null &&
+            (btn.textContent || '').toLowerCase().includes('skip')) {
+          btn.click();
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   const adSkipper = setInterval(() => {
     try {
       const player = document.querySelector('#movie_player');
       const video = document.querySelector('video');
       const isAdShowing = player && (
         player.classList.contains('ad-showing') ||
-        !!document.querySelector('.ytp-ad-player-overlay')
+        !!document.querySelector('.ytp-ad-player-overlay') ||
+        !!document.querySelector('.ad-showing')
       );
 
       if (isAdShowing && video) {
         wasInAd = true;
         // Try skip button first
-        const skipBtn = document.querySelector('.ytp-skip-ad-button, .ytp-ad-skip-button, .ytp-ad-skip-button-modern, button.ytp-skip-ad-button');
-        if (skipBtn instanceof HTMLElement && skipBtn.offsetParent !== null) {
-          skipBtn.click();
-        } else {
-          // Mute + speed through unskippable ads
+        if (!tryClickSkip()) {
+          // No skip button yet — mute + speed through
           if (!contentMutedByUs) { video.muted = true; contentMutedByUs = true; }
           video.playbackRate = 16;
           if (video.duration && isFinite(video.duration) && video.duration > 0.5) {
@@ -447,7 +481,7 @@ const YOUTUBE_MINIMAL_SCRIPT = `
           }
         }
         // Close overlay ads
-        const closeBtn = document.querySelector('.ytp-ad-overlay-close-button');
+        const closeBtn = document.querySelector('.ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container button');
         if (closeBtn instanceof HTMLElement) closeBtn.click();
       } else if (wasInAd && video) {
         wasInAd = false;
@@ -456,7 +490,7 @@ const YOUTUBE_MINIMAL_SCRIPT = `
         if (video.paused && !video.ended) video.play().catch(() => {});
       }
     } catch {}
-  }, 300);
+  }, 250);
 
   window.addEventListener('unload', () => clearInterval(adSkipper), { once: true });
 })();
@@ -2098,16 +2132,21 @@ export class AdBlockService {
           // Skip main frame requests (page navigations)
           if (details.resourceType === 'mainFrame') { callback({}); return; }
 
-          // Whitelist YouTube: allow ALL requests that originate from YouTube pages
+          // Whitelist YouTube: allow ALL requests from/to YouTube and Google domains
+          // YouTube depends on dozens of Google subdomains for video delivery, auth, APIs
           try {
             const referrerHost = details.referrer ? new URL(details.referrer).hostname : '';
             const requestHost = new URL(details.url).hostname;
-            if (YOUTUBE_WHITELIST.has(referrerHost) || YOUTUBE_WHITELIST.has(requestHost) ||
-                requestHost.endsWith('.googlevideo.com') || requestHost.endsWith('.ytimg.com') ||
-                requestHost.endsWith('.youtube.com') || requestHost.endsWith('.ggpht.com')) {
-              callback({});
-              return;
-            }
+
+            // If the request comes FROM a YouTube page, allow everything
+            const isFromYouTube = referrerHost.endsWith('youtube.com') || referrerHost.endsWith('youtu.be');
+            if (isFromYouTube) { callback({}); return; }
+
+            // Also whitelist YouTube/Google infrastructure domains regardless of referrer
+            const isYouTubeInfra = requestHost.endsWith('.youtube.com') || requestHost.endsWith('.googlevideo.com') ||
+              requestHost.endsWith('.ytimg.com') || requestHost.endsWith('.ggpht.com') ||
+              YOUTUBE_WHITELIST.has(requestHost);
+            if (isYouTubeInfra) { callback({}); return; }
           } catch {}
 
           // Check against filter engine
