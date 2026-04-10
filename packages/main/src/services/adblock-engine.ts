@@ -396,9 +396,10 @@ const YOUTUBE_MINIMAL_SCRIPT = `
   if (window.__osBrowserYTMinimal) return;
   window.__osBrowserYTMinimal = true;
 
-  // ── CSS cosmetic hiding — hide all ad UI elements ──
+  // ── CSS: hide ad UI + make ads invisible while they play ──
   const style = document.createElement('style');
   style.textContent = [
+    // Hide ad containers in feed/sidebar
     'ytd-ad-slot-renderer', 'ytd-banner-promo-renderer', 'ytd-companion-slot-renderer',
     'ytd-display-ad-renderer', 'ytd-in-feed-ad-layout-renderer', 'ytd-promoted-sparkles-web-renderer',
     'ytd-promoted-sparkles-text-search-renderer', 'ytd-promoted-video-renderer',
@@ -416,83 +417,106 @@ const YOUTUBE_MINIMAL_SCRIPT = `
     'ytmusic-mealbar-promo-renderer', 'ytmusic-statement-banner-renderer',
     'ytd-mealbar-promo-renderer', 'tp-yt-paper-dialog:has(#mealbar-promo-renderer)',
     'ytd-popup-container:has(a[href*="premium"])', 'ytd-enforcement-message-view-model',
-  ].join(', ') + ' { display: none !important; }';
+  ].join(', ') + ' { display: none !important; }\\n' +
+  // When ad is showing: hide the entire video + ad overlay so user sees nothing
+  '.ad-showing video { opacity: 0 !important; }\\n' +
+  '.ad-showing .ytp-ad-player-overlay { opacity: 0 !important; }\\n' +
+  '.ad-showing .ytp-ad-module { opacity: 0 !important; }\\n' +
+  '.ad-showing .ytp-ad-image-overlay { opacity: 0 !important; }\\n' +
+  '.ad-showing .video-ads { opacity: 0 !important; }\\n' +
+  '.ad-showing .ytp-ad-skip-button-slot { opacity: 0 !important; }\\n' +
+  // Show a dark background behind the hidden ad
+  '.ad-showing .html5-video-container { background: #0f0f0f !important; }\\n' +
+  // Hide the ad text/info bar at the bottom
+  '.ad-showing .ytp-ad-text { display: none !important; }\\n' +
+  '.ad-showing .ytp-ad-preview-container { display: none !important; }\\n' +
+  '.ad-showing .ytp-ad-badge-container { display: none !important; }\\n';
   document.head.appendChild(style);
 
-  // ── Auto-skip ads + mute/fast-forward unskippable ──
+  // ── Aggressive ad skipper — runs every 100ms, mutes immediately ──
   let wasInAd = false;
   let contentMutedByUs = false;
+  let contentVolume = 1;
 
   function tryClickSkip() {
-    // Comprehensive skip button selectors for YouTube 2024-2026 UI
     const selectors = [
-      '.ytp-skip-ad-button',
-      '.ytp-ad-skip-button',
-      '.ytp-ad-skip-button-modern',
-      '.ytp-ad-skip-button-slot button',
-      '.ytp-ad-skip-button-slot .ytp-ad-skip-button-container',
-      'button.ytp-skip-ad-button',
-      '.videoAdUiSkipButton',
-      '[id^="skip-button"] button',
-      'button[id^="skip-button"]',
+      '.ytp-skip-ad-button', '.ytp-ad-skip-button', '.ytp-ad-skip-button-modern',
+      '.ytp-ad-skip-button-slot button', 'button.ytp-skip-ad-button',
+      '.videoAdUiSkipButton', '[id^="skip-button"] button', 'button[id^="skip-button"]',
       '.ytp-ad-skip-button-modern__label',
     ];
     for (const sel of selectors) {
       const btn = document.querySelector(sel);
-      if (btn instanceof HTMLElement && btn.offsetParent !== null) {
-        btn.click();
-        return true;
-      }
+      if (btn instanceof HTMLElement) { btn.click(); return true; }
     }
-    // Fallback: find any visible button containing "Skip" text in the ad area
-    const adArea = document.querySelector('.ytp-ad-module, .video-ads, .ytp-ad-player-overlay-skip-or-preview');
-    if (adArea) {
-      const buttons = adArea.querySelectorAll('button, [role="button"], .ytp-ad-skip-button-container');
-      for (const btn of buttons) {
-        if (btn instanceof HTMLElement && btn.offsetParent !== null &&
-            (btn.textContent || '').toLowerCase().includes('skip')) {
-          btn.click();
-          return true;
-        }
+    // Fallback: any element with "skip" text in the ad area
+    const adBtns = document.querySelectorAll('.ytp-ad-module button, .video-ads button, [class*="skip"] button, button[class*="skip"]');
+    for (const btn of adBtns) {
+      if (btn instanceof HTMLElement && (btn.textContent || '').toLowerCase().includes('skip')) {
+        btn.click(); return true;
       }
     }
     return false;
   }
 
-  const adSkipper = setInterval(() => {
-    try {
-      const player = document.querySelector('#movie_player');
-      const video = document.querySelector('video');
-      const isAdShowing = player && (
-        player.classList.contains('ad-showing') ||
-        !!document.querySelector('.ytp-ad-player-overlay') ||
-        !!document.querySelector('.ad-showing')
-      );
+  function handleAd() {
+    const player = document.querySelector('#movie_player');
+    const video = document.querySelector('video');
+    if (!player || !video) return;
 
-      if (isAdShowing && video) {
-        wasInAd = true;
-        // Try skip button first
-        if (!tryClickSkip()) {
-          // No skip button yet — mute + speed through
-          if (!contentMutedByUs) { video.muted = true; contentMutedByUs = true; }
-          video.playbackRate = 16;
-          if (video.duration && isFinite(video.duration) && video.duration > 0.5) {
-            video.currentTime = video.duration - 0.1;
-          }
-        }
-        // Close overlay ads
-        const closeBtn = document.querySelector('.ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container button');
-        if (closeBtn instanceof HTMLElement) closeBtn.click();
-      } else if (wasInAd && video) {
-        wasInAd = false;
-        video.playbackRate = 1;
-        if (contentMutedByUs) { video.muted = false; contentMutedByUs = false; }
-        if (video.paused && !video.ended) video.play().catch(() => {});
+    const isAdShowing = player.classList.contains('ad-showing') ||
+      !!document.querySelector('.ytp-ad-player-overlay');
+
+    if (isAdShowing) {
+      if (!wasInAd) {
+        // Ad just started — instantly mute and remember volume
+        contentVolume = video.volume;
+        video.volume = 0;
+        video.muted = true;
+        contentMutedByUs = true;
       }
-    } catch {}
-  }, 250);
+      wasInAd = true;
 
-  window.addEventListener('unload', () => clearInterval(adSkipper), { once: true });
+      // Try skip immediately
+      tryClickSkip();
+
+      // Speed through if can't skip
+      video.playbackRate = 16;
+      if (video.duration && isFinite(video.duration) && video.duration > 0.5) {
+        video.currentTime = video.duration - 0.1;
+      }
+
+      // Close overlay ads
+      const closeBtn = document.querySelector('.ytp-ad-overlay-close-button');
+      if (closeBtn instanceof HTMLElement) closeBtn.click();
+
+    } else if (wasInAd) {
+      // Ad ended — restore everything
+      wasInAd = false;
+      video.playbackRate = 1;
+      if (contentMutedByUs) {
+        video.muted = false;
+        video.volume = contentVolume || 1;
+        contentMutedByUs = false;
+      }
+      if (video.paused && !video.ended) video.play().catch(() => {});
+    }
+  }
+
+  // Poll every 100ms for fast response
+  const adSkipper = setInterval(handleAd, 100);
+
+  // MutationObserver for instant detection when ad-showing class is added
+  const waitForPlayer = setInterval(() => {
+    const mp = document.querySelector('#movie_player');
+    if (mp) {
+      clearInterval(waitForPlayer);
+      new MutationObserver(() => handleAd()).observe(mp, { attributes: true, attributeFilter: ['class'] });
+    }
+  }, 500);
+  setTimeout(() => clearInterval(waitForPlayer), 30000);
+
+  window.addEventListener('unload', () => { clearInterval(adSkipper); clearInterval(waitForPlayer); }, { once: true });
 })();
 `;
 
