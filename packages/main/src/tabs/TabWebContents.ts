@@ -65,13 +65,20 @@ export function attachTabView(tabId: string, view: WebContentsView, targetWindow
 
 let pipTabId: string | null = null;
 
-export function showTabView(tabId: string): void {
+export function showTabView(tabId: string, mainWindow?: BrowserWindow): void {
   for (const [id, view] of tabViews) {
     if (id === tabId) {
       view.setVisible(true);
     } else if (id === pipTabId) {
-      // PiP tab stays visible but in mini size — don't hide it
+      // PiP tab stays visible in mini size — keep it on top
       view.setVisible(true);
+      // Re-add as last child to ensure it renders above the active tab
+      if (mainWindow) {
+        try {
+          mainWindow.contentView.removeChildView(view);
+          mainWindow.contentView.addChildView(view);
+        } catch {}
+      }
     } else {
       view.setVisible(false);
     }
@@ -91,7 +98,7 @@ export function hideAllTabViews(): void {
  */
 export function enterPiPMode(tabId: string, mainWindow: BrowserWindow): boolean {
   const view = tabViews.get(tabId);
-  if (!view) return false;
+  if (!view) { console.log('[PiP] No view for tab', tabId); return false; }
 
   const [winW, winH] = mainWindow.getContentSize();
   const pipW = 400;
@@ -100,6 +107,7 @@ export function enterPiPMode(tabId: string, mainWindow: BrowserWindow): boolean 
   const x = winW - pipW - margin;
   const y = winH - pipH - margin - 30; // 30px above status bar
 
+  console.log(`[PiP] Entering PiP: bounds=${x},${y},${pipW}x${pipH} window=${winW}x${winH}`);
   view.setBounds({ x, y, width: pipW, height: pipH });
   view.setVisible(true);
 

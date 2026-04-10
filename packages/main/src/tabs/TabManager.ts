@@ -248,7 +248,7 @@ export class TabManager {
         (view.webContents as any).__markUserNavigation?.();
         view.webContents.loadURL(tab.url);
       }
-      showTabView(tabId);
+      showTabView(tabId, this.mainWindow);
     } else {
       hideAllTabViews();
     }
