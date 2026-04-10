@@ -42,15 +42,15 @@ const GAMES: GameDef[] = [
   { id: 'minesweeper', name: 'Minesweeper', emoji: '💣', desc: 'Clear the minefield', color: '#64748b', category: 'Puzzles' },
   { id: 'trivia', name: 'Ghana Trivia', emoji: '🇬🇭', desc: 'Test your knowledge', color: '#006B3F', category: 'Quiz' },
   // Batch 2
-  { id: 'sudoku', name: 'Sudoku', emoji: '🔢', desc: 'Number logic puzzle', color: '#10B981', category: 'Puzzles', locked: true },
-  { id: 'solitaire', name: 'Solitaire', emoji: '🃏', desc: 'Classic card patience', color: '#22c55e', category: 'Cards', locked: true },
-  { id: 'word-scramble', name: 'Words', emoji: '🔤', desc: 'Unscramble letters', color: '#a855f7', category: 'Quiz', locked: true },
-  { id: 'typing', name: 'Typing Speed', emoji: '⌨️', desc: 'How fast can you type?', color: '#0ea5e9', category: 'Quiz', locked: true },
+  { id: 'sudoku', name: 'Sudoku', emoji: '🔢', desc: 'Number logic puzzle', color: '#10B981', category: 'Puzzles' },
+  { id: 'solitaire', name: 'Solitaire', emoji: '🃏', desc: 'Classic card patience', color: '#22c55e', category: 'Cards' },
+  { id: 'word-scramble', name: 'Words', emoji: '🔤', desc: 'Unscramble letters', color: '#a855f7', category: 'Quiz' },
+  { id: 'typing', name: 'Typing Speed', emoji: '⌨️', desc: 'How fast can you type?', color: '#0ea5e9', category: 'Quiz' },
   // Batch 3
-  { id: 'oware', name: 'Oware', emoji: '🏺', desc: 'Akan strategy game', color: '#D4A017', category: 'Strategy', locked: true },
-  { id: 'chess', name: 'Chess', emoji: '♟️', desc: 'Classic strategy', color: '#6366f1', category: 'Strategy', locked: true },
-  { id: 'checkers', name: 'Checkers', emoji: '🔴', desc: 'Jump and capture', color: '#EF4444', category: 'Strategy', locked: true },
-  { id: 'ludo', name: 'Ludo', emoji: '🎲', desc: 'Roll dice, race home', color: '#3B82F6', category: 'Strategy', locked: true },
+  { id: 'oware', name: 'Oware', emoji: '🏺', desc: 'Akan strategy game', color: '#D4A017', category: 'Strategy' },
+  { id: 'chess', name: 'Chess', emoji: '♟️', desc: 'Classic strategy', color: '#6366f1', category: 'Strategy' },
+  { id: 'checkers', name: 'Checkers', emoji: '🔴', desc: 'Jump and capture', color: '#EF4444', category: 'Strategy' },
+  { id: 'ludo', name: 'Ludo', emoji: '🎲', desc: 'Roll dice, race home', color: '#3B82F6', category: 'Strategy' },
 ];
 
 const CATEGORIES = ['All', 'Puzzles', 'Arcade', 'Quiz', 'Strategy', 'Cards'] as const;
@@ -220,7 +220,7 @@ export default function GovPlayScreen({ isDark, onSelectGame, onBack }: GovPlayS
               <Ionicons name="game-controller" size={rs(22)} color={KENTE.gold} />
               <Text style={styles.headerTitle}>GovPlay</Text>
             </View>
-            <Text style={styles.headerSubtitle}>12 games — 4 playable</Text>
+            <Text style={styles.headerSubtitle}>12 games — all playable</Text>
           </View>
 
           {/* Spacer to balance back button */}
