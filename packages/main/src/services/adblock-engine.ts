@@ -2253,6 +2253,8 @@ export class AdBlockService {
     // Skip whitelisted sites
     if (this.isSiteWhitelisted(hostname)) return;
 
+    const isYouTube = hostname.endsWith('youtube.com') || hostname.endsWith('youtu.be');
+
     // ── Ghostery cosmetic filters (CSS hiding from filter lists) ──
     if (this.blocker) {
       try {
@@ -2262,11 +2264,13 @@ export class AdBlockService {
           domain: this.getDomain(hostname),
         });
 
+        // CSS styles are always safe
         if (cosmetics.styles) {
           wc.insertCSS(cosmetics.styles).catch(() => {});
         }
 
-        if (cosmetics.scripts && cosmetics.scripts.length > 0) {
+        // Scriptlets use Proxy/Object.apply overrides that cause infinite recursion on YouTube
+        if (!isYouTube && cosmetics.scripts && cosmetics.scripts.length > 0) {
           for (const script of cosmetics.scripts) {
             wc.executeJavaScript(script).catch(() => {});
           }
@@ -2278,9 +2282,10 @@ export class AdBlockService {
 
     // ── Platform-specific video ad blocking ──
 
-    // YouTube + YouTube Music — CSS cosmetic hiding + auto-skip only
-    if (['www.youtube.com', 'youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(hostname)) {
+    // YouTube + YouTube Music — ONLY CSS + auto-skip, zero other JS injection
+    if (isYouTube) {
       wc.executeJavaScript(YOUTUBE_MINIMAL_SCRIPT).catch(() => {});
+      return; // Skip ALL other scripts for YouTube — they ALL break the player
     }
 
     // Twitch
@@ -2309,11 +2314,8 @@ export class AdBlockService {
     }
 
     // ── Universal video ad blocker — on video platforms EXCEPT YouTube ──
-    // YouTube gets its own minimal script (CSS + auto-skip only).
-    // The universal script overrides fetch/XHR and injects Google IMA stubs which
-    // cause infinite recursion and trigger YouTube's anti-tamper detection.
-    const isYouTube = hostname.endsWith('youtube.com') || hostname.endsWith('youtu.be');
-    if (!isYouTube && (VIDEO_PLATFORM_HOSTS.has(hostname) || hostname.endsWith('tiktok.com'))) {
+    // YouTube already returned above after YOUTUBE_MINIMAL_SCRIPT.
+    if (VIDEO_PLATFORM_HOSTS.has(hostname) || hostname.endsWith('tiktok.com')) {
       wc.executeJavaScript(UNIVERSAL_VIDEO_AD_BLOCK_SCRIPT).catch(() => {});
       wc.executeJavaScript(NEWSLETTER_POPUP_BLOCK_SCRIPT).catch(() => {});
     }
@@ -2321,10 +2323,9 @@ export class AdBlockService {
     // ── Lightweight privacy protection (safe on ALL sites, Brave-level) ──
     // Skip fingerprint protection on YouTube — the Canvas/WebGL/Audio overrides
     // can interfere with YouTube's video player and media pipeline
+    // ── Lightweight privacy protection (YouTube already returned above) ──
     wc.executeJavaScript(COOKIE_CONSENT_BLOCK_SCRIPT).catch(() => {});
-    if (!isYouTube) {
-      wc.executeJavaScript(FINGERPRINT_PROTECTION_SCRIPT).catch(() => {});
-    }
+    wc.executeJavaScript(FINGERPRINT_PROTECTION_SCRIPT).catch(() => {});
     wc.executeJavaScript(CRYPTO_MINER_BLOCK_SCRIPT).catch(() => {});
     wc.executeJavaScript(WEBRTC_LEAK_PREVENTION_SCRIPT).catch(() => {});
   }
