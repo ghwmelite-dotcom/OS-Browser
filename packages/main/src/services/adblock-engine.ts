@@ -433,85 +433,138 @@ const YOUTUBE_MINIMAL_SCRIPT = `
   '.ad-showing .ytp-ad-badge-container { display: none !important; }\\n';
   document.head.appendChild(style);
 
-  // ── Aggressive ad skipper — runs every 100ms, mutes immediately ──
+  // ── Aggressive ad skipper — multi-strategy approach ──
   let wasInAd = false;
   let contentMutedByUs = false;
   let contentVolume = 1;
+  let adStartTime = 0;
 
   function tryClickSkip() {
+    // Strategy 1: Direct CSS selectors for known skip buttons (2024-2026 YouTube UI)
     const selectors = [
-      '.ytp-skip-ad-button', '.ytp-ad-skip-button', '.ytp-ad-skip-button-modern',
-      '.ytp-ad-skip-button-slot button', 'button.ytp-skip-ad-button',
-      '.videoAdUiSkipButton', '[id^="skip-button"] button', 'button[id^="skip-button"]',
+      '.ytp-skip-ad-button',
+      '.ytp-ad-skip-button',
+      '.ytp-ad-skip-button-modern',
+      '.ytp-ad-skip-button-slot button',
+      '.ytp-ad-skip-button-slot .ytp-ad-skip-button-container',
+      'button.ytp-skip-ad-button',
+      '.videoAdUiSkipButton',
+      '[id^="skip-button"] button',
+      'button[id^="skip-button"]',
       '.ytp-ad-skip-button-modern__label',
+      // 2026 YouTube selectors
+      '.ytp-ad-skip-button-modern button',
+      'ytd-skip-button-renderer button',
+      '.ytp-skip-ad-button__text',
     ];
     for (const sel of selectors) {
       const btn = document.querySelector(sel);
       if (btn instanceof HTMLElement) { btn.click(); return true; }
     }
-    // Fallback: any element with "skip" text in the ad area
-    const adBtns = document.querySelectorAll('.ytp-ad-module button, .video-ads button, [class*="skip"] button, button[class*="skip"]');
-    for (const btn of adBtns) {
-      if (btn instanceof HTMLElement && (btn.textContent || '').toLowerCase().includes('skip')) {
-        btn.click(); return true;
+
+    // Strategy 2: Find ANY clickable element containing "Skip" in the player area
+    const playerArea = document.querySelector('#movie_player, .html5-video-player');
+    if (playerArea) {
+      const allClickable = playerArea.querySelectorAll('button, [role="button"], a, span[tabindex], div[tabindex]');
+      for (const el of allClickable) {
+        const text = (el.textContent || '').trim().toLowerCase();
+        if (text.includes('skip') && !text.includes('unskippable')) {
+          (el as HTMLElement).click();
+          return true;
+        }
       }
     }
     return false;
   }
 
   function handleAd() {
-    const player = document.querySelector('#movie_player');
-    const video = document.querySelector('video');
-    if (!player || !video) return;
+    try {
+      const player = document.querySelector('#movie_player');
+      const video = document.querySelector('video');
+      if (!player || !video) return;
 
-    const isAdShowing = player.classList.contains('ad-showing') ||
-      !!document.querySelector('.ytp-ad-player-overlay');
+      const isAdShowing = player.classList.contains('ad-showing') ||
+        player.classList.contains('ad-interrupting') ||
+        !!document.querySelector('.ytp-ad-player-overlay') ||
+        !!document.querySelector('.ytp-ad-player-overlay-instream-info');
 
-    if (isAdShowing) {
-      if (!wasInAd) {
-        // Ad just started — instantly mute and remember volume
-        contentVolume = video.volume;
-        video.volume = 0;
-        video.muted = true;
-        contentMutedByUs = true;
+      if (isAdShowing) {
+        if (!wasInAd) {
+          // Ad just started — instantly mute and remember volume
+          contentVolume = video.volume;
+          video.volume = 0;
+          video.muted = true;
+          contentMutedByUs = true;
+          adStartTime = Date.now();
+        }
+        wasInAd = true;
+
+        // Always try skip — the button may appear after a countdown
+        tryClickSkip();
+
+        // Speed through unskippable ads
+        if (video.playbackRate !== 16) video.playbackRate = 16;
+        if (video.duration && isFinite(video.duration) && video.duration > 0.5) {
+          video.currentTime = video.duration - 0.1;
+        }
+
+        // Force-close overlay/banner ads
+        const overlayClose = document.querySelectorAll(
+          '.ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container button, [id^="dismiss-button"]'
+        );
+        overlayClose.forEach(el => { if (el instanceof HTMLElement) el.click(); });
+
+        // Safety: if ad has been "playing" for more than 3 seconds despite our skip,
+        // try more aggressive approach
+        if (Date.now() - adStartTime > 3000) {
+          // Try clicking anywhere in the skip button slot area
+          const skipSlot = document.querySelector('.ytp-ad-skip-button-slot');
+          if (skipSlot instanceof HTMLElement) skipSlot.click();
+        }
+
+      } else if (wasInAd) {
+        // Ad ended — restore playback
+        wasInAd = false;
+        video.playbackRate = 1;
+        if (contentMutedByUs) {
+          video.muted = false;
+          video.volume = contentVolume || 1;
+          contentMutedByUs = false;
+        }
+        // Resume if stalled
+        if (video.paused && !video.ended) video.play().catch(() => {});
+        adStartTime = 0;
       }
-      wasInAd = true;
-
-      // Try skip immediately
-      tryClickSkip();
-
-      // Speed through if can't skip
-      video.playbackRate = 16;
-      if (video.duration && isFinite(video.duration) && video.duration > 0.5) {
-        video.currentTime = video.duration - 0.1;
-      }
-
-      // Close overlay ads
-      const closeBtn = document.querySelector('.ytp-ad-overlay-close-button');
-      if (closeBtn instanceof HTMLElement) closeBtn.click();
-
-    } else if (wasInAd) {
-      // Ad ended — restore everything
-      wasInAd = false;
-      video.playbackRate = 1;
-      if (contentMutedByUs) {
-        video.muted = false;
-        video.volume = contentVolume || 1;
-        contentMutedByUs = false;
-      }
-      if (video.paused && !video.ended) video.play().catch(() => {});
-    }
+    } catch {}
   }
 
-  // Poll every 100ms for fast response
-  const adSkipper = setInterval(handleAd, 100);
+  // Poll every 50ms for fastest possible response
+  const adSkipper = setInterval(handleAd, 50);
 
   // MutationObserver for instant detection when ad-showing class is added
   const waitForPlayer = setInterval(() => {
     const mp = document.querySelector('#movie_player');
     if (mp) {
       clearInterval(waitForPlayer);
-      new MutationObserver(() => handleAd()).observe(mp, { attributes: true, attributeFilter: ['class'] });
+      new MutationObserver(() => handleAd()).observe(mp, {
+        attributes: true,
+        attributeFilter: ['class'],
+      });
+      // Also observe child additions for dynamically inserted ad elements
+      new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          for (const node of m.addedNodes) {
+            if (node instanceof HTMLElement) {
+              if (node.classList?.contains('ytp-ad-module') ||
+                  node.classList?.contains('video-ads') ||
+                  node.tagName === 'YTD-AD-SLOT-RENDERER') {
+                handleAd();
+                break;
+              }
+            }
+          }
+        }
+      }).observe(mp, { childList: true, subtree: true });
     }
   }, 500);
   setTimeout(() => clearInterval(waitForPlayer), 30000);
