@@ -93,6 +93,12 @@ export class TabManager {
   constructor(mainWindow: BrowserWindow, emitUpdate: () => void) {
     this.mainWindow = mainWindow;
     this.emitUpdate = emitUpdate;
+
+    // Reset all tabs to unmuted on startup — muted state should not persist across sessions
+    try {
+      const db = getDatabase();
+      db.prepare('UPDATE tabs SET is_muted = 0 WHERE is_muted = 1').run();
+    } catch {}
   }
 
   // ── Queries ─────────────────────────────────────────────────────────
