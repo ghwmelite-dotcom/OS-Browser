@@ -209,7 +209,7 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     // Must be awaited — requestPictureInPicture() requires a visible document
     const currentActive = tabManager.getActiveTab();
     if (currentActive && currentActive.id !== id) {
-      try { await tryAutoPiP(currentActive.id, !!currentActive.is_muted); } catch {}
+      try { await tryAutoPiP(currentActive.id); } catch {}
     }
 
     // Auto-exit PiP if switching back to PiP source tab

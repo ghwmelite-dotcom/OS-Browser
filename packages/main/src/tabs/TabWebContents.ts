@@ -98,7 +98,7 @@ export function hideAllTabViews(): void {
  */
 export function enterPiPMode(tabId: string, mainWindow: BrowserWindow): boolean {
   const view = tabViews.get(tabId);
-  if (!view) { console.log('[PiP] No view for tab', tabId); return false; }
+  if (!view) return false;
 
   const [winW, winH] = mainWindow.getContentSize();
   const pipW = 400;
@@ -106,8 +106,6 @@ export function enterPiPMode(tabId: string, mainWindow: BrowserWindow): boolean 
   const margin = 16;
   const x = winW - pipW - margin;
   const y = winH - pipH - margin - 30; // 30px above status bar
-
-  console.log(`[PiP] Entering PiP: bounds=${x},${y},${pipW}x${pipH} window=${winW}x${winH}`);
   view.setBounds({ x, y, width: pipW, height: pipH });
   view.setVisible(true);
 

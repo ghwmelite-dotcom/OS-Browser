@@ -1,15 +1,5 @@
-import { BrowserWindow, app } from 'electron';
-import * as fs from 'fs';
-import * as path from 'path';
+import { BrowserWindow } from 'electron';
 import { getTabView, enterPiPMode, exitPiPMode, getPipTabId } from '../tabs/TabWebContents';
-
-// Diagnostic log file — write PiP debug output to a file the user can check
-const PIP_LOG_PATH = path.join(app.getPath('userData'), 'pip-debug.log');
-function pipLog(msg: string) {
-  const line = `[${new Date().toISOString()}] ${msg}\n`;
-  console.log(msg);
-  try { fs.appendFileSync(PIP_LOG_PATH, line); } catch {}
-}
 
 // ── Types ────────────────────────────────────────────────────────
 export interface MediaInfo {
@@ -37,7 +27,6 @@ let currentMediaState: MediaInfo | null = null;
 // ── Init / Stop ──────────────────────────────────────────────────
 export function initMediaSession(mainWindow: BrowserWindow): void {
   mainWindowRef = mainWindow;
-  pipLog('[PiP] MediaSession initialized. Log file: ' + PIP_LOG_PATH);
 }
 
 export function stopMediaSession(): void {
@@ -64,39 +53,30 @@ function broadcastPipState(active: boolean, sourceTabId: string | null): void {
 
 // ── Auto-PiP ─────────────────────────────────────────────────────
 // Called when switching away from a tab. If the outgoing tab has a
-// playing, unmuted video, enter PiP automatically.
+// playing video (muted or not), enter PiP automatically.
 
-export async function tryAutoPiP(outgoingTabId: string, isMuted: boolean): Promise<boolean> {
-  const diag = pipLog;
-
-  if (!mainWindowRef) { diag('[PiP] SKIP: no mainWindow'); return false; }
-  if (isMuted) { diag('[PiP] SKIP: tab is muted'); return false; }
+export async function tryAutoPiP(outgoingTabId: string): Promise<boolean> {
+  if (!mainWindowRef) return false;
 
   const view = getTabView(outgoingTabId);
-  if (!view) { diag('[PiP] SKIP: no view for tab ' + outgoingTabId); return false; }
-  if (view.webContents.isDestroyed()) { diag('[PiP] SKIP: webContents destroyed'); return false; }
+  if (!view || view.webContents.isDestroyed()) return false;
 
   try {
     // Check if the outgoing tab has a playing video
-    const videoInfo = await view.webContents.executeJavaScript(`
+    const hasPlayingVideo: boolean = await view.webContents.executeJavaScript(`
       (() => {
         const videos = document.querySelectorAll('video');
-        const results = [];
         for (const v of videos) {
-          results.push({ paused: v.paused, ended: v.ended, readyState: v.readyState, duration: v.duration, src: (v.src || '').substring(0, 80) });
+          if (!v.paused && !v.ended && v.readyState > 2) return true;
         }
-        return { count: videos.length, results };
+        return false;
       })()
     `);
 
-    diag('[PiP] Video check: ' + JSON.stringify(videoInfo));
+    if (!hasPlayingVideo) return false;
 
-    const hasPlayingVideo = videoInfo.results?.some((v: any) => !v.paused && !v.ended && v.readyState > 2);
-    if (!hasPlayingVideo) { diag('[PiP] SKIP: no playing video found'); return false; }
-
-    // Use native Electron PiP: resize the view to a small floating rectangle
+    // Native Electron PiP: resize the view to a floating mini window
     const success = enterPiPMode(outgoingTabId, mainWindowRef);
-    diag('[PiP] enterPiPMode result: ' + success);
     if (!success) return false;
 
     pipSourceTabId = outgoingTabId;
