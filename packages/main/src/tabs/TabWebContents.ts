@@ -155,7 +155,13 @@ export function resizeView(view: WebContentsView, mainWindow: BrowserWindow): vo
 }
 
 export function resizeAllViews(mainWindow: BrowserWindow): void {
-  for (const view of tabViews.values()) {
-    resizeView(view, mainWindow);
+  for (const [id, view] of tabViews) {
+    if (id === pipTabId) {
+      // Re-position PiP in bottom-right of resized window
+      const [winW, winH] = mainWindow.getContentSize();
+      view.setBounds({ x: winW - 416, y: winH - 271, width: 400, height: 225 });
+    } else {
+      resizeView(view, mainWindow);
+    }
   }
 }
