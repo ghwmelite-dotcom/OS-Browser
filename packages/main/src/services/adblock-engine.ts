@@ -418,19 +418,20 @@ const YOUTUBE_MINIMAL_SCRIPT = `
     'ytd-mealbar-promo-renderer', 'tp-yt-paper-dialog:has(#mealbar-promo-renderer)',
     'ytd-popup-container:has(a[href*="premium"])', 'ytd-enforcement-message-view-model',
   ].join(', ') + ' { display: none !important; }\\n' +
-  // When ad is showing: hide the entire video + ad overlay so user sees nothing
-  '.ad-showing video { opacity: 0 !important; }\\n' +
-  '.ad-showing .ytp-ad-player-overlay { opacity: 0 !important; }\\n' +
-  '.ad-showing .ytp-ad-module { opacity: 0 !important; }\\n' +
-  '.ad-showing .ytp-ad-image-overlay { opacity: 0 !important; }\\n' +
-  '.ad-showing .video-ads { opacity: 0 !important; }\\n' +
-  '.ad-showing .ytp-ad-skip-button-slot { opacity: 0 !important; }\\n' +
-  // Show a dark background behind the hidden ad
-  '.ad-showing .html5-video-container { background: #0f0f0f !important; }\\n' +
-  // Hide the ad text/info bar at the bottom
-  '.ad-showing .ytp-ad-text { display: none !important; }\\n' +
-  '.ad-showing .ytp-ad-preview-container { display: none !important; }\\n' +
-  '.ad-showing .ytp-ad-badge-container { display: none !important; }\\n';
+  // When ad is showing: hide video + overlays (both .ad-showing parent AND direct selectors)
+  '.ad-showing video, .ad-interrupting video { opacity: 0 !important; }\\n' +
+  '.ad-showing .html5-video-container, .ad-interrupting .html5-video-container { background: #0f0f0f !important; }\\n' +
+  // Direct hiding of ad overlays regardless of parent class
+  '.ytp-ad-player-overlay { opacity: 0 !important; pointer-events: none !important; }\\n' +
+  '.ytp-ad-player-overlay-instream-info { opacity: 0 !important; }\\n' +
+  '.ytp-ad-image-overlay { display: none !important; }\\n' +
+  '.ytp-ad-text { display: none !important; }\\n' +
+  '.ytp-ad-preview-container { display: none !important; }\\n' +
+  '.ytp-ad-badge-container { display: none !important; }\\n' +
+  '.ytp-ad-skip-button-slot { z-index: 999999 !important; opacity: 1 !important; }\\n' +
+  // Hide the "Visit site" / "Sponsored" info overlay
+  '.ytp-ad-action-interstitial { display: none !important; }\\n' +
+  '.ytp-ad-visit-advertiser-button { display: none !important; }\\n';
   document.head.appendChild(style);
 
   // ── Aggressive ad skipper — multi-strategy approach ──
@@ -474,6 +475,17 @@ const YOUTUBE_MINIMAL_SCRIPT = `
         }
       }
     }
+
+    // Strategy 3: Search the ENTIRE page for skip buttons (YouTube may render them outside #movie_player)
+    const allBtns = document.querySelectorAll('button, [role="button"]');
+    for (const btn of allBtns) {
+      const text = (btn.textContent || '').trim().toLowerCase();
+      if (text === 'skip' || text === 'skip ad' || text === 'skip ads' ||
+          text.startsWith('skip ') || text.includes('skip ad')) {
+        (btn as HTMLElement).click();
+        return true;
+      }
+    }
     return false;
   }
 
@@ -486,7 +498,11 @@ const YOUTUBE_MINIMAL_SCRIPT = `
       const isAdShowing = player.classList.contains('ad-showing') ||
         player.classList.contains('ad-interrupting') ||
         !!document.querySelector('.ytp-ad-player-overlay') ||
-        !!document.querySelector('.ytp-ad-player-overlay-instream-info');
+        !!document.querySelector('.ytp-ad-player-overlay-instream-info') ||
+        !!document.querySelector('.ytp-ad-action-interstitial') ||
+        !!document.querySelector('[class*="ad-showing"]') ||
+        !!document.querySelector('.ytp-ad-skip-button-slot:not(:empty)') ||
+        !!document.querySelector('.video-ads .ad-container');
 
       if (isAdShowing) {
         if (!wasInAd) {
