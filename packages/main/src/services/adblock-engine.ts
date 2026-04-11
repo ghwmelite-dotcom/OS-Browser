@@ -2161,6 +2161,7 @@ export class AdBlockService {
   private totalBytesSaved = 0;
   private sessionBytesSaved = 0;
   private updateTimer: ReturnType<typeof setInterval> | null = null;
+  private statsTimer: ReturnType<typeof setInterval> | null = null;
   private cachePath: string = '';
 
   constructor() {
@@ -2265,6 +2266,10 @@ export class AdBlockService {
 
     // Load persisted whitelist from database
     this.loadWhitelist();
+    this.loadStats();
+
+    // Save stats every 60 seconds
+    this.statsTimer = setInterval(() => this.saveStats(), 60_000);
 
     // Schedule background updates every 24 hours
     this.updateTimer = setInterval(() => {
@@ -2418,6 +2423,28 @@ export class AdBlockService {
     return parts.slice(-2).join('.');
   }
 
+  private loadStats(): void {
+    try {
+      const db = getDatabase();
+      db.prepare("CREATE TABLE IF NOT EXISTS adblock_stats (key TEXT PRIMARY KEY, value INTEGER DEFAULT 0)").run();
+      const row = db.prepare("SELECT * FROM adblock_stats WHERE key = 'lifetime'").get() as any;
+      if (row) {
+        this.totalBlocked = row.value || 0;
+        // Load lifetime bytes from a separate row
+        const bytesRow = db.prepare("SELECT * FROM adblock_stats WHERE key = 'lifetime_bytes'").get() as any;
+        this.totalBytesSaved = bytesRow?.value || 0;
+      }
+    } catch {}
+  }
+
+  private saveStats(): void {
+    try {
+      const db = getDatabase();
+      db.prepare("INSERT OR REPLACE INTO adblock_stats (key, value) VALUES ('lifetime', ?)").run(this.totalBlocked);
+      db.prepare("INSERT OR REPLACE INTO adblock_stats (key, value) VALUES ('lifetime_bytes', ?)").run(this.totalBytesSaved);
+    } catch {}
+  }
+
   private loadWhitelist(): void {
     try {
       const db = getDatabase();
@@ -2490,9 +2517,15 @@ export class AdBlockService {
   }
 
   destroy(): void {
+    // Persist stats before shutdown
+    this.saveStats();
     if (this.updateTimer) {
       clearInterval(this.updateTimer);
       this.updateTimer = null;
+    }
+    if (this.statsTimer) {
+      clearInterval(this.statsTimer);
+      this.statsTimer = null;
     }
     if (this.blocker) {
       try {
