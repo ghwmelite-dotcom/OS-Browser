@@ -2356,10 +2356,12 @@ export class AdBlockService {
 
     // ── Platform-specific video ad blocking ──
 
-    // YouTube + YouTube Music — ONLY CSS + auto-skip, zero other JS injection
+    // YouTube + YouTube Music — comprehensive ad blocking (fetch/XHR interception + auto-skip + CSS)
+    // IMPORTANT: only the YOUTUBE_AD_BLOCK_SCRIPT runs here. The universal ad blocker, fingerprint,
+    // crypto miner, and Ghostery scriptlets are EXCLUDED (they cause infinite recursion via Proxy).
     if (isYouTube) {
-      wc.executeJavaScript(YOUTUBE_MINIMAL_SCRIPT).catch(() => {});
-      return; // Skip ALL other scripts for YouTube — they ALL break the player
+      wc.executeJavaScript(YOUTUBE_AD_BLOCK_SCRIPT).catch(() => {});
+      return; // Skip ALL other scripts — they break the player via Proxy/fetch conflicts
     }
 
     // Twitch
