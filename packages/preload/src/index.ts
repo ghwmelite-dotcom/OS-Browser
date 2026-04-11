@@ -1,18 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
-// PiP diagnostic overlay — shows what's happening with auto-PiP (TEMPORARY)
-ipcRenderer.on('pip:diagnostic', (_e: any, msg: string) => {
-  console.log(msg);
-  // Show a visible toast on screen so we can see without DevTools
-  try {
-    const toast = document.createElement('div');
-    toast.textContent = msg;
-    toast.style.cssText = 'position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#0f0;padding:8px 16px;border-radius:8px;font-family:monospace;font-size:11px;z-index:999999;pointer-events:none;opacity:0.9;max-width:80vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 4000);
-  } catch {}
-});
-
 const IPC = {
   TAB_CREATE: 'tab:create', TAB_CLOSE: 'tab:close', TAB_SWITCH: 'tab:switch',
   TAB_UPDATE: 'tab:update', TAB_LIST: 'tab:list', TAB_NAVIGATE: 'tab:navigate',
