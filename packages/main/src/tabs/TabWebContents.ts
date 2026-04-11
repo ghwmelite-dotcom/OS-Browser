@@ -115,6 +115,50 @@ export function enterPiPMode(tabId: string, mainWindow: BrowserWindow): boolean 
     mainWindow.contentView.addChildView(view);
   } catch {}
 
+  // Inject close button overlay + "Back to tab" button into the PiP page
+  try {
+    view.webContents.executeJavaScript(`
+      (function() {
+        if (document.getElementById('__os-pip-controls')) return;
+        const bar = document.createElement('div');
+        bar.id = '__os-pip-controls';
+        bar.style.cssText = 'position:fixed;top:0;left:0;right:0;height:32px;background:linear-gradient(rgba(0,0,0,0.7),transparent);z-index:999999;display:flex;align-items:center;justify-content:space-between;padding:4px 8px;pointer-events:auto;';
+
+        const backBtn = document.createElement('button');
+        backBtn.textContent = '← Back to tab';
+        backBtn.style.cssText = 'background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:11px;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:system-ui;';
+        backBtn.onmouseover = function() { this.style.background = 'rgba(255,255,255,0.3)'; };
+        backBtn.onmouseout = function() { this.style.background = 'rgba(255,255,255,0.15)'; };
+        backBtn.onclick = function() { console.log('__OS_PIP_BACK_TO_TAB__'); };
+
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕';
+        closeBtn.style.cssText = 'background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:14px;width:24px;height:24px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;';
+        closeBtn.onmouseover = function() { this.style.background = 'rgba(239,68,68,0.8)'; };
+        closeBtn.onmouseout = function() { this.style.background = 'rgba(255,255,255,0.15)'; };
+        closeBtn.onclick = function() { console.log('__OS_PIP_CLOSE__'); };
+
+        bar.appendChild(backBtn);
+        bar.appendChild(closeBtn);
+        document.body.appendChild(bar);
+      })()
+    `).catch(() => {});
+
+    // Listen for close/back button clicks via console messages
+    const consoleHandler = (_event: any, _level: number, message: string) => {
+      if (message === '__OS_PIP_CLOSE__') {
+        exitPiPMode(mainWindow);
+        view.webContents.removeListener('console-message', consoleHandler);
+      } else if (message === '__OS_PIP_BACK_TO_TAB__') {
+        // Switch back to this tab — broadcast event to renderer
+        exitPiPMode(mainWindow);
+        mainWindow.webContents.send('pip:back-to-tab', tabId);
+        view.webContents.removeListener('console-message', consoleHandler);
+      }
+    };
+    view.webContents.on('console-message', consoleHandler);
+  } catch {}
+
   pipTabId = tabId;
   return true;
 }
@@ -126,7 +170,12 @@ export function exitPiPMode(mainWindow: BrowserWindow): void {
   if (!pipTabId) return;
   const view = tabViews.get(pipTabId);
   if (view) {
-    // Check if this tab is the active one — if so, resize to full, otherwise hide
+    // Remove the injected PiP controls overlay
+    try {
+      view.webContents.executeJavaScript(`
+        (function() { var el = document.getElementById('__os-pip-controls'); if (el) el.remove(); })()
+      `).catch(() => {});
+    } catch {}
     view.setVisible(false);
     resizeView(view, mainWindow);
   }

@@ -1,5 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
+// Auto-switch to tab when user clicks "Back to tab" in PiP mini window
+ipcRenderer.on('pip:back-to-tab', (_e: any, tabId: string) => {
+  ipcRenderer.invoke('tab:switch', tabId);
+});
+
 const IPC = {
   TAB_CREATE: 'tab:create', TAB_CLOSE: 'tab:close', TAB_SWITCH: 'tab:switch',
   TAB_UPDATE: 'tab:update', TAB_LIST: 'tab:list', TAB_NAVIGATE: 'tab:navigate',
