@@ -56,36 +56,50 @@ function broadcastPipState(active: boolean, sourceTabId: string | null): void {
 // playing, unmuted video, enter PiP automatically.
 
 export async function tryAutoPiP(outgoingTabId: string, isMuted: boolean): Promise<boolean> {
-  if (!mainWindowRef || isMuted) return false;
+  // Send diagnostic to renderer so user can see what's happening
+  const diag = (msg: string) => {
+    console.log(msg);
+    try { mainWindowRef?.webContents?.send('pip:diagnostic', msg); } catch {}
+  };
+
+  if (!mainWindowRef) { diag('[PiP] SKIP: no mainWindow'); return false; }
+  if (isMuted) { diag('[PiP] SKIP: tab is muted'); return false; }
 
   const view = getTabView(outgoingTabId);
-  if (!view || view.webContents.isDestroyed()) return false;
+  if (!view) { diag('[PiP] SKIP: no view for tab ' + outgoingTabId); return false; }
+  if (view.webContents.isDestroyed()) { diag('[PiP] SKIP: webContents destroyed'); return false; }
 
   try {
     // Check if the outgoing tab has a playing video
-    const hasPlayingVideo: boolean = await view.webContents.executeJavaScript(`
+    const videoInfo = await view.webContents.executeJavaScript(`
       (() => {
         const videos = document.querySelectorAll('video');
+        const results = [];
         for (const v of videos) {
-          if (!v.paused && !v.ended && v.readyState > 2) return true;
+          results.push({ paused: v.paused, ended: v.ended, readyState: v.readyState, duration: v.duration, src: (v.src || '').substring(0, 80) });
         }
-        return false;
+        return { count: videos.length, results };
       })()
     `);
 
-    if (!hasPlayingVideo) return false;
+    diag('[PiP] Video check: ' + JSON.stringify(videoInfo));
+
+    const hasPlayingVideo = videoInfo.results?.some((v: any) => !v.paused && !v.ended && v.readyState > 2);
+    if (!hasPlayingVideo) { diag('[PiP] SKIP: no playing video found'); return false; }
 
     // Use native Electron PiP: resize the view to a small floating rectangle
-    // instead of calling requestPictureInPicture() which has gesture restrictions
     const success = enterPiPMode(outgoingTabId, mainWindowRef);
+    diag('[PiP] enterPiPMode result: ' + success);
     if (!success) return false;
 
     pipSourceTabId = outgoingTabId;
     pipDismissIntent = false;
     broadcastPipState(true, outgoingTabId);
 
+    diag('[PiP] SUCCESS: PiP activated for tab ' + outgoingTabId);
     return true;
-  } catch {
+  } catch (err: any) {
+    diag('[PiP] ERROR: ' + (err?.message || String(err)));
     return false;
   }
 }
