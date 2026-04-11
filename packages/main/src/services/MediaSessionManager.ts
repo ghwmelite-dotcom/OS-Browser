@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron';
+import { BrowserWindow, Notification } from 'electron';
 import { getTabView, enterPiPMode, exitPiPMode, getPipTabId } from '../tabs/TabWebContents';
 
 // ── Types ────────────────────────────────────────────────────────
@@ -56,10 +56,10 @@ function broadcastPipState(active: boolean, sourceTabId: string | null): void {
 // playing, unmuted video, enter PiP automatically.
 
 export async function tryAutoPiP(outgoingTabId: string, isMuted: boolean): Promise<boolean> {
-  // Send diagnostic to renderer so user can see what's happening
+  // DIAGNOSTIC: show native OS notification so we can see what's happening
   const diag = (msg: string) => {
     console.log(msg);
-    try { mainWindowRef?.webContents?.send('pip:diagnostic', msg); } catch {}
+    try { new Notification({ title: 'PiP Debug', body: msg }).show(); } catch {}
   };
 
   if (!mainWindowRef) { diag('[PiP] SKIP: no mainWindow'); return false; }
