@@ -83,10 +83,8 @@ export async function tryAutoPiP(outgoingTabId: string): Promise<boolean> {
     pipDismissIntent = false;
     broadcastPipState(true, outgoingTabId);
 
-    diag('[PiP] SUCCESS: PiP activated for tab ' + outgoingTabId);
     return true;
-  } catch (err: any) {
-    diag('[PiP] ERROR: ' + (err?.message || String(err)));
+  } catch {
     return false;
   }
 }
