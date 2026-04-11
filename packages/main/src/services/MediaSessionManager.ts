@@ -1,5 +1,15 @@
-import { BrowserWindow, Notification } from 'electron';
+import { BrowserWindow, app } from 'electron';
+import * as fs from 'fs';
+import * as path from 'path';
 import { getTabView, enterPiPMode, exitPiPMode, getPipTabId } from '../tabs/TabWebContents';
+
+// Diagnostic log file — write PiP debug output to a file the user can check
+const PIP_LOG_PATH = path.join(app.getPath('userData'), 'pip-debug.log');
+function pipLog(msg: string) {
+  const line = `[${new Date().toISOString()}] ${msg}\n`;
+  console.log(msg);
+  try { fs.appendFileSync(PIP_LOG_PATH, line); } catch {}
+}
 
 // ── Types ────────────────────────────────────────────────────────
 export interface MediaInfo {
@@ -27,6 +37,7 @@ let currentMediaState: MediaInfo | null = null;
 // ── Init / Stop ──────────────────────────────────────────────────
 export function initMediaSession(mainWindow: BrowserWindow): void {
   mainWindowRef = mainWindow;
+  pipLog('[PiP] MediaSession initialized. Log file: ' + PIP_LOG_PATH);
 }
 
 export function stopMediaSession(): void {
@@ -56,11 +67,7 @@ function broadcastPipState(active: boolean, sourceTabId: string | null): void {
 // playing, unmuted video, enter PiP automatically.
 
 export async function tryAutoPiP(outgoingTabId: string, isMuted: boolean): Promise<boolean> {
-  // DIAGNOSTIC: show native OS notification so we can see what's happening
-  const diag = (msg: string) => {
-    console.log(msg);
-    try { new Notification({ title: 'PiP Debug', body: msg }).show(); } catch {}
-  };
+  const diag = pipLog;
 
   if (!mainWindowRef) { diag('[PiP] SKIP: no mainWindow'); return false; }
   if (isMuted) { diag('[PiP] SKIP: tab is muted'); return false; }
