@@ -2220,11 +2220,27 @@ export class AdBlockService {
       try {
         const blocker = this.blocker;
         const self = this;
+        // Internal/app domains that should never be blocked
+        const APP_WHITELIST_DOMAINS = [
+          'askozzy.work',       // GovChat Matrix homeserver + API
+          'govchat.askozzy.work',
+          'osbrowser.askozzy.work',
+          'os-browser-worker.ghwmelite.workers.dev',
+        ];
+
         session.defaultSession.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, (details, callback) => {
           // Skip if ad blocking is globally disabled
           if (!self.enabled) { callback({}); return; }
           // Skip main frame requests (page navigations)
           if (details.resourceType === 'mainFrame') { callback({}); return; }
+
+          // Whitelist internal app domains (GovChat, API, worker)
+          try {
+            const reqHost = new URL(details.url).hostname;
+            if (APP_WHITELIST_DOMAINS.some(d => reqHost === d || reqHost.endsWith('.' + d))) {
+              callback({}); return;
+            }
+          } catch {}
 
           // Whitelist YouTube: allow ALL requests from/to YouTube and Google domains
           // YouTube depends on dozens of Google subdomains for video delivery, auth, APIs
