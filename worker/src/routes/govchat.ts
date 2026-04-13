@@ -69,8 +69,19 @@ async function getAuthenticatedSession(
   const auth = request.headers.get('Authorization');
   if (!auth?.startsWith('Bearer ')) return null;
   const token = auth.slice(7);
-  const session = await env.SESSIONS.get(`govchat-session:${token}`, 'json');
-  return session as GovChatSession | null;
+  const key = `govchat-session:${token}`;
+  const session = await env.SESSIONS.get(key, 'json') as GovChatSession | null;
+
+  // Auto-refresh: renew the 7-day TTL on every authenticated request
+  if (session) {
+    try {
+      await env.SESSIONS.put(key, JSON.stringify(session), {
+        expirationTtl: 7 * 24 * 60 * 60,
+      });
+    } catch {}
+  }
+
+  return session;
 }
 
 async function requireAdmin(
