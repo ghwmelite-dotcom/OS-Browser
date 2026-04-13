@@ -76,7 +76,7 @@ async function getAuthenticatedSession(
   if (session) {
     try {
       await env.SESSIONS.put(key, JSON.stringify(session), {
-        expirationTtl: 7 * 24 * 60 * 60,
+        expirationTtl: 365 * 24 * 60 * 60,
       });
     } catch {}
   }
@@ -196,7 +196,7 @@ govchatRoutes.post('/auth/login', async (c) => {
   };
 
   await c.env.SESSIONS.put(`govchat-session:${sessionToken}`, JSON.stringify(newSession), {
-    expirationTtl: 7 * 24 * 60 * 60,
+    expirationTtl: 365 * 24 * 60 * 60,
   });
 
   return c.json({
@@ -447,7 +447,7 @@ govchatRoutes.post('/auth/redeem-invite', async (c) => {
 
   // Store session with 7-day TTL
   await c.env.SESSIONS.put(`govchat-session:${sessionToken}`, JSON.stringify(session), {
-    expirationTtl: 7 * 24 * 60 * 60, // 7 days in seconds
+    expirationTtl: 365 * 24 * 60 * 60, // 7 days in seconds
   });
 
   return c.json({
@@ -613,7 +613,7 @@ govchatRoutes.post('/auth/register-synapse', async (c) => {
       matrixPassword: password,
     };
     await c.env.SESSIONS.put(`govchat-session:${token}`, JSON.stringify(updatedSession), {
-      expirationTtl: 7 * 24 * 60 * 60,
+      expirationTtl: 365 * 24 * 60 * 60,
     });
 
     return c.json({
@@ -666,7 +666,7 @@ govchatRoutes.get('/auth/me', async (c) => {
         const auth = c.req.header('Authorization')!;
         const token = auth.slice(7);
         await c.env.SESSIONS.put(`govchat-session:${token}`, JSON.stringify(updatedSession), {
-          expirationTtl: 7 * 24 * 60 * 60,
+          expirationTtl: 365 * 24 * 60 * 60,
         });
         break;
       }
