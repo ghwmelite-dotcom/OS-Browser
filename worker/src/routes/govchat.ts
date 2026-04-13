@@ -183,6 +183,59 @@ govchatRoutes.post('/auth/login', async (c) => {
   }
 
   if (!existingSession) {
+    // Session expired or was deleted — try to re-authenticate with Matrix directly
+    // This allows users to log back in without needing a new invite code
+    const homeserverUrl = c.env.MATRIX_HOMESERVER_URL || 'https://govchat.askozzy.work';
+    const synapseUser = /^\d+$/.test(body.staffId) ? `staff_${body.staffId}` : body.staffId;
+
+    try {
+      // Try logging into Matrix with a known password pattern
+      const loginRes = await fetch(`${homeserverUrl}/_matrix/client/v3/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'm.login.password',
+          identifier: { type: 'm.id.user', user: synapseUser },
+          password: `govchat_${body.staffId}_2026`,
+        }),
+      });
+
+      if (loginRes.ok) {
+        const loginData = await loginRes.json() as { user_id: string; access_token: string; device_id: string };
+        const sessionToken = generateToken();
+        const hostname = new URL(homeserverUrl).hostname;
+        const reSession: GovChatSession = {
+          userId: loginData.user_id || `@${synapseUser}:${hostname}`,
+          staffId: body.staffId,
+          displayName: body.displayName || body.staffId,
+          department: '',
+          ministry: '',
+          token: sessionToken,
+          homeserverUrl,
+          deviceId: loginData.device_id,
+          createdAt: Date.now(),
+          role: 'user',
+          matrixAccessToken: loginData.access_token,
+          matrixPassword: `govchat_${body.staffId}_2026`,
+        };
+
+        await c.env.SESSIONS.put(`govchat-session:${sessionToken}`, JSON.stringify(reSession), {
+          expirationTtl: 365 * 24 * 60 * 60,
+        });
+
+        return c.json({
+          success: true,
+          userId: reSession.userId,
+          accessToken: sessionToken,
+          homeserverUrl,
+          staffId: body.staffId,
+          deviceId: reSession.deviceId,
+          displayName: reSession.displayName,
+          role: reSession.role,
+        });
+      }
+    } catch {}
+
     return c.json({ error: 'No account found for this Staff ID. Please use an invite code to register.' }, 404);
   }
 
@@ -1173,7 +1226,7 @@ govchatRoutes.post('/auth/public-signup', async (c) => {
 
   // Store session with 30-day TTL
   await c.env.SESSIONS.put(`govchat-session:${sessionToken}`, JSON.stringify(session), {
-    expirationTtl: 30 * 24 * 60 * 60, // 30 days in seconds
+    expirationTtl: 365 * 24 * 60 * 60, // 1 year
   });
 
   return c.json({
