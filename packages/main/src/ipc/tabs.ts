@@ -1251,11 +1251,12 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
       `);
     } catch { /* injection failed — non-critical */ }
 
-    // ── USSD Code Detection ─────────────────────────────────────────
+    // ── USSD Code Detection — DEACTIVATED ─────────────────────────
+    // TreeWalker scans entire DOM on every page — too heavy for non-Ghana sites.
     // Scan visible text for USSD patterns and make them interactive.
     // Wraps matched codes in a styled span with gold underline and
     // a copy-to-clipboard tooltip on hover.
-    try {
+    if (false) try { // DEACTIVATED — too heavy for every page
       wc.executeJavaScript(`
         (function() {
           if (window.__osBrowserUSSDDetector) return;
