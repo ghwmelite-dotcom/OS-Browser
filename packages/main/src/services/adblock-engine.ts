@@ -2396,13 +2396,11 @@ export class AdBlockService {
       wc.executeJavaScript(NEWSLETTER_POPUP_BLOCK_SCRIPT).catch(() => {});
     }
 
-    // ── Lightweight privacy protection (safe on ALL sites, Brave-level) ──
-    // Skip fingerprint protection on YouTube — the Canvas/WebGL/Audio overrides
-    // can interfere with YouTube's video player and media pipeline
-    // ── Lightweight privacy protection (YouTube already returned above) ──
-    wc.executeJavaScript(COOKIE_CONSENT_BLOCK_SCRIPT).catch(() => {});
-    wc.executeJavaScript(FINGERPRINT_PROTECTION_SCRIPT).catch(() => {});
-    wc.executeJavaScript(CRYPTO_MINER_BLOCK_SCRIPT).catch(() => {});
+    // ── Lightweight privacy protection ──
+    // DEACTIVATED: Cookie consent, fingerprint, crypto miner scripts — too heavy for every page load
+    // wc.executeJavaScript(COOKIE_CONSENT_BLOCK_SCRIPT).catch(() => {});
+    // wc.executeJavaScript(FINGERPRINT_PROTECTION_SCRIPT).catch(() => {});
+    // wc.executeJavaScript(CRYPTO_MINER_BLOCK_SCRIPT).catch(() => {});
     wc.executeJavaScript(WEBRTC_LEAK_PREVENTION_SCRIPT).catch(() => {});
   }
 
