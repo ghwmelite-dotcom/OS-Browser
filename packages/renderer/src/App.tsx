@@ -860,7 +860,7 @@ export function App() {
                 />
               )}
               <ContentArea />
-              <FloatingAIBar />
+              {/* <FloatingAIBar /> — DEACTIVATED */}
             </div>
           )}
         </div>
