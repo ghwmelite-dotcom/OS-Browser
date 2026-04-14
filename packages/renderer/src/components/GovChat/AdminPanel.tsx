@@ -125,6 +125,8 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
   const [approvingRequest, setApprovingRequest] = useState<string | null>(null);
   const [rejectingRequest, setRejectingRequest] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
+  const [selectedRequestIds, setSelectedRequestIds] = useState<Set<string>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
 
   const authHeader = credentials?.accessToken
     ? { Authorization: `Bearer ${credentials.accessToken}` }
@@ -346,6 +348,63 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
       // user can retry
     } finally {
       setRejectingRequest(null);
+    }
+  };
+
+  /* ── Bulk approve/reject ── */
+  const pendingRequests = requests.filter(r => r.status === 'pending');
+  const allPendingSelected = pendingRequests.length > 0 && pendingRequests.every(r => selectedRequestIds.has(r.id));
+
+  const toggleSelectRequest = (id: string) => {
+    setSelectedRequestIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (allPendingSelected) {
+      setSelectedRequestIds(new Set());
+    } else {
+      setSelectedRequestIds(new Set(pendingRequests.map(r => r.id)));
+    }
+  };
+
+  const handleBulkApprove = async () => {
+    if (selectedRequestIds.size === 0 || bulkProcessing) return;
+    setBulkProcessing(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/govchat/code-requests/bulk-approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeader } as HeadersInit,
+        body: JSON.stringify({ ids: Array.from(selectedRequestIds) }),
+      });
+      if (!res.ok) throw new Error(`Bulk approve failed (${res.status})`);
+      setSelectedRequestIds(new Set());
+      await fetchRequests();
+      await fetchPendingCount();
+    } catch {} finally {
+      setBulkProcessing(false);
+    }
+  };
+
+  const handleBulkReject = async () => {
+    if (selectedRequestIds.size === 0 || bulkProcessing) return;
+    const reason = window.prompt('Rejection reason for all selected (optional):');
+    setBulkProcessing(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/govchat/code-requests/bulk-reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeader } as HeadersInit,
+        body: JSON.stringify({ ids: Array.from(selectedRequestIds), reason: reason ?? '' }),
+      });
+      if (!res.ok) throw new Error(`Bulk reject failed (${res.status})`);
+      setSelectedRequestIds(new Set());
+      await fetchRequests();
+      await fetchPendingCount();
+    } catch {} finally {
+      setBulkProcessing(false);
     }
   };
 
@@ -800,6 +859,44 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
                   <p className="text-[12px] text-text-muted">No code requests yet.</p>
                 </div>
               ) : (
+                <>
+                {/* Bulk action bar */}
+                {pendingRequests.length > 0 && (
+                  <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: 'var(--color-border-1)' }}>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={allPendingSelected}
+                        onChange={toggleSelectAll}
+                        className="w-3.5 h-3.5 rounded accent-[#D4A017]"
+                      />
+                      <span className="text-[11px] text-text-muted">
+                        {selectedRequestIds.size > 0 ? `${selectedRequestIds.size} selected` : 'Select all pending'}
+                      </span>
+                    </label>
+                    {selectedRequestIds.size > 0 && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleBulkApprove}
+                          disabled={bulkProcessing}
+                          className="text-[10px] font-semibold px-3 py-1 rounded-md transition-colors"
+                          style={{ background: 'rgba(0,107,63,0.15)', color: '#006B3F' }}
+                        >
+                          {bulkProcessing ? 'Processing...' : `Approve ${selectedRequestIds.size}`}
+                        </button>
+                        <button
+                          onClick={handleBulkReject}
+                          disabled={bulkProcessing}
+                          className="text-[10px] font-semibold px-3 py-1 rounded-md transition-colors"
+                          style={{ background: 'rgba(206,17,38,0.1)', color: '#CE1126' }}
+                        >
+                          Reject {selectedRequestIds.size}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="max-h-[400px] overflow-y-auto p-3 flex flex-col gap-2.5">
                   {requests.map(req => {
                     const isPending = req.status === 'pending';
@@ -824,9 +921,17 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
                           background: 'var(--color-surface-2)',
                         }}
                       >
-                        {/* Header row: name + status */}
+                        {/* Header row: checkbox + name + status */}
                         <div className="flex items-center justify-between mb-1.5">
                           <div className="flex items-center gap-2">
+                            {isPending && (
+                              <input
+                                type="checkbox"
+                                checked={selectedRequestIds.has(req.id)}
+                                onChange={() => toggleSelectRequest(req.id)}
+                                className="w-3.5 h-3.5 rounded accent-[#D4A017] shrink-0 cursor-pointer"
+                              />
+                            )}
                             <div
                               className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
                               style={{ background: isPending ? '#D4A017' : isApproved ? '#006B3F' : '#CE1126' }}
@@ -916,6 +1021,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
                     );
                   })}
                 </div>
+                </>
               )}
             </div>
           )}
