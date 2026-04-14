@@ -642,16 +642,67 @@ govchatRoutes.post('/auth/register-synapse', async (c) => {
       matrixDeviceId = regData.device_id;
     } else {
       const errBody = await regRes.text();
-      // User already exists — try login with a new password set approach
+      // User already exists — reset password via Synapse admin API using a temp admin
       if (errBody.includes('User ID already taken')) {
-        // Try to login if we have previous password stored
-        // For now, return error — user already exists
-        return c.json({
-          error: 'Synapse user already exists. Try logging in with existing credentials.',
-          detail: errBody,
-        }, 409);
+        try {
+          // Register a temporary admin user to reset the password
+          const tempUser = `admin_reset_${Date.now()}`;
+          const tempPass = `Reset_${generateToken().slice(0, 16)}`;
+
+          const nonce2Res = await fetch(`${homeserverUrl}/_synapse/admin/v1/register`, { method: 'GET' });
+          const nonce2Data = await nonce2Res.json() as { nonce: string };
+          const nonce2 = nonce2Data.nonce;
+
+          const hmacMsg2 = `${nonce2}\x00${tempUser}\x00${tempPass}\x00admin`;
+          const sig2 = await crypto.subtle.sign('HMAC', key, encoder.encode(hmacMsg2));
+          const mac2 = Array.from(new Uint8Array(sig2)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+          const tempRegRes = await fetch(`${homeserverUrl}/_synapse/admin/v1/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nonce: nonce2, username: tempUser, password: tempPass, admin: true, mac: mac2 }),
+          });
+
+          if (tempRegRes.ok) {
+            const tempData = await tempRegRes.json() as { access_token: string };
+            // Use temp admin to reset the target user's password
+            const targetUserId = `@${synapseUsername}:${serverName}`;
+            const resetRes = await fetch(`${homeserverUrl}/_synapse/admin/v2/users/${encodeURIComponent(targetUserId)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tempData.access_token}` },
+              body: JSON.stringify({ password, logout_devices: false }),
+            });
+
+            if (resetRes.ok) {
+              // Password reset — now login with new password
+              const loginRes = await fetch(`${homeserverUrl}/_matrix/client/v3/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'm.login.password', identifier: { type: 'm.id.user', user: synapseUsername }, password }),
+              });
+              if (loginRes.ok) {
+                const loginData = await loginRes.json() as { user_id: string; access_token: string; device_id: string };
+                matrixAccessToken = loginData.access_token;
+                matrixDeviceId = loginData.device_id;
+              }
+            }
+            // Deactivate temp admin
+            try {
+              await fetch(`${homeserverUrl}/_synapse/admin/v1/deactivate/@${tempUser}:${serverName}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tempData.access_token}` },
+                body: JSON.stringify({ erase: true }),
+              });
+            } catch {}
+          }
+        } catch {}
+
+        if (!matrixAccessToken) {
+          return c.json({ error: 'Synapse user exists but password reset failed', detail: errBody }, 409);
+        }
+      } else {
+        return c.json({ error: 'Synapse registration failed', detail: errBody }, 500);
       }
-      return c.json({ error: 'Synapse registration failed', detail: errBody }, 500);
     }
 
     // Step 4: Update KV session with Matrix credentials
