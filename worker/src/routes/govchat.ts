@@ -196,7 +196,7 @@ govchatRoutes.post('/auth/login', async (c) => {
         body: JSON.stringify({
           type: 'm.login.password',
           identifier: { type: 'm.id.user', user: synapseUser },
-          password: `govchat_${body.staffId}_2026`,
+          password: `GovChat_${generateToken().slice(0, 16)}`,
         }),
       });
 
@@ -204,6 +204,7 @@ govchatRoutes.post('/auth/login', async (c) => {
         const loginData = await loginRes.json() as { user_id: string; access_token: string; device_id: string };
         const sessionToken = generateToken();
         const hostname = new URL(homeserverUrl).hostname;
+        const freshPassword = `GovChat_${generateToken().slice(0, 16)}`;
         const reSession: GovChatSession = {
           userId: loginData.user_id || `@${synapseUser}:${hostname}`,
           staffId: body.staffId,
@@ -216,7 +217,7 @@ govchatRoutes.post('/auth/login', async (c) => {
           createdAt: Date.now(),
           role: 'user',
           matrixAccessToken: loginData.access_token,
-          matrixPassword: `govchat_${body.staffId}_2026`,
+          matrixPassword: freshPassword,
         };
 
         await c.env.SESSIONS.put(`govchat-session:${sessionToken}`, JSON.stringify(reSession), {
