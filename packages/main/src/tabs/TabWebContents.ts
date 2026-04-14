@@ -64,6 +64,7 @@ export function attachTabView(tabId: string, view: WebContentsView, targetWindow
 // ── Visibility ──────────────────────────────────────────────────────────
 
 let pipTabId: string | null = null;
+let pipConsoleHandler: any = null;
 
 export function showTabView(tabId: string, mainWindow?: BrowserWindow): void {
   for (const [id, view] of tabViews) {
@@ -113,7 +114,7 @@ export function enterPiPMode(tabId: string, mainWindow: BrowserWindow): boolean 
   try {
     mainWindow.contentView.removeChildView(view);
     mainWindow.contentView.addChildView(view);
-  } catch {}
+  } catch { /* view re-ordering failed — non-critical */ }
 
   // Inject close button overlay + "Back to tab" button into the PiP page
   try {
@@ -144,20 +145,23 @@ export function enterPiPMode(tabId: string, mainWindow: BrowserWindow): boolean 
       })()
     `).catch(() => {});
 
+    // Remove any existing PiP console listener before adding a new one
+    if (pipConsoleHandler && view.webContents.listenerCount('console-message') > 0) {
+      view.webContents.removeListener('console-message', pipConsoleHandler);
+    }
+
     // Listen for close/back button clicks via console messages
-    const consoleHandler = (_event: any, _level: number, message: string) => {
+    pipConsoleHandler = (_event: any, _level: number, message: string) => {
       if (message === '__OS_PIP_CLOSE__') {
         exitPiPMode(mainWindow);
-        view.webContents.removeListener('console-message', consoleHandler);
       } else if (message === '__OS_PIP_BACK_TO_TAB__') {
         // Switch back to this tab — broadcast event to renderer
         exitPiPMode(mainWindow);
         mainWindow.webContents.send('pip:back-to-tab', tabId);
-        view.webContents.removeListener('console-message', consoleHandler);
       }
     };
-    view.webContents.on('console-message', consoleHandler);
-  } catch {}
+    view.webContents.on('console-message', pipConsoleHandler);
+  } catch { /* PiP controls injection failed — non-critical */ }
 
   pipTabId = tabId;
   return true;
@@ -170,12 +174,17 @@ export function exitPiPMode(mainWindow: BrowserWindow): void {
   if (!pipTabId) return;
   const view = tabViews.get(pipTabId);
   if (view) {
+    // Remove PiP console-message listener
+    if (pipConsoleHandler) {
+      try { view.webContents.removeListener('console-message', pipConsoleHandler); } catch { /* view may be destroyed */ }
+      pipConsoleHandler = null;
+    }
     // Remove the injected PiP controls overlay
     try {
       view.webContents.executeJavaScript(`
         (function() { var el = document.getElementById('__os-pip-controls'); if (el) el.remove(); })()
       `).catch(() => {});
-    } catch {}
+    } catch { /* view may be destroyed */ }
     view.setVisible(false);
     resizeView(view, mainWindow);
   }

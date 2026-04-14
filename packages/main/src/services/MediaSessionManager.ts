@@ -1,6 +1,13 @@
 import { BrowserWindow } from 'electron';
 import { getTabView, enterPiPMode, exitPiPMode, getPipTabId } from '../tabs/TabWebContents';
 
+function execWithTimeout(wc: any, code: string, timeoutMs = 3000): Promise<any> {
+  return Promise.race([
+    wc.executeJavaScript(code),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('executeJavaScript timeout')), timeoutMs)),
+  ]);
+}
+
 // ── Types ────────────────────────────────────────────────────────
 export interface MediaInfo {
   title: string;
@@ -63,7 +70,7 @@ export async function tryAutoPiP(outgoingTabId: string): Promise<boolean> {
 
   try {
     // Check if the outgoing tab has a playing video
-    const hasPlayingVideo: boolean = await view.webContents.executeJavaScript(`
+    const hasPlayingVideo: boolean = await execWithTimeout(view.webContents,`
       (() => {
         const videos = document.querySelectorAll('video');
         for (const v of videos) {
@@ -139,7 +146,7 @@ export async function extractMediaMetadata(tabId: string): Promise<MediaInfo | n
   if (!view) return null;
 
   try {
-    const raw = await view.webContents.executeJavaScript(`
+    const raw = await execWithTimeout(view.webContents,`
       (() => {
         const md = navigator.mediaSession?.metadata;
         const videos = document.querySelectorAll('video');
@@ -217,7 +224,7 @@ export async function mediaPlayPause(tabId: string): Promise<void> {
   if (!view) return;
 
   try {
-    await view.webContents.executeJavaScript(`
+    await execWithTimeout(view.webContents,`
       (() => {
         const media = document.querySelector('video') || document.querySelector('audio');
         if (!media) return;
@@ -235,7 +242,7 @@ export async function mediaSkipForward(tabId: string, seconds = 10): Promise<voi
   if (!view) return;
 
   try {
-    await view.webContents.executeJavaScript(`
+    await execWithTimeout(view.webContents,`
       (() => {
         const media = document.querySelector('video') || document.querySelector('audio');
         if (media) media.currentTime = Math.min(media.duration || Infinity, media.currentTime + ${seconds});
@@ -251,7 +258,7 @@ export async function mediaSkipBackward(tabId: string, seconds = 10): Promise<vo
   if (!view) return;
 
   try {
-    await view.webContents.executeJavaScript(`
+    await execWithTimeout(view.webContents,`
       (() => {
         const media = document.querySelector('video') || document.querySelector('audio');
         if (media) media.currentTime = Math.max(0, media.currentTime - ${seconds});
@@ -275,7 +282,7 @@ export function startProgressPolling(tabId: string): void {
     }
 
     try {
-      const progress: ProgressInfo = await view.webContents.executeJavaScript(`
+      const progress: ProgressInfo = await execWithTimeout(view.webContents,`
         (() => {
           const media = document.querySelector('video') || document.querySelector('audio');
           if (!media) return { currentTime: 0, duration: 0 };

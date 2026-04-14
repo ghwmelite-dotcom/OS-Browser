@@ -209,11 +209,21 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     // Must be awaited — requestPictureInPicture() requires a visible document
     const currentActive = tabManager.getActiveTab();
     if (currentActive && currentActive.id !== id) {
-      try { await tryAutoPiP(currentActive.id); } catch {}
+      try {
+        await Promise.race([
+          tryAutoPiP(currentActive.id),
+          new Promise(r => setTimeout(() => r(false), 2000)),
+        ]);
+      } catch {}
     }
 
     // Auto-exit PiP if switching back to PiP source tab
-    try { await tryAutoExitPiP(id); } catch {};
+    try {
+      await Promise.race([
+        tryAutoExitPiP(id),
+        new Promise(r => setTimeout(() => r(false), 1000)),
+      ]);
+    } catch {};
 
     // Check if tab was suspended BEFORE activating (activation recreates the view)
     const wasSuspended = isTabSuspended(id);
