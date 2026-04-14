@@ -807,12 +807,11 @@ function resizeViewToContent(view: WebContentsView, win: BrowserWindow): void {
  * @param oauthOpener If provided, marks this tab as an OAuth flow so we can auto-close it
  *                    when the auth redirects back to the opener's domain.
  */
-export function createTabFromMain(mainWindow: BrowserWindow, url: string, oauthOpener?: { openerTabId: string; openerHost: string }): void {
+export function createTabFromMain(mainWindow: BrowserWindow, url: string, oauthOpener?: { openerTabId: string; openerHost: string }, afterTabId?: string): void {
   if (!url || (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('view-source:'))) return;
 
-  // Chrome behavior: new tab opens right next to the active tab
-  const activeTab = _tabManager.getActiveTab();
-  const tab = _tabManager.createTab(url, activeTab?.id);
+  // Chrome behavior: new tab opens right after the source tab
+  const tab = _tabManager.createTab(url, afterTabId);
 
   // If this is an OAuth tab, track it so we can auto-close when auth completes
   if (oauthOpener) {
@@ -941,8 +940,8 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
         };
       }
     } catch {}
-    // Everything else opens as a new tab
-    createTabFromMain(mainWindow, url);
+    // Everything else opens as a new tab (right after source tab)
+    createTabFromMain(mainWindow, url, undefined, tabId);
     return { action: 'deny' };
   });
 
@@ -985,7 +984,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
   wc.on('new-window' as any, (event: any, url: string) => {
     event.preventDefault();
     if ((url.startsWith('https://') || url.startsWith('http://')) && !isAdPopupUrl(url)) {
-      createTabFromMain(mainWindow, url);
+      createTabFromMain(mainWindow, url, undefined, tabId);
     }
   });
 
@@ -1007,7 +1006,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
       // ── Link context menu (Chrome-style: link options first) ──
       menu.append(new MenuItem({
         label: 'Open Link in New Tab',
-        click: () => createTabFromMain(mainWindow, params.linkURL),
+        click: () => createTabFromMain(mainWindow, params.linkURL, undefined, tabId),
       }));
       menu.append(new MenuItem({
         label: 'Copy Link Address',
@@ -1018,7 +1017,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
         menu.append(new MenuItem({ label: 'Copy', role: 'copy' }));
         menu.append(new MenuItem({
           label: `Search Google for "${params.selectionText.substring(0, 30)}${params.selectionText.length > 30 ? '...' : ''}"`,
-          click: () => createTabFromMain(mainWindow, `https://www.google.com/search?q=${encodeURIComponent(params.selectionText)}`),
+          click: () => createTabFromMain(mainWindow, `https://www.google.com/search?q=${encodeURIComponent(params.selectionText)}`, undefined, tabId),
         }));
         menu.append(new MenuItem({ type: 'separator' }));
       }
@@ -1038,7 +1037,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
       // ── Image context menu ──
       menu.append(new MenuItem({
         label: 'Open Image in New Tab',
-        click: () => createTabFromMain(mainWindow, params.srcURL),
+        click: () => createTabFromMain(mainWindow, params.srcURL, undefined, tabId),
       }));
       menu.append(new MenuItem({
         label: 'Copy Image Address',
@@ -1067,7 +1066,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
         menu.append(new MenuItem({ label: 'Copy', role: 'copy' }));
         menu.append(new MenuItem({
           label: `Search Google for "${params.selectionText.substring(0, 30)}${params.selectionText.length > 30 ? '...' : ''}"`,
-          click: () => createTabFromMain(mainWindow, `https://www.google.com/search?q=${encodeURIComponent(params.selectionText)}`),
+          click: () => createTabFromMain(mainWindow, `https://www.google.com/search?q=${encodeURIComponent(params.selectionText)}`, undefined, tabId),
         }));
         menu.append(new MenuItem({ type: 'separator' }));
       }
@@ -1084,7 +1083,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
       }));
       menu.append(new MenuItem({ type: 'separator' }));
       menu.append(new MenuItem({ label: 'View Page Source', accelerator: 'Ctrl+U', click: () => {
-        createTabFromMain(mainWindow, `view-source:${wc.getURL()}`);
+        createTabFromMain(mainWindow, `view-source:${wc.getURL()}`, undefined, tabId);
       }}));
       menu.append(new MenuItem({ label: 'Inspect Element', accelerator: 'Ctrl+Shift+I', click: () => {
         wc.openDevTools({ mode: 'detach' });
