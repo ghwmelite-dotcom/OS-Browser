@@ -993,6 +993,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     const menu = new Menu();
 
     if (params.isEditable) {
+      // ── Editable field context menu ──
       menu.append(new MenuItem({ label: 'Undo', role: 'undo' }));
       menu.append(new MenuItem({ label: 'Redo', role: 'redo' }));
       menu.append(new MenuItem({ type: 'separator' }));
@@ -1000,19 +1001,74 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
       menu.append(new MenuItem({ label: 'Copy', role: 'copy' }));
       menu.append(new MenuItem({ label: 'Paste', role: 'paste' }));
       menu.append(new MenuItem({ label: 'Select All', role: 'selectAll' }));
-    } else {
+    } else if (params.linkURL) {
+      // ── Link context menu (Chrome-style: link options first) ──
+      menu.append(new MenuItem({
+        label: 'Open Link in New Tab',
+        click: () => createTabFromMain(mainWindow, params.linkURL),
+      }));
+      menu.append(new MenuItem({
+        label: 'Copy Link Address',
+        click: () => clipboard.writeText(params.linkURL),
+      }));
+      menu.append(new MenuItem({ type: 'separator' }));
       if (params.selectionText) {
         menu.append(new MenuItem({ label: 'Copy', role: 'copy' }));
         menu.append(new MenuItem({
           label: `Search Google for "${params.selectionText.substring(0, 30)}${params.selectionText.length > 30 ? '...' : ''}"`,
-          click: () => {
-            const q = encodeURIComponent(params.selectionText);
-            createTabFromMain(mainWindow, `https://www.google.com/search?q=${q}`);
-          },
+          click: () => createTabFromMain(mainWindow, `https://www.google.com/search?q=${encodeURIComponent(params.selectionText)}`),
         }));
         menu.append(new MenuItem({ type: 'separator' }));
       }
-
+      menu.append(new MenuItem({ label: 'Inspect Element', accelerator: 'Ctrl+Shift+I', click: () => {
+        wc.openDevTools({ mode: 'detach' });
+        setTimeout(() => {
+          const dtWc = wc.devToolsWebContents;
+          if (dtWc) {
+            const allWindows = BrowserWindow.getAllWindows();
+            const dtWin = allWindows.find(w => w.webContents.id === dtWc.id);
+            if (dtWin) { dtWin.setAlwaysOnTop(true); dtWin.focus(); setTimeout(() => dtWin.setAlwaysOnTop(false), 500); }
+            else dtWc.focus();
+          }
+        }, 300);
+      }}));
+    } else if (params.mediaType === 'image' && params.srcURL) {
+      // ── Image context menu ──
+      menu.append(new MenuItem({
+        label: 'Open Image in New Tab',
+        click: () => createTabFromMain(mainWindow, params.srcURL),
+      }));
+      menu.append(new MenuItem({
+        label: 'Copy Image Address',
+        click: () => clipboard.writeText(params.srcURL),
+      }));
+      menu.append(new MenuItem({
+        label: 'Save Image As...',
+        click: () => wc.downloadURL(params.srcURL),
+      }));
+      menu.append(new MenuItem({ type: 'separator' }));
+      menu.append(new MenuItem({ label: 'Inspect Element', accelerator: 'Ctrl+Shift+I', click: () => {
+        wc.openDevTools({ mode: 'detach' });
+        setTimeout(() => {
+          const dtWc = wc.devToolsWebContents;
+          if (dtWc) {
+            const allWindows = BrowserWindow.getAllWindows();
+            const dtWin = allWindows.find(w => w.webContents.id === dtWc.id);
+            if (dtWin) { dtWin.setAlwaysOnTop(true); dtWin.focus(); setTimeout(() => dtWin.setAlwaysOnTop(false), 500); }
+            else dtWc.focus();
+          }
+        }, 300);
+      }}));
+    } else {
+      // ── Page context menu (no link, no image) ──
+      if (params.selectionText) {
+        menu.append(new MenuItem({ label: 'Copy', role: 'copy' }));
+        menu.append(new MenuItem({
+          label: `Search Google for "${params.selectionText.substring(0, 30)}${params.selectionText.length > 30 ? '...' : ''}"`,
+          click: () => createTabFromMain(mainWindow, `https://www.google.com/search?q=${encodeURIComponent(params.selectionText)}`),
+        }));
+        menu.append(new MenuItem({ type: 'separator' }));
+      }
       menu.append(new MenuItem({ label: 'Back', accelerator: 'Alt+Left', enabled: wc.canGoBack(), click: () => wc.goBack() }));
       menu.append(new MenuItem({ label: 'Forward', accelerator: 'Alt+Right', enabled: wc.canGoForward(), click: () => wc.goForward() }));
       menu.append(new MenuItem({ label: 'Reload', accelerator: 'Ctrl+R', click: () => wc.reload() }));
@@ -1020,31 +1076,6 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
       menu.append(new MenuItem({ label: 'Save Page As...', accelerator: 'Ctrl+S', click: () => wc.downloadURL(wc.getURL()) }));
       menu.append(new MenuItem({ label: 'Print...', accelerator: 'Ctrl+P', click: () => wc.print() }));
       menu.append(new MenuItem({ type: 'separator' }));
-
-      if (params.linkURL) {
-        menu.append(new MenuItem({
-          label: 'Open Link in New Tab',
-          click: () => createTabFromMain(mainWindow, params.linkURL),
-        }));
-        menu.append(new MenuItem({
-          label: 'Copy Link Address',
-          click: () => clipboard.writeText(params.linkURL),
-        }));
-        menu.append(new MenuItem({ type: 'separator' }));
-      }
-
-      if (params.mediaType === 'image' && params.srcURL) {
-        menu.append(new MenuItem({
-          label: 'Copy Image Address',
-          click: () => clipboard.writeText(params.srcURL),
-        }));
-        menu.append(new MenuItem({
-          label: 'Open Image in New Tab',
-          click: () => createTabFromMain(mainWindow, params.srcURL),
-        }));
-        menu.append(new MenuItem({ type: 'separator' }));
-      }
-
       menu.append(new MenuItem({
         label: 'Copy Page URL',
         click: () => clipboard.writeText(wc.getURL()),
