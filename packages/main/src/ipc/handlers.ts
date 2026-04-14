@@ -671,8 +671,8 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
   // Offline queue count
   ipcMain.handle(IPC.OFFLINE_QUEUE_COUNT, () => getQueueCount());
 
-  // Data usage tracker — DEACTIVATED (runs onCompleted for EVERY request, high overhead)
-  // initDataTracker(mainWindow);
+  // Data usage tracker
+  initDataTracker(mainWindow);
   initPowerMonitor(mainWindow);
 
   // Interaction Vault — proof of interaction capture system
