@@ -810,8 +810,17 @@ function resizeViewToContent(view: WebContentsView, win: BrowserWindow): void {
 export function createTabFromMain(mainWindow: BrowserWindow, url: string, oauthOpener?: { openerTabId: string; openerHost: string }, afterTabId?: string): void {
   if (!url || (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('view-source:'))) return;
 
-  // Chrome behavior: new tab opens right after the source tab
-  const tab = _tabManager.createTab(url, afterTabId);
+  // Create tab at the end first
+  const tab = _tabManager.createTab(url);
+
+  // Then move it right after the source tab (Chrome behavior)
+  if (afterTabId) {
+    const allTabs = _tabManager.getTabs();
+    const sourceIdx = allTabs.findIndex(t => t.id === afterTabId);
+    if (sourceIdx >= 0) {
+      _tabManager.reorderTab(tab.id, sourceIdx + 1);
+    }
+  }
 
   // If this is an OAuth tab, track it so we can auto-close when auth completes
   if (oauthOpener) {
