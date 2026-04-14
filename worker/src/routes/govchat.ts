@@ -1151,6 +1151,108 @@ govchatRoutes.put('/code-requests/:id/reject', async (c) => {
 });
 
 // ---------------------------------------------------------------------------
+// POST /code-requests/bulk-approve — Admin bulk-approves multiple requests
+// ---------------------------------------------------------------------------
+
+govchatRoutes.post('/code-requests/bulk-approve', async (c) => {
+  const adminResult = await requireAdmin(c.env, c.req.raw);
+  if (adminResult instanceof Response) return adminResult;
+  const admin = adminResult;
+
+  const body = await c.req.json<{ ids: string[] }>();
+  if (!body.ids || !Array.isArray(body.ids) || body.ids.length === 0) {
+    return c.json({ error: 'ids array is required' }, 400);
+  }
+
+  if (body.ids.length > 100) {
+    return c.json({ error: 'Maximum 100 requests per batch' }, 400);
+  }
+
+  const results: { id: string; success: boolean; code?: string; error?: string }[] = [];
+
+  for (const id of body.ids) {
+    const stored = await c.env.INVITE_CODES.get(`code-request:${id}`, 'json');
+    if (!stored) {
+      results.push({ id, success: false, error: 'Not found' });
+      continue;
+    }
+
+    const request = stored as CodeRequest;
+    if (request.status !== 'pending') {
+      results.push({ id, success: false, error: `Already ${request.status}` });
+      continue;
+    }
+
+    // Generate invite code
+    const code = generateInviteCode();
+    const now = Date.now();
+    const expiresAt = now + 168 * 60 * 60 * 1000; // 7 days
+
+    const inviteCode: InviteCode = {
+      code,
+      createdBy: admin.userId,
+      createdAt: now,
+      expiresAt,
+      maxUses: 1,
+      usedCount: 0,
+      department: request.department,
+      ministry: request.ministry,
+      isRevoked: false,
+    };
+
+    await c.env.INVITE_CODES.put(`invite:${code}`, JSON.stringify(inviteCode), {
+      expirationTtl: Math.max(Math.ceil((expiresAt - now) / 1000), 60),
+    });
+
+    request.status = 'approved';
+    request.reviewedBy = admin.userId;
+    request.reviewedAt = now;
+    request.generatedCode = code;
+
+    await c.env.INVITE_CODES.put(`code-request:${id}`, JSON.stringify(request));
+    results.push({ id, success: true, code });
+  }
+
+  const approved = results.filter(r => r.success).length;
+  const failed = results.filter(r => !r.success).length;
+
+  return c.json({ success: true, approved, failed, results });
+});
+
+// ---------------------------------------------------------------------------
+// POST /code-requests/bulk-reject — Admin bulk-rejects multiple requests
+// ---------------------------------------------------------------------------
+
+govchatRoutes.post('/code-requests/bulk-reject', async (c) => {
+  const adminResult = await requireAdmin(c.env, c.req.raw);
+  if (adminResult instanceof Response) return adminResult;
+  const admin = adminResult;
+
+  const body = await c.req.json<{ ids: string[]; reason?: string }>();
+  if (!body.ids || !Array.isArray(body.ids) || body.ids.length === 0) {
+    return c.json({ error: 'ids array is required' }, 400);
+  }
+
+  let rejected = 0;
+  for (const id of body.ids) {
+    const stored = await c.env.INVITE_CODES.get(`code-request:${id}`, 'json');
+    if (!stored) continue;
+    const request = stored as CodeRequest;
+    if (request.status !== 'pending') continue;
+
+    request.status = 'rejected';
+    request.reviewedBy = admin.userId;
+    request.reviewedAt = Date.now();
+    request.rejectionReason = body.reason;
+
+    await c.env.INVITE_CODES.put(`code-request:${id}`, JSON.stringify(request));
+    rejected++;
+  }
+
+  return c.json({ success: true, rejected });
+});
+
+// ---------------------------------------------------------------------------
 // POST /auth/public-signup — Public user registration (no invite code)
 // ---------------------------------------------------------------------------
 
