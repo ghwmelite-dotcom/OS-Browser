@@ -810,7 +810,9 @@ function resizeViewToContent(view: WebContentsView, win: BrowserWindow): void {
 export function createTabFromMain(mainWindow: BrowserWindow, url: string, oauthOpener?: { openerTabId: string; openerHost: string }): void {
   if (!url || (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('view-source:'))) return;
 
-  const tab = _tabManager.createTab(url);
+  // Chrome behavior: new tab opens right next to the active tab
+  const activeTab = _tabManager.getActiveTab();
+  const tab = _tabManager.createTab(url, activeTab?.id);
 
   // If this is an OAuth tab, track it so we can auto-close when auth completes
   if (oauthOpener) {
