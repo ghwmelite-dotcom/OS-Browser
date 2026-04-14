@@ -101,13 +101,14 @@ export const useWellbeingStore = create<WellbeingState>((set, get) => ({
     const state = get();
     if (!state.enabled) return;
 
-    // Increment browsing time
-    const newBrowsingSeconds = state.dailyBrowsingSeconds + 1;
+    // Increment browsing time by the tick interval (10 seconds)
+    const TICK_SECONDS = 10;
+    const newBrowsingSeconds = state.dailyBrowsingSeconds + TICK_SECONDS;
 
     // Increment current site time
     const newSiteTime = { ...state.siteTime };
     if (state.currentSite) {
-      newSiteTime[state.currentSite] = (newSiteTime[state.currentSite] ?? 0) + 1;
+      newSiteTime[state.currentSite] = (newSiteTime[state.currentSite] ?? 0) + TICK_SECONDS;
     }
 
     // Check break reminder
