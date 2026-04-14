@@ -451,11 +451,10 @@ export function App() {
       }
     } catch {}
 
-    // Digital Wellbeing — DEACTIVATED (1s interval too heavy, constant CPU drain)
-    // Changed to 60s to reduce overhead while still tracking browsing time
+    // Digital Wellbeing — tracks browsing time per site (10s interval)
     const wellbeingInterval = setInterval(() => {
       useWellbeingStore.getState().tick();
-    }, 60_000);
+    }, 10_000);
 
     // Tab Search shortcut: Ctrl+Shift+A
     const handleTabSearchKey = (e: KeyboardEvent) => {
