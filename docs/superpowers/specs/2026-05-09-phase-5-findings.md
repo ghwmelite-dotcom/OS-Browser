@@ -93,4 +93,21 @@ Status values:
 
 ## 4. Implementation Notes
 
-(One section per implemented fix, added in Task 7+ as items land.)
+### Landed (this session)
+
+- **Keyboard shortcut gaps** — commit `248f2ad`. Added Ctrl+Shift+R hard reload, Ctrl+0 reset zoom, Ctrl+P print global shortcut (was right-click only), Esc to stop loading. New IPC handlers: `tab:reload-hard`, `tab:reset-zoom`. New preload bridge methods: `reloadHard`, `resetZoom`, `print`. Closes items #24, #26, #27 from §1.
+- **Download "Show in folder" + "Open file"** — commit `23786f0`. Adds `shell.showItemInFolder` and `shell.openPath` IPC handlers in `download-manager.ts`. New preload bridge methods. New buttons in `DownloadPanel.tsx` shown when `state === 'completed'`. Closes items #2, #3 from §1.
+- **Context menu — Search Image, Open Image in New Tab, Translate Page** — commit `df73370`. Image menu gains "Open Image in New Tab" + "Search Image with Google" (uses Google Lens upload-by-URL). Page menu gains "Translate Page" (Google Translate auto-detect to English). Closes items #13, #14, #15 from §1.
+
+### Deferred to a follow-up session
+
+- **Paste-and-go in OmniBar context menu** (item #32) — implementing properly requires a full custom React context menu with 5 items (Cut, Copy, Paste, Paste and go, Select all) and click-away handling, ~50 lines. A keyboard-shortcut MVP (Ctrl+Shift+V) is technically possible but isn't Chrome-parity (Chrome doesn't bind that shortcut). Better to do it right next session than land a half-version. Effort estimate: S, ~30 min focused.
+- **Find-in-page** (items #6-9) — entire feature missing on desktop; needs new FindBar React component, `webContents.findInPage` IPC, `found-in-page` event listener for match count, and key handling in renderer. Effort estimate: M, half day. Worth a dedicated session.
+
+### Items needing user verification (pending Phase 1 §5 walk)
+
+- Save link as / Copy link text (#16, #17)
+- Drag-to-reorder (#29)
+- Drag-out to new window (#30)
+
+These were marked "Implemented?" in the static audit — need user side-by-side comparison with Chrome to confirm UX matches.
