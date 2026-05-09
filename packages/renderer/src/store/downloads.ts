@@ -20,6 +20,8 @@ interface DownloadState {
   resumeDownload: (id: string) => void;
   cancelDownload: (id: string) => void;
   retryDownload: (id: string) => void;
+  showInFolder: (id: string) => void;
+  openFile: (id: string) => void;
   clearCompleted: () => void;
   activeCount: () => number;
 }
@@ -129,6 +131,14 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
 
   retryDownload: (id) => {
     (window as any).osBrowser?.downloads?.retry(id);
+  },
+
+  showInFolder: (id) => {
+    (window as any).osBrowser?.downloads?.showInFolder(id);
+  },
+
+  openFile: (id) => {
+    (window as any).osBrowser?.downloads?.openFile(id);
   },
 
   clearCompleted: () => {

@@ -342,6 +342,8 @@ contextBridge.exposeInMainWorld('osBrowser', {
     resume: (id: string) => ipcRenderer.invoke('download:resume', id),
     cancel: (id: string) => ipcRenderer.invoke('download:cancel', id),
     retry: (id: string) => ipcRenderer.invoke('download:retry', id),
+    showInFolder: (id: string) => ipcRenderer.invoke('download:show-in-folder', id),
+    openFile: (id: string) => ipcRenderer.invoke('download:open-file', id),
     clearCompleted: () => ipcRenderer.invoke('download:clear-completed'),
     onStarted: (cb: (data: any) => void) => { const l = (_e: any, d: any) => cb(d); ipcRenderer.on('download:started', l); return () => ipcRenderer.removeListener('download:started', l); },
     onProgress: (cb: (data: any) => void) => { const l = (_e: any, d: any) => cb(d); ipcRenderer.on('download:progress', l); return () => ipcRenderer.removeListener('download:progress', l); },

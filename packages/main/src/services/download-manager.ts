@@ -1,4 +1,4 @@
-import { app, session, ipcMain, BrowserWindow, dialog } from 'electron';
+import { app, session, ipcMain, BrowserWindow, dialog, shell } from 'electron';
 import path from 'path';
 import crypto from 'crypto';
 
@@ -187,6 +187,18 @@ class DownloadManager {
         this.downloads.delete(id);
         this.mainWindow.webContents.downloadURL(dl.url);
       }
+    });
+
+    // Phase 5 — show download in OS file explorer with the file selected
+    ipcMain.handle('download:show-in-folder', (_e, id: string) => {
+      const dl = this.downloads.get(id);
+      if (dl?.savePath) shell.showItemInFolder(dl.savePath);
+    });
+
+    // Phase 5 — open the downloaded file with the OS default app
+    ipcMain.handle('download:open-file', (_e, id: string) => {
+      const dl = this.downloads.get(id);
+      if (dl?.savePath && dl.state === 'completed') shell.openPath(dl.savePath);
     });
 
     ipcMain.handle('download:clear-completed', () => {

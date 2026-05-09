@@ -9,6 +9,8 @@ import {
   CheckCircle,
   AlertCircle,
   ArrowDownToLine,
+  FolderOpen,
+  FileText,
 } from 'lucide-react';
 import { SidebarPanelProps } from '@/features/registry';
 import { useDownloadStore, DownloadItem } from '@/store/downloads';
@@ -60,7 +62,7 @@ function stateLabel(state: string): string {
 
 // ── Single download row ──────────────────────────────────────────────
 const DownloadRow: React.FC<{ item: DownloadItem; stripColor: string }> = ({ item, stripColor }) => {
-  const { pauseDownload, resumeDownload, cancelDownload, retryDownload } = useDownloadStore();
+  const { pauseDownload, resumeDownload, cancelDownload, retryDownload, showInFolder, openFile } = useDownloadStore();
   const knownSize = item.totalBytes > 0;
   const pct = knownSize ? Math.round((item.receivedBytes / item.totalBytes) * 100) : 0;
   const isActive = item.state === 'downloading' || item.state === 'paused';
@@ -177,6 +179,12 @@ const DownloadRow: React.FC<{ item: DownloadItem; stripColor: string }> = ({ ite
         )}
         {isFailed && (
           <ActionBtn icon={RotateCcw} label="Retry" onClick={() => retryDownload(item.id)} />
+        )}
+        {item.state === 'completed' && (
+          <>
+            <ActionBtn icon={FileText} label="Open" onClick={() => openFile(item.id)} />
+            <ActionBtn icon={FolderOpen} label="Show in folder" onClick={() => showInFolder(item.id)} />
+          </>
         )}
       </div>
     </div>
