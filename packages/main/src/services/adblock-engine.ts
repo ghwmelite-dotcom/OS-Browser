@@ -1960,7 +1960,18 @@ export class AdBlockService {
         // Scriptlets use Proxy/Object.apply overrides that cause infinite recursion on YouTube
         if (!isYouTube && cosmetics.scripts && cosmetics.scripts.length > 0) {
           for (const script of cosmetics.scripts) {
-            wc.executeJavaScript(script).catch(() => {});
+            // Defer scriptlet execution to page idle time. Ghostery cosmetic scripts
+            // are not time-critical (CSS hides ads immediately above; scriptlets run
+            // late to clean up dynamic insertions). Running them on the page's main
+            // thread during the critical path adds ~1.5–2s of LCP regression on
+            // heavy SPAs like Slack — see Phase 3 trace analysis.
+            const deferred =
+              `if(typeof requestIdleCallback==='function'){` +
+                `requestIdleCallback(function(){try{${script}}catch(e){}},{timeout:5000});` +
+              `}else{` +
+                `setTimeout(function(){try{${script}}catch(e){}},100);` +
+              `}`;
+            wc.executeJavaScript(deferred).catch(() => {});
           }
         }
       } catch (err) {
@@ -2015,7 +2026,16 @@ export class AdBlockService {
     // wc.executeJavaScript(COOKIE_CONSENT_BLOCK_SCRIPT).catch(() => {});
     // wc.executeJavaScript(FINGERPRINT_PROTECTION_SCRIPT).catch(() => {});
     // wc.executeJavaScript(CRYPTO_MINER_BLOCK_SCRIPT).catch(() => {});
-    wc.executeJavaScript(WEBRTC_LEAK_PREVENTION_SCRIPT).catch(() => {});
+    // WebRTC leak prevention deferred to idle time — not critical for first paint, and
+    // running it synchronously on every page load contributed to the Slack LCP regression
+    // measured in Phase 3 traces.
+    const deferredWebRtc =
+      `if(typeof requestIdleCallback==='function'){` +
+        `requestIdleCallback(function(){try{${WEBRTC_LEAK_PREVENTION_SCRIPT}}catch(e){}},{timeout:5000});` +
+      `}else{` +
+        `setTimeout(function(){try{${WEBRTC_LEAK_PREVENTION_SCRIPT}}catch(e){}},100);` +
+      `}`;
+    wc.executeJavaScript(deferredWebRtc).catch(() => {});
   }
 
   /**
