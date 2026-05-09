@@ -22,7 +22,24 @@ Status values: PASS, FAIL: <reason>, BLOCKED-NO-ACCOUNT, PARTIAL: <details>
 
 ## 2. YouTube 403 Investigation
 
-(Filled in Task 6.)
+**Headline finding: Not a content/API failure. Single 403 on Google's passive sign-in flow.**
+
+Captured every HTTP response on YouTube load via `scripts/audit-youtube-403.js`. Result:
+
+- **136 total responses captured**
+- **1 response with status 403**, on `accounts.google.com/v3/signin/identifier?continue=...&service=youtube&...&flowName=WebLiteSignIn` — Google's passive sign-in attempt
+- **0 trackers** with 403 (the ad blocker had already blocked them upstream — `BLOCKED_BY_CLIENT`, not 403)
+- **0 YouTube content/API** with 403 (the actual concern)
+
+**Root cause hypothesis:** Phase 0's "5 errors" were the same URL being retried 5 times by Google's auth flow, captured as 5 separate console.error events. The Phase 1 capture used `Network.responseReceived` directly, so each unique URL counts once.
+
+**Possible contributing factor:** OS Browser's user-agent string contains `os-browser/1.0.0 Chrome/130.0.6723.191 Electron/33.4.11`. Google's anti-bot heuristics may flag the `Electron/` token, causing the passive sign-in to fall back to a "lite" flow that 403s. Worth investigating in Phase 1B as a potential one-line UA tweak.
+
+**Status:** Not a real compatibility blocker. YouTube content loads fine, page title shows "YouTube". The single 403 is on a passive auth check that doesn't break the user experience for unsigned-in users.
+
+**Phase 1B follow-up candidate:** strip `os-browser/1.0.0` and `Electron/33.4.11` tokens from user-agent. Risk: minor — may affect telemetry; some sites use UA for feature detection. Worth A/B testing before shipping.
+
+Raw data: `./youtube-403-results.json` (committed).
 
 ---
 

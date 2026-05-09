@@ -1,0 +1,64 @@
+{
+  "total": 1,
+  "byHost": {
+    "accounts.google.com": [
+      {
+        "url": "https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den%26next%3D%252Fsignin_passive%26feature%3Dpassive&dsh=S-1641382467%3A1778357210859079&hl=en&passive=true&service=youtube&uilel=3&flowName=WebLiteSignIn&flowEntry=ServiceLogin&ifkv=AWa2PaubHJ8LJajAbncy_3tk2mOEw8Qar2eK7i2bM8USkbg4eJmFiRuTMfzl34OK9QqlXzxY3gFW",
+        "type": "Document",
+        "mimeType": "text/html",
+        "headers": {
+          "accept-ch": "Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Model, Sec-CH-UA-WoW64, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version",
+          "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+          "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+          "content-encoding": "gzip",
+          "content-security-policy": "require-trusted-types-for 'script';report-uri /v3/signin/_/AccountsSignInUi/cspreport\nscript-src 'report-sample' 'nonce-WYgb7yenORfSysZtU-tlIA' 'unsafe-inline';object-src 'none';base-uri 'self';report-uri /v3/signin/_/AccountsSignInUi/cspreport;worker-src 'self'\nscript-src 'unsafe-inline' 'unsafe-eval' blob: data: 'self' https://apis.google.com https://ssl.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.gstatic.com https://www.google-analytics.com https://www.google.com/tools/feedback/ https://www.gstatic.com/feedback/js/ https://www.gstatic.com/inproduct_help/ https://www.gstatic.com/support/content/ https://www.gstatic.com/uservoice/feedback/client/web/live/ https://www.gstatic.com/uservoice/surveys/resources/prod/js/survey/ https://support.google.com/inapp/;report-uri /v3/signin/_/AccountsSignInUi/cspreport/allowlist",
+          "content-security-policy-report-only": "script-src 'unsafe-inline' 'unsafe-eval' blob: data: https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js https://translate.google.com/translate_a/element.js https://www.google.com/recaptcha/api.js https://www.google.com/recaptcha/enterprise.js https://www.gstatic.com/recaptcha/ https://www.google.com/tools/feedback/chat_load.js https://www.google.com/tools/feedback/help_api.js https://www.google.com/tools/feedback/load.js https://www.google.com/tools/feedback/open.js https://www.google.com/tools/feedback/open_to_help_guide_lazy.js https://www.gstatic.com/feedback/js/ https://www.gstatic.com/feedback/js/help/prod/service/lazy.min.js https://www.gstatic.com/inproduct_help/api/main.min.js https://www.gstatic.com/inproduct_help/chatsupport/chatsupport_button_v2.js https://www.gstatic.com/inproduct_help/service/lazy.min.js https://www.gstatic.com/uservoice/feedback/client/web/live/ https://www.gstatic.com/uservoice/surveys/resources/prod/js/survey/ https://www.gstatic.com/_/mss/boq-one-google/_/ https://www.gstatic.com/og/_/js/ https://apis.google.com/js/api.js https://apis.google.com/js/client.js https://www.googletagmanager.com/gtag/js https://www.google-analytics.com/analytics.js https://www.googletagmanager.com/gtag/destination https://www.gstatic.com/_/mss/boq-identity/_/js/k=boq-identity.AccountsSignInUi.en.DyC8OwPtVAE.es5.O/ https://apis.google.com/_/scs/abc-static/_/js/ https://translate.googleapis.com/_/translate_http/_/js/ https://www.gstatic.com/recaptcha/releases/;report-uri /v3/signin/_/AccountsSignInUi/cspreport/fine-allowlist",
+          "content-type": "text/html; charset=utf-8",
+          "date": "Sat, 09 May 2026 20:06:51 GMT",
+          "expires": "Mon, 01 Jan 1990 00:00:00 GMT",
+          "permissions-policy": "ch-ua-arch=*, ch-ua-bitness=*, ch-ua-full-version=*, ch-ua-full-version-list=*, ch-ua-model=*, ch-ua-wow64=*, ch-ua-form-factors=*, ch-ua-platform=*, ch-ua-platform-version=*",
+          "pragma": "no-cache",
+          "report-to": "{\"group\":\"AccountsSignInUi\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/AccountsSignInUi\"}]}",
+          "server": "ESF",
+          "strict-transport-security": "max-age=31536000; includeSubDomains",
+          "vary": "Sec-Fetch-Dest, Sec-Fetch-Mode, Sec-Fetch-Site",
+          "x-content-type-options": "nosniff",
+          "x-xss-protection": "0"
+        }
+      }
+    ]
+  },
+  "trackerCount": 0,
+  "youtubeContent": 0,
+  "other": 1,
+  "youtubeContentUrls": [],
+  "otherUrls": [
+    "https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den%26next%3D%252Fsignin_passive%26feature%3Dpassive&dsh=S-1641382467%3A1778357210859079&hl=en&passive=true&service=youtube&uilel=3&flowName=WebLiteSignIn&flowEntry=ServiceLogin&ifkv=AWa2PaubHJ8LJajAbncy_3tk2mOEw8Qar2eK7i2bM8USkbg4eJmFiRuTMfzl34OK9QqlXzxY3gFW"
+  ],
+  "full": [
+    {
+      "url": "https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den%26next%3D%252Fsignin_passive%26feature%3Dpassive&dsh=S-1641382467%3A1778357210859079&hl=en&passive=true&service=youtube&uilel=3&flowName=WebLiteSignIn&flowEntry=ServiceLogin&ifkv=AWa2PaubHJ8LJajAbncy_3tk2mOEw8Qar2eK7i2bM8USkbg4eJmFiRuTMfzl34OK9QqlXzxY3gFW",
+      "type": "Document",
+      "mimeType": "text/html",
+      "headers": {
+        "accept-ch": "Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Model, Sec-CH-UA-WoW64, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+        "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+        "content-encoding": "gzip",
+        "content-security-policy": "require-trusted-types-for 'script';report-uri /v3/signin/_/AccountsSignInUi/cspreport\nscript-src 'report-sample' 'nonce-WYgb7yenORfSysZtU-tlIA' 'unsafe-inline';object-src 'none';base-uri 'self';report-uri /v3/signin/_/AccountsSignInUi/cspreport;worker-src 'self'\nscript-src 'unsafe-inline' 'unsafe-eval' blob: data: 'self' https://apis.google.com https://ssl.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.gstatic.com https://www.google-analytics.com https://www.google.com/tools/feedback/ https://www.gstatic.com/feedback/js/ https://www.gstatic.com/inproduct_help/ https://www.gstatic.com/support/content/ https://www.gstatic.com/uservoice/feedback/client/web/live/ https://www.gstatic.com/uservoice/surveys/resources/prod/js/survey/ https://support.google.com/inapp/;report-uri /v3/signin/_/AccountsSignInUi/cspreport/allowlist",
+        "content-security-policy-report-only": "script-src 'unsafe-inline' 'unsafe-eval' blob: data: https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js https://translate.google.com/translate_a/element.js https://www.google.com/recaptcha/api.js https://www.google.com/recaptcha/enterprise.js https://www.gstatic.com/recaptcha/ https://www.google.com/tools/feedback/chat_load.js https://www.google.com/tools/feedback/help_api.js https://www.google.com/tools/feedback/load.js https://www.google.com/tools/feedback/open.js https://www.google.com/tools/feedback/open_to_help_guide_lazy.js https://www.gstatic.com/feedback/js/ https://www.gstatic.com/feedback/js/help/prod/service/lazy.min.js https://www.gstatic.com/inproduct_help/api/main.min.js https://www.gstatic.com/inproduct_help/chatsupport/chatsupport_button_v2.js https://www.gstatic.com/inproduct_help/service/lazy.min.js https://www.gstatic.com/uservoice/feedback/client/web/live/ https://www.gstatic.com/uservoice/surveys/resources/prod/js/survey/ https://www.gstatic.com/_/mss/boq-one-google/_/ https://www.gstatic.com/og/_/js/ https://apis.google.com/js/api.js https://apis.google.com/js/client.js https://www.googletagmanager.com/gtag/js https://www.google-analytics.com/analytics.js https://www.googletagmanager.com/gtag/destination https://www.gstatic.com/_/mss/boq-identity/_/js/k=boq-identity.AccountsSignInUi.en.DyC8OwPtVAE.es5.O/ https://apis.google.com/_/scs/abc-static/_/js/ https://translate.googleapis.com/_/translate_http/_/js/ https://www.gstatic.com/recaptcha/releases/;report-uri /v3/signin/_/AccountsSignInUi/cspreport/fine-allowlist",
+        "content-type": "text/html; charset=utf-8",
+        "date": "Sat, 09 May 2026 20:06:51 GMT",
+        "expires": "Mon, 01 Jan 1990 00:00:00 GMT",
+        "permissions-policy": "ch-ua-arch=*, ch-ua-bitness=*, ch-ua-full-version=*, ch-ua-full-version-list=*, ch-ua-model=*, ch-ua-wow64=*, ch-ua-form-factors=*, ch-ua-platform=*, ch-ua-platform-version=*",
+        "pragma": "no-cache",
+        "report-to": "{\"group\":\"AccountsSignInUi\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/AccountsSignInUi\"}]}",
+        "server": "ESF",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "vary": "Sec-Fetch-Dest, Sec-Fetch-Mode, Sec-Fetch-Site",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "0"
+      }
+    }
+  ]
+}
