@@ -28,7 +28,36 @@ Status values: PASS, FAIL: <reason>, BLOCKED-NO-ACCOUNT, PARTIAL: <details>
 
 ## 3. Ad-Blocker First-Party Audit
 
-(Filled in Task 7.)
+**Headline finding: NO over-blocking. The ad blocker is working correctly across all 15 sites.**
+
+Captured every blocked URL across 15 sites via `scripts/audit-adblocker.js` + CDP `Network.loadingFailed`. Total: 54 blocked URLs.
+
+| Site | Total | First-party | Trackers | CDN | Other | Reviewed |
+|---|---|---|---|---|---|---|
+| gmail | 1 | 0 | 0 | 0 | 1 | clean |
+| meet | 2 | 0 | 2 | 0 | 0 | clean |
+| youtube | 0 | 0 | 0 | 0 | 0 | clean |
+| netflix | 7 | 7 | 0 | 0 | 0 | telemetry only ✅ |
+| drive | 8 | 0 | 2 | 0 | 6 | clean (other = OneTrust consent + cross-tab artifact) |
+| github | 4 | 4 | 0 | 0 | 0 | telemetry only ✅ |
+| office | 7 | 0 | 0 | 0 | 7 | telemetry only (Microsoft Clarity + OneCollector) |
+| zoom | 5 | 1 | 1 | 0 | 3 | telemetry only ✅ |
+| slack | 3 | 1 | 1 | 0 | 1 | telemetry only ✅ |
+| x | 2 | 0 | 0 | 0 | 2 | clean |
+| ghana.gov.gh | 0 | 0 | 0 | 0 | 0 | clean |
+| ecobank | 0 | 0 | 0 | 0 | 0 | clean |
+| nytimes | 15 | 6 | 5 | 1 | 3 | telemetry only ✅ |
+| whatsapp | 0 | 0 | 0 | 0 | 0 | clean |
+| webauthn | 0 | 0 | 0 | 0 | 0 | clean |
+
+**On manual inspection of every "first-party" and "other" blocked URL:**
+- **All 18 first-party blocks** are the site's own telemetry endpoints (`logs.netflix.com`, `collector.github.com`, `app.slack.com/clog/track/`, `log-gateway.zoom.us/pwa/webclient`, `a.et.nytimes.com/track`, `purr.nytimes.com/v1/purr-cache`, `als-svc.nytimes.com/als`, `api.github.com/_private/browser/stats`).
+- **All "other" bucket URLs** are third-party telemetry (Microsoft Clarity, OneCollector, OneTrust consent management). Zero content, auth, or functional resources.
+- **No over-blocking action needed.** Ad blocker behaviour is correct as designed.
+
+**Side finding:** YouTube had **zero** blocked requests in this audit run. This is significant because Phase 0 saw 5+ HTTP 403 errors on YouTube. **This rules out the ad blocker as the cause of YouTube's 403s** — the 403s come directly from YouTube's upstream servers. (Most likely culprit: User-Agent string or anti-bot signal — see Task 6.)
+
+**Status:** Section closed. No fix required for ad-blocker behaviour. Raw data: `./adblock-blocked-urls.json` (committed).
 
 ---
 

@@ -1,0 +1,494 @@
+{
+  "summary": {
+    "gmail": {
+      "total": 1,
+      "firstParty": 0,
+      "trackerLike": 0,
+      "cdnLike": 0,
+      "other": 1,
+      "firstPartyUrls": []
+    },
+    "meet": {
+      "total": 2,
+      "firstParty": 0,
+      "trackerLike": 2,
+      "cdnLike": 0,
+      "other": 0,
+      "firstPartyUrls": []
+    },
+    "youtube": {
+      "total": 0,
+      "firstParty": 0,
+      "trackerLike": 0,
+      "cdnLike": 0,
+      "other": 0,
+      "firstPartyUrls": []
+    },
+    "netflix": {
+      "total": 7,
+      "firstParty": 7,
+      "trackerLike": 0,
+      "cdnLike": 0,
+      "other": 0,
+      "firstPartyUrls": [
+        "https://logs.netflix.com/log/wwwhead/cl/2?fetchType=js&eventType=WebsiteDetect&modalView=nmLanding",
+        "https://logs.netflix.com/log/wwwhead/cl/2?fetchType=js&eventType=WebsiteScreen&winw=1200&winh=660&screenw=1200&screenh=660&ratio=1.5",
+        "https://logs.netflix.com/log/www/cl/2",
+        "https://logs.netflix.com/log/www/cl/2",
+        "https://logs.netflix.com/log/www/cl/2",
+        "https://logs.netflix.com/log/www/cl/2",
+        "https://logs.netflix.com/log/www/cl/2"
+      ]
+    },
+    "drive": {
+      "total": 8,
+      "firstParty": 0,
+      "trackerLike": 2,
+      "cdnLike": 0,
+      "other": 6,
+      "firstPartyUrls": []
+    },
+    "github": {
+      "total": 4,
+      "firstParty": 4,
+      "trackerLike": 0,
+      "cdnLike": 0,
+      "other": 0,
+      "firstPartyUrls": [
+        "https://collector.github.com/github/collect",
+        "https://collector.github.com/github/collect",
+        "https://api.github.com/_private/browser/stats",
+        "https://collector.github.com/github/collect"
+      ]
+    },
+    "office": {
+      "total": 7,
+      "firstParty": 0,
+      "trackerLike": 0,
+      "cdnLike": 0,
+      "other": 7,
+      "firstPartyUrls": []
+    },
+    "zoom": {
+      "total": 5,
+      "firstParty": 1,
+      "trackerLike": 1,
+      "cdnLike": 0,
+      "other": 3,
+      "firstPartyUrls": [
+        "https://log-gateway.zoom.us/pwa/webclient?from=pwa"
+      ]
+    },
+    "slack": {
+      "total": 3,
+      "firstParty": 1,
+      "trackerLike": 1,
+      "cdnLike": 0,
+      "other": 1,
+      "firstPartyUrls": [
+        "https://app.slack.com/clog/track/?logs=%5B%7B%22tstamp%22%3A1778356629670%2C%22event%22%3A%22WEBSITE_IMPRESSION%22%2C%22args%22%3A%7B%22trigger%22%3A%22%22%2C%22contexts%22%3A%7B%22ui_context%22%3A%7B%22step%22%3A%22page_home%22%2C%22ui_step%22%3A%22page_home%22%2C%22action%22%3A%22impression%22%2C%22ui_component%22%3A%22%22%7D%7D%2C%22page_url%22%3A%22https%3A%2F%2Fapp.slack.com%2F%22%7D%2C%22i18n_locale%22%3A%22en-US%22%7D%2C%7B%22tstamp%22%3A1778356629670%2C%22event%22%3A%22KEY_PAGE_IMPRESSION%22%2C%22args%22%3A%7B%22trigger%22%3A%22%22%2C%22contexts%22%3A%7B%22ui_context%22%3A%7B%22step%22%3A%22page_home%22%2C%22ui_step%22%3A%22page_home%22%2C%22action%22%3A%22impression%22%2C%22ui_component%22%3A%22%22%7D%7D%2C%22page_url%22%3A%22https%3A%2F%2Fapp.slack.com%2F%22%7D%2C%22i18n_locale%22%3A%22en-US%22%7D%5D&o=dotcom"
+      ]
+    },
+    "x": {
+      "total": 2,
+      "firstParty": 0,
+      "trackerLike": 0,
+      "cdnLike": 0,
+      "other": 2,
+      "firstPartyUrls": []
+    },
+    "ghana": {
+      "total": 0,
+      "firstParty": 0,
+      "trackerLike": 0,
+      "cdnLike": 0,
+      "other": 0,
+      "firstPartyUrls": []
+    },
+    "ecobank": {
+      "total": 0,
+      "firstParty": 0,
+      "trackerLike": 0,
+      "cdnLike": 0,
+      "other": 0,
+      "firstPartyUrls": []
+    },
+    "nytimes": {
+      "total": 15,
+      "firstParty": 6,
+      "trackerLike": 5,
+      "cdnLike": 1,
+      "other": 3,
+      "firstPartyUrls": [
+        "https://a.et.nytimes.com/track",
+        "https://a.et.nytimes.com/track",
+        "https://als-svc.nytimes.com/als?uri=https%3A%2F%2Fwww.nytimes.com%2Fpages%2Findex.html&typ=hp&prop=nyt&plat=web",
+        "https://a.et.nytimes.com//.status",
+        "https://purr.nytimes.com/v1/purr-cache",
+        "https://als-svc.nytimes.com/als?uri=https%3A%2F%2Fwww.nytimes.com%2Fpages%2Findex.html&typ=hp&prop=nyt&plat=web"
+      ]
+    },
+    "whatsapp": {
+      "total": 0,
+      "firstParty": 0,
+      "trackerLike": 0,
+      "cdnLike": 0,
+      "other": 0,
+      "firstPartyUrls": []
+    },
+    "webauthn": {
+      "total": 0,
+      "firstParty": 0,
+      "trackerLike": 0,
+      "cdnLike": 0,
+      "other": 0,
+      "firstPartyUrls": []
+    }
+  },
+  "results": {
+    "gmail": [
+      {
+        "url": "https://accounts.google.com/generate_204?g7gVOQ",
+        "type": "Image",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      }
+    ],
+    "meet": [
+      {
+        "url": "https://www.googletagmanager.com/gtm.js?id=GTM-Q4J6",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://ssl.google-analytics.com/ga.js",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      }
+    ],
+    "netflix": [
+      {
+        "url": "https://logs.netflix.com/log/wwwhead/cl/2?fetchType=js&eventType=WebsiteDetect&modalView=nmLanding",
+        "type": "XHR",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://logs.netflix.com/log/wwwhead/cl/2?fetchType=js&eventType=WebsiteScreen&winw=1200&winh=660&screenw=1200&screenh=660&ratio=1.5",
+        "type": "XHR",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://logs.netflix.com/log/www/cl/2",
+        "type": "Fetch",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://logs.netflix.com/log/www/cl/2",
+        "type": "Fetch",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://logs.netflix.com/log/www/cl/2",
+        "type": "Fetch",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://logs.netflix.com/log/www/cl/2",
+        "type": "Fetch",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://logs.netflix.com/log/www/cl/2",
+        "type": "Fetch",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      }
+    ],
+    "drive": [
+      {
+        "url": "https://logs.netflix.com/log/www/cl/2",
+        "type": "Fetch",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://privacyportal.onetrust.com/request/v1/consentreceipts/anonymous",
+        "type": "Ping",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://logs.netflix.com/log/www/cl/2",
+        "type": "Fetch",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://logs.netflix.com/log/www/cl/2",
+        "type": "Fetch",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://logs.netflix.com/log/www/cl/2",
+        "type": "Fetch",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://logs.netflix.com/log/www/cl/2",
+        "type": "Fetch",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://www.googletagmanager.com/gtm.js?id=GTM-Q4J6",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://ssl.google-analytics.com/ga.js",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      }
+    ],
+    "github": [
+      {
+        "url": "https://collector.github.com/github/collect",
+        "type": "Ping",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://collector.github.com/github/collect",
+        "type": "Ping",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://api.github.com/_private/browser/stats",
+        "type": "Ping",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://collector.github.com/github/collect",
+        "type": "Ping",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      }
+    ],
+    "office": [
+      {
+        "url": "https://www.clarity.ms/tag/svciz78sa8",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://browser.events.data.microsoft.com/OneCollector/1.0/?cors=true&content-type=application/x-json-stream&w=0",
+        "type": "XHR",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://browser.events.data.microsoft.com/OneCollector/1.0/?cors=true&content-type=application/x-json-stream&w=2",
+        "type": "XHR",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://browser.events.data.microsoft.com/OneCollector/1.0/?cors=true&content-type=application/x-json-stream&w=0",
+        "type": "XHR",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://browser.events.data.microsoft.com/OneCollector/1.0/?cors=true&content-type=application/x-json-stream&w=0",
+        "type": "XHR",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://browser.events.data.microsoft.com/OneCollector/1.0/?cors=true&content-type=application/x-json-stream&w=2",
+        "type": "XHR",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://browser.events.data.microsoft.com/OneCollector/1.0/?cors=true&content-type=application/x-json-stream&w=0",
+        "type": "XHR",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      }
+    ],
+    "zoom": [
+      {
+        "url": "https://browser.events.data.microsoft.com/OneCollector/1.0/?cors=true&content-type=application/x-json-stream&client-id=NO_AUTH&client-version=1DS-Web-JS-4.3.9&apikey=aa86c364bc9e4a5a94a6b232c110af26-72da2ec9-498a-44df-8cca-7fd88cf654c1-7527&upload-time=1778356616520&w=0&NoResponseBody=true",
+        "type": "Ping",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://browser.events.data.microsoft.com/OneCollector/1.0/?cors=true&content-type=application/x-json-stream&w=0",
+        "type": "XHR",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://browser.events.data.microsoft.com/OneCollector/1.0/?cors=true&content-type=application/x-json-stream&w=2",
+        "type": "XHR",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://www.googletagmanager.com/gtm.js?id=GTM-5WKFT9",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://log-gateway.zoom.us/pwa/webclient?from=pwa",
+        "type": "XHR",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      }
+    ],
+    "slack": [
+      {
+        "url": "https://reveal.clearbit.com/v1/companies/reveal?variable=reveal&authorization=pk_7144fadb90a8fdd9c89e1395ff4171a3",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://app.slack.com/clog/track/?logs=%5B%7B%22tstamp%22%3A1778356629670%2C%22event%22%3A%22WEBSITE_IMPRESSION%22%2C%22args%22%3A%7B%22trigger%22%3A%22%22%2C%22contexts%22%3A%7B%22ui_context%22%3A%7B%22step%22%3A%22page_home%22%2C%22ui_step%22%3A%22page_home%22%2C%22action%22%3A%22impression%22%2C%22ui_component%22%3A%22%22%7D%7D%2C%22page_url%22%3A%22https%3A%2F%2Fapp.slack.com%2F%22%7D%2C%22i18n_locale%22%3A%22en-US%22%7D%2C%7B%22tstamp%22%3A1778356629670%2C%22event%22%3A%22KEY_PAGE_IMPRESSION%22%2C%22args%22%3A%7B%22trigger%22%3A%22%22%2C%22contexts%22%3A%7B%22ui_context%22%3A%7B%22step%22%3A%22page_home%22%2C%22ui_step%22%3A%22page_home%22%2C%22action%22%3A%22impression%22%2C%22ui_component%22%3A%22%22%7D%7D%2C%22page_url%22%3A%22https%3A%2F%2Fapp.slack.com%2F%22%7D%2C%22i18n_locale%22%3A%22en-US%22%7D%5D&o=dotcom",
+        "type": "Image",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://www.googletagmanager.com/gtm.js?id=GTM-KH2LPK",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      }
+    ],
+    "x": [
+      {
+        "url": "https://privacyportal.onetrust.com/request/v1/consentreceipts",
+        "type": "Ping",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://accounts.google.com/gsi/log?client_id=49625052041-kgt0hghf445lmcmhijv46b715m2mpbct.apps.googleusercontent.com&as=g0Vxj2IE3K%2Fo8h8anIU7qF2ZyERyDOocmvaAoqta63k&bs=iiwXQJRccPeqzCTXNqdQxshedewYRdUjGKqrrZ0Ngis&event=onetap.card.prompt.apiCall&enable_itp_optimization=21",
+        "type": "XHR",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      }
+    ],
+    "nytimes": [
+      {
+        "url": "https://a.et.nytimes.com/track",
+        "type": "Ping",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://a.et.nytimes.com/track",
+        "type": "Ping",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://als-svc.nytimes.com/als?uri=https%3A%2F%2Fwww.nytimes.com%2Fpages%2Findex.html&typ=hp&prop=nyt&plat=web",
+        "type": "XHR",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://www.datadoghq-browser-agent.com/us1/v6/datadog-rum.js",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://www.googletagmanager.com/gtm.js?id=GTM-P528B3&gtm_auth=tfAzqo1rYDLgYhmTnSjPqw&gtm_preview=env-130&gtm_cookies_win=x",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://securepubads.g.doubleclick.net/tag/js/gpt.js",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://rumcdn.geoedge.be/b3960cc6-bfd2-4adc-910c-6e917e8a6a0e/grumi-ip.js",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://warp.media.net/js/tags/clientag.js?cid=8CU26C87G&dn=www.nytimes.com&ysection=home&version=1",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://c.amazon-adsystem.com/aax2/apstag.js",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://static01.nyt.com/ads/tpc-check.html",
+        "type": "Document",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://securepubads.g.doubleclick.net/tag/js/gpt.js",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://a.et.nytimes.com//.status",
+        "type": "Fetch",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://purr.nytimes.com/v1/purr-cache",
+        "type": "Fetch",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://securepubads.g.doubleclick.net/tag/js/gpt.js",
+        "type": "Script",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      },
+      {
+        "url": "https://als-svc.nytimes.com/als?uri=https%3A%2F%2Fwww.nytimes.com%2Fpages%2Findex.html&typ=hp&prop=nyt&plat=web",
+        "type": "XHR",
+        "errorText": "net::ERR_BLOCKED_BY_CLIENT",
+        "blockedReason": "other"
+      }
+    ]
+  }
+}
