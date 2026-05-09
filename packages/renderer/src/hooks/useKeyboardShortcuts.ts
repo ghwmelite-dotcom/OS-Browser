@@ -53,9 +53,24 @@ export function useKeyboardShortcuts(callbacks: {
         callbacks.onToggleCommandPalette?.();
       }
       // F5 / Ctrl+R — Reload
-      else if (key === 'f5' || (ctrl && key === 'r')) {
+      else if (key === 'f5' || (ctrl && key === 'r' && !shift)) {
         e.preventDefault();
         if (activeTabId) isLoading ? stop(activeTabId) : reload(activeTabId);
+      }
+      // Ctrl+Shift+R — Hard reload (bypass cache)
+      else if (ctrl && shift && key === 'r') {
+        e.preventDefault();
+        if (activeTabId) (window as any).osBrowser?.tabs?.reloadHard?.(activeTabId);
+      }
+      // Ctrl+0 — Reset zoom to 100%
+      else if (ctrl && key === '0' && !shift) {
+        e.preventDefault();
+        if (activeTabId) (window as any).osBrowser?.tabs?.resetZoom?.(activeTabId);
+      }
+      // Ctrl+P — Print current page
+      else if (ctrl && key === 'p' && !shift) {
+        e.preventDefault();
+        if (activeTabId) (window as any).osBrowser?.tabs?.print?.(activeTabId);
       }
       // Ctrl+H — History
       else if (ctrl && key === 'h' && !shift) { e.preventDefault(); callbacks.onToggleHistory?.(); }
@@ -72,8 +87,14 @@ export function useKeyboardShortcuts(callbacks: {
       else if (ctrl && shift && key === 'o') { e.preventDefault(); openPanel(activePanel === 'askozzy' ? 'none' : 'askozzy'); }
       // Ctrl+Shift+S — Split Screen
       else if (ctrl && shift && key === 's') { e.preventDefault(); callbacks.onToggleSplitScreen?.(); }
-      // Escape — Close sidebar/panel
-      else if (key === 'escape') { closePanel(); }
+      // Escape — Stop page loading if loading; otherwise close sidebar/panel
+      else if (key === 'escape') {
+        if (isLoading && activeTabId) {
+          stop(activeTabId);
+        } else {
+          closePanel();
+        }
+      }
       // F11 — Fullscreen
       else if (key === 'f11') { e.preventDefault(); window.osBrowser?.fullscreen(); }
       // Alt+P — Picture-in-Picture toggle

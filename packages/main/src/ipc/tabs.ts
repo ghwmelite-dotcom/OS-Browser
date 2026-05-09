@@ -297,6 +297,18 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     view?.webContents.reload();
   });
 
+  // Ctrl+Shift+R hard reload — bypasses cache (Phase 5 UX parity)
+  ipcMain.handle('tab:reload-hard', (_event, id: string) => {
+    const view = getTabView(id);
+    view?.webContents.reloadIgnoringCache();
+  });
+
+  // Ctrl+0 reset zoom — restores 100% zoom (Phase 5 UX parity)
+  ipcMain.handle('tab:reset-zoom', (_event, id: string) => {
+    const view = getTabView(id);
+    view?.webContents.setZoomLevel(0);
+  });
+
   ipcMain.handle(IPC.TAB_STOP, (_event, id: string) => {
     const view = getTabView(id);
     view?.webContents.stop();
