@@ -1,7 +1,7 @@
 # OS Browser Chrome-Parity — Master Design Spec
 
 **Date:** 2026-05-09
-**Status:** Draft (awaiting user review)
+**Status:** Revised post-Phase-0/1/2/3 — most original scope dissolved under measurement; remaining work is Phase 1 manual + Phase 5 UX polish
 **Scope:** Whole-browser parity with Chrome across compatibility, performance, and UX
 
 ---
@@ -298,3 +298,59 @@ A phase is done when:
 ## 9. Next Step
 
 After user approval of this design, the next step is to invoke `superpowers:writing-plans` to produce a detailed implementation plan for **Phase 0** only. Phases 1–5 each get their own implementation plan after their preceding phase completes — we don't plan Phase 1 in detail until Phase 0's audit tells us what to plan for.
+
+---
+
+## 10. Post-Execution Update (2026-05-09 evening)
+
+After Phases 0, 1, 2, and 3 ran, the picture changed dramatically. Recording here so future readers see the master plan's actual outcome rather than the original aspirational scope.
+
+### Phase 0 — Audit (✅ complete, tagged `phase-0-audit-complete`)
+
+Findings exceeded expectations: OS Browser is materially LIGHTER on memory than Chrome (peak RSS 55% lower) and at parity on most sites' LCP. The headline "+140% Slack / +132% YouTube" LCP regressions were **methodology artifacts** — Phase 0 compared Chrome under Lighthouse's *simulated* throttling against OS Browser under CDP-applied *real* throttling. The two methods produce values that differ by 2-3x for identical pages. See `2026-05-09-audit-results.md` and the methodology correction in `2026-05-09-phase-3-findings.md` §5.
+
+### Phase 1 — Site Compatibility (partial)
+
+Auto-tasks complete: ad-blocker first-party audit found NO over-blocking (all 54 blocked URLs are tracker/telemetry); YouTube 403 investigation found only 1 actual 403 on Google's passive sign-in (not a content/API failure). Both were cleared from the fix list.
+
+Manual tasks (Netflix DRM, Meet WebRTC, Zoom WebRTC, Slack workspace, scroll/switch, UX 30-item checklist) **deferred to a follow-up hands-on session** — ~60 min total user time. These remain the primary remaining work for the entire Chrome-parity initiative.
+
+### Phase 2 — Render & Switch Feel (✅ static audits complete)
+
+Static audits found the architecture mostly clean: zero Chromium command-line flags set (Electron defaults are fine), scroll passivity correct, resize debounce path well-designed. ONE structural issue: `showTabView` has an iteration-order race that could cause white flash. ~6-line fix is queued as a candidate, gated on Phase 1 §4 visual evidence that it manifests as visible flicker.
+
+### Phase 3 — Page Load Speed (✅ complete, primary finding was methodology correction)
+
+Apples-to-apples trace comparison via CDP showed:
+- YouTube: at parity (+1.3%, was reported +132%)
+- Slack: +14.7% (was reported +140%) — driven mostly by Slack's own JS, not OS Browser overhead
+- X, Meet: very likely also artifacts; not chased
+
+Hygiene fix shipped (`79eb1f6`) deferring Ghostery cosmetic scriptlets to `requestIdleCallback`. Phase 3 acceptance criterion ("median LCP within 10% of Chrome") is effectively met for 14 of 15 sites; the Slack outlier is in user-perception noise (5s in a 40s LCP) and cause is largely site-side.
+
+### Phase 4 — Memory (DESCOPED)
+
+Phase 0 found OS Browser uses 55% less RAM than Chrome at the 10-tab mark. The originally planned discard UI / form-data protection / multi-feature memory work has no payoff. **Phase 4 is dropped from the roadmap.** Optionally retain just an OS-level memory pressure handler as defensive code (<1 day work, gated on actual user reports — not on measurement).
+
+### Phase 5 — UX Polish (planned, gated on Phase 1 §5 checklist completion)
+
+Still scheduled. Cannot be planned in detail until the user walks the 30-item Chrome-parity behavior checklist (currently §5 of `2026-05-09-phase-1-findings.md`). Implementation effort scales with how many ❌ items the checklist surfaces.
+
+### Revised remaining-work picture
+
+```
+USER hands-on session (~60 min)
+  ├── Phase 1 manual: Netflix, Meet, Zoom, Slack functional tests
+  ├── Phase 1 §4: scroll/switch observations on 6 sites
+  └── Phase 1 §5: 30-item UX checklist
+  ↓
+ME: Phase 5 implementation plan based on §5 checklist findings
+  ↓
+Phase 5 implementation (varies)
+  ↓
+Done
+```
+
+**Phase 4 dropped. Phases 0/2/3 essentially complete.** Of the original "17–25 dev days" estimate, the actual remaining engineering work is much smaller — likely 2–5 dev days for Phase 5 implementation depending on what the UX checklist surfaces.
+
+**The big-picture finding:** OS Browser is in much better shape than Phase 0's initial headlines suggested. Most of the master plan's scope dissolved under apples-to-apples measurement. The remaining real work is in user-facing UX polish, not under-the-hood performance.
