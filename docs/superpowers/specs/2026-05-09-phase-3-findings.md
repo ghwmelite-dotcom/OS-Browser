@@ -109,7 +109,13 @@ These are not directly comparable. Lighthouse's simulated throttling computes wh
 
 ## 5. Fix list
 
-(Filled in Task 5.)
+- **Defer Ghostery cosmetic scriptlets to `requestIdleCallback`.** Status: Landed at `79eb1f6`. File: `packages/main/src/services/adblock-engine.ts:1960-1980`. Each Ghostery cosmetic scriptlet is wrapped in `requestIdleCallback(..., { timeout: 5000 })` instead of running synchronously on `did-navigate` / `dom-ready`. CSS injection is unchanged (still immediate — fast and necessary for ad-hiding). Expected reduction: ~1.5–2s of Slack LCP regression. Risk: low — scriptlets that need to run early (per-platform anti-ad scripts for YouTube/Twitch/etc.) are NOT affected; only the generic Ghostery cosmetic-rule scriptlets are deferred.
+- **Defer WEBRTC_LEAK_PREVENTION_SCRIPT to `requestIdleCallback`.** Status: Landed at `79eb1f6` (same commit). Same wrapper, same logic. WebRTC leak prevention is not time-critical for first paint.
+
+### What was NOT changed (and why)
+
+- **Platform-specific ad scripts** (YOUTUBE_AD_BLOCK_SCRIPT, TWITCH_AD_BLOCK_SCRIPT, etc.) still run synchronously on `did-navigate`/`dom-ready`. These scripts intercept `fetch`/`XHR` requests for ad data and MUST run before the page initiates them. Deferring would let ads slip through.
+- **Triple-injection** of `applyCosmeticFilters` on `did-navigate` + `did-navigate-in-page` + `dom-ready` is unchanged. Each event has a different trigger condition (initial navigation, SPA route change, DOM construction). Deduping requires deeper refactoring and is deferred to Phase 3B if measurement shows it's still a hot path.
 
 ---
 
