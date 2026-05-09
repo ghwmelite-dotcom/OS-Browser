@@ -1068,6 +1068,14 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
         label: 'Save Image As...',
         click: () => wc.downloadURL(params.srcURL),
       }));
+      menu.append(new MenuItem({
+        label: 'Open Image in New Tab',
+        click: () => createTabFromMain(mainWindow, params.srcURL, undefined, tabId),
+      }));
+      menu.append(new MenuItem({
+        label: 'Search Image with Google',
+        click: () => createTabFromMain(mainWindow, `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(params.srcURL)}`, undefined, tabId),
+      }));
       menu.append(new MenuItem({ type: 'separator' }));
       menu.append(new MenuItem({ label: 'Inspect Element', accelerator: 'Ctrl+Shift+I', click: () => {
         wc.openDevTools({ mode: 'detach' });
@@ -1101,6 +1109,10 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
       menu.append(new MenuItem({
         label: 'Copy Page URL',
         click: () => clipboard.writeText(wc.getURL()),
+      }));
+      menu.append(new MenuItem({
+        label: 'Translate Page',
+        click: () => createTabFromMain(mainWindow, `https://translate.google.com/translate?sl=auto&tl=en&u=${encodeURIComponent(wc.getURL())}`, undefined, tabId),
       }));
       menu.append(new MenuItem({ type: 'separator' }));
       menu.append(new MenuItem({ label: 'View Page Source', accelerator: 'Ctrl+U', click: () => {
