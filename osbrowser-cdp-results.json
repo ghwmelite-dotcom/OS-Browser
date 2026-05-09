@@ -1,0 +1,152 @@
+[
+  {
+    "slug": "gmail",
+    "url": "https://gmail.com",
+    "fcp": null,
+    "lcp": null,
+    "errors": [],
+    "title": "Gmail: Secure, AI-Powered Email for Everyone | Google Worksp",
+    "status": "OK"
+  },
+  {
+    "slug": "meet",
+    "url": "https://meet.google.com",
+    "fcp": null,
+    "lcp": null,
+    "errors": [],
+    "title": "Google Meet: Online Web and Video Conferencing Calls | Googl",
+    "status": "OK"
+  },
+  {
+    "slug": "youtube",
+    "url": "https://www.youtube.com",
+    "fcp": null,
+    "lcp": null,
+    "errors": [
+      "cerr: Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "cerr: Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "cerr: Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "cerr: Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "cerr: Failed to load resource: net::ERR_NAME_NOT_RESOLVED"
+    ],
+    "title": "YouTube",
+    "status": "OK"
+  },
+  {
+    "slug": "netflix",
+    "url": "https://www.netflix.com",
+    "fcp": null,
+    "lcp": null,
+    "errors": [
+      "cerr: Refused to get unsafe header \"X-OneTrust-IsBot\""
+    ],
+    "title": "Netflix Ghana - Watch TV Shows Online, Watch Movies Online",
+    "status": "OK"
+  },
+  {
+    "slug": "drive",
+    "url": "https://drive.google.com",
+    "fcp": 11004,
+    "lcp": 11004,
+    "errors": [],
+    "title": "Google Drive: Share Files Online with Secure Cloud Storage |",
+    "status": "OK"
+  },
+  {
+    "slug": "github",
+    "url": "https://github.com",
+    "fcp": 5556,
+    "lcp": 5804,
+    "errors": [],
+    "title": "GitHub · Change is constant. GitHub keeps you ahead. · GitHu",
+    "status": "OK"
+  },
+  {
+    "slug": "office",
+    "url": "https://www.office.com",
+    "fcp": 7332,
+    "lcp": 7332,
+    "errors": [],
+    "title": "Microsoft 365 | Write, Create & Collaborate with AI",
+    "status": "OK"
+  },
+  {
+    "slug": "zoom",
+    "url": "https://zoom.us/wc",
+    "fcp": 13502,
+    "lcp": 13502,
+    "errors": [
+      "exc: Uncaught (in promise) "
+    ],
+    "title": "Zoom",
+    "status": "OK"
+  },
+  {
+    "slug": "slack",
+    "url": "https://app.slack.com",
+    "fcp": null,
+    "lcp": null,
+    "errors": [],
+    "title": null,
+    "status": "TIMEOUT"
+  },
+  {
+    "slug": "x",
+    "url": "https://x.com",
+    "fcp": 1560,
+    "lcp": 15744,
+    "errors": [
+      "cerr: Not signed in with the identity provider.",
+      "cerr: Not signed in with the identity provider."
+    ],
+    "title": "X. It’s what’s happening / X",
+    "status": "OK"
+  },
+  {
+    "slug": "ghana",
+    "url": "https://ghana.gov.gh",
+    "fcp": 2116,
+    "lcp": 4684,
+    "errors": [],
+    "title": "Ghana.GOV : The Ghana Government Official Web Portal | Ghana",
+    "status": "OK"
+  },
+  {
+    "slug": "ecobank",
+    "url": "https://ecobank.com",
+    "fcp": null,
+    "lcp": null,
+    "errors": [
+      "cerr: A bad HTTP response code (404) was received when fetching the script."
+    ],
+    "title": null,
+    "status": "TIMEOUT"
+  },
+  {
+    "slug": "nytimes",
+    "url": "https://www.nytimes.com",
+    "fcp": 3116,
+    "lcp": 44612,
+    "errors": [],
+    "title": "The New York Times - Breaking News, US News, World News and ",
+    "status": "OK"
+  },
+  {
+    "slug": "whatsapp",
+    "url": "https://web.whatsapp.com",
+    "fcp": 12844,
+    "lcp": 38626,
+    "errors": [],
+    "title": "WhatsApp",
+    "status": "OK"
+  },
+  {
+    "slug": "webauthn",
+    "url": "https://webauthn.io",
+    "fcp": 3548,
+    "lcp": 4212,
+    "errors": [],
+    "title": "WebAuthn.io",
+    "status": "OK"
+  }
+]

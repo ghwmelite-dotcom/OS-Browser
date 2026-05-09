@@ -4,7 +4,7 @@
 const CDP = require('chrome-remote-interface');
 const fs = require('fs');
 
-const PORT = 9223;
+const PORT = parseInt(process.env.CDP_PORT_OVERRIDE || '9223', 10);
 const PER_SITE_TIMEOUT_MS = 60000;       // slow 4G needs more headroom
 const POST_LOAD_SETTLE_MS = 5000;        // wait for LCP to settle after load event
 
