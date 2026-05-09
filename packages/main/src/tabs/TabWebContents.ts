@@ -5,13 +5,6 @@ import { BrowserWindow, WebContentsView } from 'electron';
 
 const tabViews = new Map<string, WebContentsView>();
 
-// ── TEMPORARY: Phase 0 audit instrumentation. Remove after audit-results.md is committed. ──
-const tabPerfTimers = new Map<string, number>();
-function tabPerfLog(event: string, tabId: string, durationMs: number): void {
-  console.log(`[TabPerf] ${event} tab=${tabId} dur=${durationMs.toFixed(2)}ms`);
-}
-// ── END TEMPORARY ──
-
 // ── Chrome height offsets ───────────────────────────────────────────────
 // KenteCrown: 3px, TitleBar: 32px, TabBar: 36px, NavigationBar: 44px = 115px
 // BookmarksBar: ~28px, KenteStatusBar: ~28px = 56px additional
@@ -39,20 +32,10 @@ export function setTabView(tabId: string, view: WebContentsView): void {
 // ── View lifecycle ──────────────────────────────────────────────────────
 
 export function createTabView(tabId: string, mainWindow: BrowserWindow): WebContentsView {
-  const t0 = performance.now();
-  tabPerfTimers.set(tabId, t0);
   const view = new WebContentsView();
   mainWindow.contentView.addChildView(view);
   resizeView(view, mainWindow);
   tabViews.set(tabId, view);
-  tabPerfLog('create', tabId, performance.now() - t0);
-  view.webContents.once('did-finish-load', () => {
-    const start = tabPerfTimers.get(tabId);
-    if (start !== undefined) {
-      tabPerfLog('first-load', tabId, performance.now() - start);
-      tabPerfTimers.delete(tabId);
-    }
-  });
   return view;
 }
 
@@ -84,7 +67,6 @@ let pipTabId: string | null = null;
 let pipConsoleHandler: any = null;
 
 export function showTabView(tabId: string, mainWindow?: BrowserWindow): void {
-  const t0 = performance.now();
   for (const [id, view] of tabViews) {
     if (id === tabId) {
       view.setVisible(true);
@@ -102,7 +84,6 @@ export function showTabView(tabId: string, mainWindow?: BrowserWindow): void {
       view.setVisible(false);
     }
   }
-  tabPerfLog('show', tabId, performance.now() - t0);
 }
 
 export function hideAllTabViews(): void {
@@ -230,7 +211,6 @@ export function resizeView(view: WebContentsView, mainWindow: BrowserWindow): vo
 }
 
 export function resizeAllViews(mainWindow: BrowserWindow): void {
-  const t0 = performance.now();
   for (const [id, view] of tabViews) {
     if (id === pipTabId) {
       // Re-position PiP in bottom-right of resized window
@@ -240,5 +220,4 @@ export function resizeAllViews(mainWindow: BrowserWindow): void {
       resizeView(view, mainWindow);
     }
   }
-  tabPerfLog('resize-all', `(${tabViews.size} views)`, performance.now() - t0);
 }
