@@ -4,3 +4,6 @@ dist/
 *.db
 .wrangler/
 out/
+
+# Phase 3 trace captures (large; not committed)
+/traces/
