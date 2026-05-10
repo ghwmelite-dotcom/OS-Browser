@@ -53,13 +53,13 @@ export function useKeyboardShortcuts(callbacks: {
         e.preventDefault();
         callbacks.onToggleCommandPalette?.();
       }
-      // F5 / Ctrl+R — Reload
-      else if (key === 'f5' || (ctrl && key === 'r' && !shift)) {
+      // F5 / Ctrl+R — Soft reload
+      else if ((key === 'f5' && !ctrl) || (ctrl && key === 'r' && !shift)) {
         e.preventDefault();
         if (activeTabId) isLoading ? stop(activeTabId) : reload(activeTabId);
       }
-      // Ctrl+Shift+R — Hard reload (bypass cache)
-      else if (ctrl && shift && key === 'r') {
+      // Ctrl+F5 / Ctrl+Shift+R — Hard reload (bypass cache)
+      else if ((ctrl && key === 'f5') || (ctrl && shift && key === 'r')) {
         e.preventDefault();
         if (activeTabId) (window as any).osBrowser?.tabs?.reloadHard?.(activeTabId);
       }

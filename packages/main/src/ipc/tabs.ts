@@ -1187,6 +1187,13 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
       return;
     }
 
+    // F5 — Soft reload; Ctrl+F5 — Hard reload (bypass cache)
+    if (input.key === 'F5') {
+      event.preventDefault();
+      if (ctrl) wc.reloadIgnoringCache(); else wc.reload();
+      return;
+    }
+
     // Ctrl+0 — Reset zoom
     if (ctrl && !input.shift && key === '0') {
       event.preventDefault();
