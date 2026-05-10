@@ -18,6 +18,7 @@ import { useStatsStore } from './store/stats';
 import { useSidebarStore } from './store/sidebar';
 import { useSplitScreenStore } from './store/splitscreen';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useChromeCommand } from './hooks/useChromeCommand';
 import { CommandPalette } from './components/CommandPalette';
 import { FloatingAIBar } from './components/FloatingAIBar';
 import { SplitScreenToolbar, SplitScreenContent, SplitScreenPicker } from './components/SplitScreen';
@@ -297,6 +298,22 @@ export function App() {
           if (match) await window.osBrowser.bookmarks.delete(match.id);
         }
         // Notify BookmarkStar to refresh its state
+        window.dispatchEvent(new Event('bookmark-changed'));
+      }
+    },
+  });
+
+  // Subscribe to keyboard commands forwarded from the main process when the
+  // user presses a shortcut while the WebContentsView (page) has focus.
+  useChromeCommand({
+    onToggleHistory: () => setShowHistory(prev => !prev),
+    onToggleBookmarks: () => setShowBookmarks(prev => !prev),
+    onToggleDownloads: () => useSidebarStore.getState().openPanel('downloads'),
+    onBookmarkPage: async () => {
+      const url = useNavigationStore.getState().currentUrl;
+      if (url && url !== 'os-browser://newtab') {
+        const activeTab = useTabsStore.getState().tabs.find(t => t.id === useTabsStore.getState().activeTabId);
+        await window.osBrowser.bookmarks.add({ url, title: activeTab?.title || url });
         window.dispatchEvent(new Event('bookmark-changed'));
       }
     },

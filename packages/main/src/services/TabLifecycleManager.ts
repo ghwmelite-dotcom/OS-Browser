@@ -14,11 +14,14 @@ interface TabLifecycleInfo {
 }
 
 // ── Config ────────────────────────────────────────────────────
-const CHECK_INTERVAL_MS = 30_000;
-const FREEZE_AFTER_MS = 5 * 60_000;
-const DISCARD_AFTER_MS = 15 * 60_000;
-const MIN_TABS_FOR_LIFECYCLE = 3;
-const REACTIVATION_DEBOUNCE_MS = 30_000;
+// Relaxed timings (2026-05-10): OS Browser already uses ~55% less RAM than
+// Chrome at the 10-tab mark (per Phase 0 audit), so aggressive freeze/discard
+// isn't justified. Aligning closer to Chrome's defaults.
+const CHECK_INTERVAL_MS = 60_000;            // every minute (was 30s)
+const FREEZE_AFTER_MS = 30 * 60_000;         // 30 min (was 5 min)
+const DISCARD_AFTER_MS = 4 * 60 * 60_000;    // 4 hours (was 15 min — matches Chrome)
+const MIN_TABS_FOR_LIFECYCLE = 8;            // only kick in with many tabs (was 3)
+const REACTIVATION_DEBOUNCE_MS = 60_000;     // 1 min grace (was 30s)
 
 // ── State ─────────────────────────────────────────────────────
 let interval: NodeJS.Timeout | null = null;

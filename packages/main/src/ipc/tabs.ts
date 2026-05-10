@@ -1201,6 +1201,20 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
       return;
     }
 
+    // Ctrl+= / Ctrl++ — Zoom in
+    if (ctrl && !input.shift && (key === '=' || input.key === '+' || input.key === '=')) {
+      event.preventDefault();
+      try { wc.setZoomLevel(Math.min(9, wc.getZoomLevel() + 0.5)); } catch {}
+      return;
+    }
+
+    // Ctrl+- / Ctrl+_ — Zoom out
+    if (ctrl && !input.shift && (key === '-' || input.key === '_')) {
+      event.preventDefault();
+      try { wc.setZoomLevel(Math.max(-9, wc.getZoomLevel() - 0.5)); } catch {}
+      return;
+    }
+
     // Ctrl+P — Print
     if (ctrl && !input.shift && key === 'p') {
       event.preventDefault();
@@ -1222,6 +1236,98 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
         event.preventDefault();
         wc.stop();
       }
+      return;
+    }
+
+    // ── Renderer-routed commands (intercept here, dispatch to chrome) ─────
+    // These are renderer-state operations (open panels, manipulate tabs) so
+    // we forward as a typed command IPC.
+    const sendCmd = (type: string, extra: Record<string, any> = {}) => {
+      try { mainWindow.webContents.send('chrome:command', { type, ...extra }); } catch {}
+    };
+
+    // Ctrl+L — Focus omnibar
+    if (ctrl && !input.shift && !input.alt && key === 'l') {
+      event.preventDefault();
+      sendCmd('focus-omnibar');
+      return;
+    }
+    // Ctrl+T — New tab
+    if (ctrl && !input.shift && !input.alt && key === 't') {
+      event.preventDefault();
+      sendCmd('new-tab');
+      return;
+    }
+    // Ctrl+W — Close tab
+    if (ctrl && !input.shift && !input.alt && key === 'w') {
+      event.preventDefault();
+      sendCmd('close-tab');
+      return;
+    }
+    // Ctrl+Shift+T — Reopen closed tab
+    if (ctrl && input.shift && key === 't') {
+      event.preventDefault();
+      sendCmd('reopen-tab');
+      return;
+    }
+    // Ctrl+Tab — Next tab; Ctrl+Shift+Tab — Previous tab
+    if (ctrl && input.key === 'Tab') {
+      event.preventDefault();
+      sendCmd(input.shift ? 'prev-tab' : 'next-tab');
+      return;
+    }
+    // Ctrl+1..9 — Jump to tab N (Ctrl+9 = last tab in our convention)
+    if (ctrl && !input.shift && !input.alt && key >= '1' && key <= '9') {
+      event.preventDefault();
+      sendCmd('jump-to-tab', { n: parseInt(key, 10) });
+      return;
+    }
+    // Ctrl+H — History panel
+    if (ctrl && !input.shift && !input.alt && key === 'h') {
+      event.preventDefault();
+      sendCmd('toggle-history');
+      return;
+    }
+    // Ctrl+B — Bookmarks panel
+    if (ctrl && !input.shift && !input.alt && key === 'b') {
+      event.preventDefault();
+      sendCmd('toggle-bookmarks');
+      return;
+    }
+    // Ctrl+D — Bookmark current page
+    if (ctrl && !input.shift && !input.alt && key === 'd') {
+      event.preventDefault();
+      sendCmd('bookmark-page');
+      return;
+    }
+    // Ctrl+J — Downloads panel
+    if (ctrl && !input.shift && !input.alt && key === 'j') {
+      event.preventDefault();
+      sendCmd('toggle-downloads');
+      return;
+    }
+    // Ctrl+N — New window
+    if (ctrl && !input.shift && !input.alt && key === 'n') {
+      event.preventDefault();
+      sendCmd('new-window');
+      return;
+    }
+    // Ctrl+Shift+N — New private window
+    if (ctrl && input.shift && key === 'n') {
+      event.preventDefault();
+      sendCmd('new-private-window');
+      return;
+    }
+    // Ctrl+Shift+W — Close window
+    if (ctrl && input.shift && key === 'w') {
+      event.preventDefault();
+      sendCmd('close-window');
+      return;
+    }
+    // F3 / Shift+F3 — Next / previous match (within FindBar)
+    if (input.key === 'F3') {
+      event.preventDefault();
+      sendCmd(input.shift ? 'find-prev' : 'find-next');
       return;
     }
   });

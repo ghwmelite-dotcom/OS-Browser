@@ -101,6 +101,11 @@ contextBridge.exposeInMainWorld('osBrowser', {
       ipcRenderer.on('find:open', listener);
       return () => ipcRenderer.removeListener('find:open', listener);
     },
+    onChromeCommand: (callback: (cmd: any) => void) => {
+      const listener = (_e: any, cmd: any) => callback(cmd);
+      ipcRenderer.on('chrome:command', listener);
+      return () => ipcRenderer.removeListener('chrome:command', listener);
+    },
     stop: (id: string) => ipcRenderer.invoke(IPC.TAB_STOP, id),
     getContent: (id: string) => ipcRenderer.invoke('tab:get-content', id),
     pip: (id: string) => ipcRenderer.invoke('tab:pip', id),
