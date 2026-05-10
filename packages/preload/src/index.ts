@@ -86,6 +86,15 @@ contextBridge.exposeInMainWorld('osBrowser', {
     reloadHard: (id: string) => ipcRenderer.invoke('tab:reload-hard', id),
     resetZoom: (id: string) => ipcRenderer.invoke('tab:reset-zoom', id),
     print: (id: string) => ipcRenderer.invoke('tab:print', id),
+    findStart: (id: string, text: string, options?: { findNext?: boolean; forward?: boolean; matchCase?: boolean }) =>
+      ipcRenderer.invoke('tab:find-start', id, text, options),
+    findStop: (id: string, action?: 'clearSelection' | 'keepSelection' | 'activateSelection') =>
+      ipcRenderer.invoke('tab:find-stop', id, action),
+    onFindResult: (callback: (data: any) => void) => {
+      const listener = (_e: any, data: any) => callback(data);
+      ipcRenderer.on('tab:find-result', listener);
+      return () => ipcRenderer.removeListener('tab:find-result', listener);
+    },
     stop: (id: string) => ipcRenderer.invoke(IPC.TAB_STOP, id),
     getContent: (id: string) => ipcRenderer.invoke('tab:get-content', id),
     pip: (id: string) => ipcRenderer.invoke('tab:pip', id),

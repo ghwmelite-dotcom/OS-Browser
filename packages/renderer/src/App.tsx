@@ -25,6 +25,7 @@ import { CurrencyTools } from './components/CurrencyTools';
 import { TwiDictionary } from './components/TwiDictionary';
 // ReadingMode replaced by ReadingModePanel (lazy loaded below)
 import { DownloadBar } from './components/DownloadBar';
+import { FindBar } from './components/Browser/FindBar';
 import { Onboarding } from './components/Onboarding';
 import { OfflineBanner } from './components/NetworkManager/OfflineBanner';
 import { useNetworkStore } from './store/network';
@@ -903,6 +904,7 @@ export function App() {
       </div>
 
       <DownloadBar />
+      <FindBar />
 
       {showSplitPicker && <SplitScreenPicker onClose={() => setShowSplitPicker(false)} />}
 

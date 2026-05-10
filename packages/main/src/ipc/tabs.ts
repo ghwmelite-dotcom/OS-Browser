@@ -309,6 +309,19 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     view?.webContents.setZoomLevel(0);
   });
 
+  // Ctrl+F find-in-page — start/refine a search (Phase 5 UX parity)
+  ipcMain.handle('tab:find-start', (_event, id: string, text: string, options: any) => {
+    const view = getTabView(id);
+    if (!view || !text) return null;
+    return view.webContents.findInPage(text, options || {});
+  });
+
+  // Stop the active find session and clear/keep the highlight selection
+  ipcMain.handle('tab:find-stop', (_event, id: string, action?: 'clearSelection' | 'keepSelection' | 'activateSelection') => {
+    const view = getTabView(id);
+    view?.webContents.stopFindInPage(action || 'clearSelection');
+  });
+
   ipcMain.handle(IPC.TAB_STOP, (_event, id: string) => {
     const view = getTabView(id);
     view?.webContents.stop();
@@ -1266,6 +1279,18 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
   wc.on('did-start-loading', () => {
     if (wc.isDestroyed() || mainWindow.isDestroyed()) return;
     mainWindow.webContents.send('tab:loading', { id: tabId, isLoading: true });
+  });
+
+  // Phase 5 — forward find-in-page results (match count, active ordinal) to renderer
+  wc.on('found-in-page', (_e, result) => {
+    if (wc.isDestroyed() || mainWindow.isDestroyed()) return;
+    mainWindow.webContents.send('tab:find-result', {
+      id: tabId,
+      requestId: result.requestId,
+      activeMatchOrdinal: result.activeMatchOrdinal,
+      matches: result.matches,
+      finalUpdate: result.finalUpdate,
+    });
   });
 
   // Inject ad blocking scripts as early as possible — dom-ready fires before

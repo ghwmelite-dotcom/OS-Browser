@@ -3,6 +3,7 @@ import { useTabsStore } from '@/store/tabs';
 import { useNavigationStore } from '@/store/navigation';
 import { useSidebarStore } from '@/store/sidebar';
 import { useSplitScreenStore } from '@/store/splitscreen';
+import { useFindStore } from '@/store/find';
 
 export function useKeyboardShortcuts(callbacks: {
   onToggleHistory?: () => void;
@@ -71,6 +72,11 @@ export function useKeyboardShortcuts(callbacks: {
       else if (ctrl && key === 'p' && !shift) {
         e.preventDefault();
         if (activeTabId) (window as any).osBrowser?.tabs?.print?.(activeTabId);
+      }
+      // Ctrl+F — Find in page
+      else if (ctrl && key === 'f' && !shift) {
+        e.preventDefault();
+        useFindStore.getState().open();
       }
       // Ctrl+H — History
       else if (ctrl && key === 'h' && !shift) { e.preventDefault(); callbacks.onToggleHistory?.(); }
