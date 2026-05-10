@@ -218,9 +218,10 @@ export function Tab({
       }}
       role="tab"
       aria-selected={isActive}
-      // Use aria-label (accessible name) instead of title — the latter shows the
-      // native OS tooltip which competes with our custom TabPreview component.
-      aria-label={title}
+      // Native OS tooltip — rendered by Windows outside the Chromium compositor
+      // so it's never hidden by the WebContentsView (page content). Includes
+      // the URL on the second line to match the rich Chrome tab tooltip.
+      title={url && !url.startsWith('os-browser://') ? `${title}\n${url}` : title}
       data-tab-id={id}
     >
       {/* Chrome-style separator — 1px, 20px tall, hidden near active/hovered tabs */}
@@ -350,13 +351,9 @@ export function Tab({
         </button>
       )}
 
-      {/* Tab preview tooltip -- fixed position, centered below tab */}
-      {showPreview && !isPinned && previewPos && (
-        <TabPreview
-          tab={{ title, url, favicon_path: favicon }}
-          position={previewPos}
-        />
-      )}
+      {/* Custom React TabPreview removed — see git commit. The native OS
+          tooltip (title attribute above) is the single source of truth so
+          it cannot be hidden behind the WebContentsView. */}
     </div>
   );
 }
