@@ -63,6 +63,7 @@ contextBridge.exposeInMainWorld('osBrowser', {
   newPrivateWindow: () => ipcRenderer.invoke('window:new-private'),
   hideWebViews: () => ipcRenderer.invoke('webviews:hide'),
   showWebViews: () => ipcRenderer.invoke('webviews:show'),
+  setChromeLeft: (pixels: number) => ipcRenderer.invoke('webviews:set-chrome-left', pixels),
   captureScreenshot: () => ipcRenderer.invoke('screenshot:capture'),
   screenshot: {
     captureVisible: () => ipcRenderer.invoke('screenshot:capture-visible'),
@@ -94,6 +95,11 @@ contextBridge.exposeInMainWorld('osBrowser', {
       const listener = (_e: any, data: any) => callback(data);
       ipcRenderer.on('tab:find-result', listener);
       return () => ipcRenderer.removeListener('tab:find-result', listener);
+    },
+    onFindOpen: (callback: () => void) => {
+      const listener = () => callback();
+      ipcRenderer.on('find:open', listener);
+      return () => ipcRenderer.removeListener('find:open', listener);
     },
     stop: (id: string) => ipcRenderer.invoke(IPC.TAB_STOP, id),
     getContent: (id: string) => ipcRenderer.invoke('tab:get-content', id),
@@ -457,6 +463,64 @@ contextBridge.exposeInMainWorld('osBrowser', {
     },
     autofill: (tabId: string, username: string, password: string) =>
       ipcRenderer.invoke('password:autofill', tabId, username, password),
+  },
+
+  browseAgent: {
+    // Workflow CRUD
+    workflowList: () => ipcRenderer.invoke('agent:workflow:list'),
+    workflowGet: (id: string) => ipcRenderer.invoke('agent:workflow:get', id),
+    workflowCreate: (data: any) => ipcRenderer.invoke('agent:workflow:create', data),
+    workflowUpdate: (id: string, data: any) => ipcRenderer.invoke('agent:workflow:update', id, data),
+    workflowDelete: (id: string) => ipcRenderer.invoke('agent:workflow:delete', id),
+    workflowDuplicate: (id: string) => ipcRenderer.invoke('agent:workflow:duplicate', id),
+    // Execution
+    workflowRun: (workflowId: string, tabId: string) => ipcRenderer.invoke('agent:workflow:run', workflowId, tabId),
+    workflowPause: (executionId: string) => ipcRenderer.invoke('agent:workflow:pause', executionId),
+    workflowResume: (executionId: string) => ipcRenderer.invoke('agent:workflow:resume', executionId),
+    workflowStop: (executionId: string) => ipcRenderer.invoke('agent:workflow:stop', executionId),
+    executionStatus: (executionId: string) => ipcRenderer.invoke('agent:execution:status', executionId),
+    executionHistory: () => ipcRenderer.invoke('agent:execution:history'),
+    // Page intelligence
+    pageAnalyze: (tabId: string) => ipcRenderer.invoke('agent:page:analyze', tabId),
+    pageExtract: (tabId: string, config: any) => ipcRenderer.invoke('agent:page:extract', tabId, config),
+    pageFillForm: (tabId: string, fields: Record<string, string>, formIndex?: number) => ipcRenderer.invoke('agent:page:fill-form', tabId, fields, formIndex),
+    pageClick: (tabId: string, selector: string) => ipcRenderer.invoke('agent:page:click', tabId, selector),
+    pageScreenshot: (tabId: string) => ipcRenderer.invoke('agent:page:screenshot', tabId),
+    pageEvaluate: (tabId: string, expression: string) => ipcRenderer.invoke('agent:page:evaluate', tabId, expression),
+    // Templates
+    templateList: () => ipcRenderer.invoke('agent:template:list'),
+    templateInstall: (templateId: string) => ipcRenderer.invoke('agent:template:install', templateId),
+    // Events (main -> renderer)
+    onExecutionUpdate: (cb: (data: any) => void) => {
+      const l = (_e: any, d: any) => cb(d);
+      ipcRenderer.on('agent:execution:update', l);
+      return () => ipcRenderer.removeListener('agent:execution:update', l);
+    },
+    onExecutionLog: (cb: (data: any) => void) => {
+      const l = (_e: any, d: any) => cb(d);
+      ipcRenderer.on('agent:execution:log', l);
+      return () => ipcRenderer.removeListener('agent:execution:log', l);
+    },
+    onExecutionStepComplete: (cb: (data: any) => void) => {
+      const l = (_e: any, d: any) => cb(d);
+      ipcRenderer.on('agent:execution:step-complete', l);
+      return () => ipcRenderer.removeListener('agent:execution:step-complete', l);
+    },
+    onExecutionComplete: (cb: (data: any) => void) => {
+      const l = (_e: any, d: any) => cb(d);
+      ipcRenderer.on('agent:execution:complete', l);
+      return () => ipcRenderer.removeListener('agent:execution:complete', l);
+    },
+    onExecutionError: (cb: (data: any) => void) => {
+      const l = (_e: any, d: any) => cb(d);
+      ipcRenderer.on('agent:execution:error', l);
+      return () => ipcRenderer.removeListener('agent:execution:error', l);
+    },
+    onExecutionNeedsInput: (cb: (data: any) => void) => {
+      const l = (_e: any, d: any) => cb(d);
+      ipcRenderer.on('agent:execution:needs-input', l);
+      return () => ipcRenderer.removeListener('agent:execution:needs-input', l);
+    },
   },
 
   watcher: {

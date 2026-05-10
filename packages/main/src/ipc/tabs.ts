@@ -1148,12 +1148,18 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     menu.popup({ window: mainWindow });
   });
 
-  // Keyboard shortcut: F12 or Ctrl+Shift+I opens DevTools for the page
+  // Keyboard shortcuts intercepted before the focused page sees them.
+  // Needed because window.addEventListener in the renderer only fires when the
+  // chrome (not the WebContentsView) has focus.
   wc.on('before-input-event', (event, input) => {
     if (wc.isDestroyed()) return;
     if (input.type !== 'keyDown') return;
-    if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
-      event.preventDefault(); // Stop Chromium's default docked DevTools from opening
+    const ctrl = input.control || input.meta;
+    const key = input.key.toLowerCase();
+
+    // F12 / Ctrl+Shift+I — DevTools for the page
+    if (input.key === 'F12' || (ctrl && input.shift && key === 'i')) {
+      event.preventDefault();
       wc.openDevTools({ mode: 'detach' });
       setTimeout(() => {
         const dtWc = wc.devToolsWebContents;
@@ -1164,6 +1170,52 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
           else dtWc.focus();
         }
       }, 300);
+      return;
+    }
+
+    // Ctrl+F — Find in page (forward to renderer to open the FindBar)
+    if (ctrl && !input.shift && key === 'f') {
+      event.preventDefault();
+      try { mainWindow.webContents.send('find:open'); } catch {}
+      return;
+    }
+
+    // Ctrl+Shift+R / Ctrl+R — Reload variants (handle in main since chrome may not have focus)
+    if (ctrl && key === 'r') {
+      event.preventDefault();
+      if (input.shift) wc.reloadIgnoringCache(); else wc.reload();
+      return;
+    }
+
+    // Ctrl+0 — Reset zoom
+    if (ctrl && !input.shift && key === '0') {
+      event.preventDefault();
+      wc.setZoomLevel(0);
+      return;
+    }
+
+    // Ctrl+P — Print
+    if (ctrl && !input.shift && key === 'p') {
+      event.preventDefault();
+      try { wc.print({}, () => {}); } catch {}
+      return;
+    }
+
+    // Alt+Left / Alt+Right — Back / Forward
+    if (input.alt && !ctrl && (input.key === 'ArrowLeft' || input.key === 'ArrowRight')) {
+      event.preventDefault();
+      if (input.key === 'ArrowLeft' && wc.canGoBack()) wc.goBack();
+      else if (input.key === 'ArrowRight' && wc.canGoForward()) wc.goForward();
+      return;
+    }
+
+    // Escape — Stop loading if loading
+    if (input.key === 'Escape' && !ctrl && !input.shift && !input.alt) {
+      if (wc.isLoading()) {
+        event.preventDefault();
+        wc.stop();
+      }
+      return;
     }
   });
 

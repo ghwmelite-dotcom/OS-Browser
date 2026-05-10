@@ -31,6 +31,16 @@ export function FindBar() {
     return unsub;
   }, [activeTabId]);
 
+  // Open the bar when main forwards Ctrl+F from the focused WebContentsView.
+  // (renderer's window.addEventListener only fires when chrome has focus,
+  // which is rarely the case while the user is reading a page.)
+  useEffect(() => {
+    const unsub = (window as any).osBrowser?.tabs?.onFindOpen?.(() => {
+      useFindStore.getState().open();
+    });
+    return unsub;
+  }, []);
+
   // Focus + select text when opening
   useEffect(() => {
     if (isOpen) {
