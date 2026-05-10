@@ -218,7 +218,9 @@ export function Tab({
       }}
       role="tab"
       aria-selected={isActive}
-      title={title}
+      // Use aria-label (accessible name) instead of title — the latter shows the
+      // native OS tooltip which competes with our custom TabPreview component.
+      aria-label={title}
       data-tab-id={id}
     >
       {/* Chrome-style separator — 1px, 20px tall, hidden near active/hovered tabs */}
