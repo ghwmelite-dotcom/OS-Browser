@@ -110,19 +110,23 @@ export function FindBar() {
     <div
       style={{
         position: 'fixed',
-        top: 142,
-        right: 16,
-        width: 380,
-        height: 38,
+        top: 130,
+        right: 20,
+        width: 440,
+        height: 46,
         background: 'var(--color-surface-1, #fff)',
-        border: '1px solid var(--color-border-1, rgba(0,0,0,0.1))',
-        borderRadius: 8,
-        boxShadow: '0 6px 18px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.08)',
+        border: '2px solid var(--color-accent, #006B3F)',
+        borderRadius: 12,
+        boxShadow:
+          '0 16px 40px -8px rgba(0,0,0,0.28), ' +
+          '0 4px 12px -2px rgba(0,0,0,0.18), ' +
+          '0 0 0 4px rgba(0,107,63,0.08)',
         display: 'flex',
         alignItems: 'center',
-        padding: '0 6px 0 12px',
+        padding: '0 8px 0 14px',
         zIndex: 1000,
-        gap: 4,
+        gap: 6,
+        backdropFilter: 'saturate(140%)',
       }}
       role="dialog"
       aria-label="Find in page"
@@ -137,23 +141,29 @@ export function FindBar() {
         spellCheck={false}
         style={{
           flex: 1,
-          height: 32,
+          height: 36,
           background: 'transparent',
           border: 'none',
           outline: 'none',
-          fontSize: 13,
+          fontSize: 14,
+          fontWeight: 500,
           color: 'var(--color-text-primary)',
           minWidth: 0,
+          letterSpacing: '0.01em',
         }}
         aria-label="Search query"
       />
       {query.length > 0 && (
         <span
           style={{
-            fontSize: 11,
-            color: matchCount === 0 ? 'var(--color-danger, #ef4444)' : 'var(--color-text-muted)',
+            fontSize: 12,
+            fontWeight: 600,
+            color: matchCount === 0 ? 'var(--color-danger, #ef4444)' : 'var(--color-text-muted, #6b7280)',
             whiteSpace: 'nowrap',
-            padding: '0 4px',
+            padding: '4px 8px',
+            borderRadius: 6,
+            background: matchCount === 0 ? 'rgba(239,68,68,0.08)' : 'rgba(0,0,0,0.04)',
+            letterSpacing: '0.02em',
           }}
         >
           {matchCount === 0 ? 'No matches' : `${matchOrdinal} of ${matchCount}`}
@@ -201,18 +211,21 @@ const FindBtn: React.FC<{
     disabled={disabled}
     title={title}
     style={{
-      width: 26,
-      height: 26,
+      width: 30,
+      height: 30,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: 4,
+      borderRadius: 6,
       border: 'none',
-      background: active ? 'var(--color-accent-soft, rgba(59,130,246,0.12))' : 'transparent',
-      color: disabled ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
+      background: active ? 'rgba(0,107,63,0.14)' : 'transparent',
+      color: active ? 'var(--color-accent, #006B3F)' : (disabled ? 'var(--color-text-muted)' : 'var(--color-text-primary)'),
       cursor: disabled ? 'default' : 'pointer',
-      opacity: disabled ? 0.4 : 1,
+      opacity: disabled ? 0.35 : 1,
+      transition: 'background 120ms ease',
     }}
+    onMouseEnter={(e) => { if (!disabled && !active) e.currentTarget.style.background = 'rgba(0,0,0,0.06)'; }}
+    onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent'; }}
   >
     {children}
   </button>
