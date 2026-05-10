@@ -15,6 +15,14 @@ let mainWindow: BrowserWindow | null = null;
 const adBlockService = new AdBlockService();
 setAdBlockService(adBlockService);
 
+// Override the default user-agent so sites like WhatsApp Web and YouTube
+// don't reject us as "non-Chrome". Electron's default appends
+// `os-browser/1.0.0 ... Electron/33.4.11` to the UA which trips browser-sniffing
+// regexes. We present as plain Chrome 130 (the bundled Chromium version).
+app.userAgentFallback =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
+  '(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+
 // Track URL passed via protocol (e.g. user clicks a link when OS Browser is default)
 let pendingProtocolUrl: string | null = null;
 
