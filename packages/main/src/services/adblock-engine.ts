@@ -54,7 +54,9 @@ const YOUTUBE_AD_BLOCK_SCRIPT = `
         delete json.playerAds;
         delete json.adBreakHeartbeatParams;
         delete json.adBreakParams;
-        delete json.attestation;
+        // NOTE: do NOT delete json.attestation — it's YouTube's anti-bot/integrity
+        // token used for AUTHENTICATED actions (Create button, Notifications,
+        // Account menu). Removing it leaves those UI elements unresponsive.
         if (json.playerConfig) {
           delete json.playerConfig.adRequestConfig;
           delete json.playerConfig.adsRequestConfig;
@@ -114,7 +116,7 @@ const YOUTUBE_AD_BLOCK_SCRIPT = `
           delete val.playerAds;
           delete val.adBreakHeartbeatParams;
           delete val.adBreakParams;
-          delete val.attestation;
+          // NOTE: do NOT delete val.attestation — see comment in fetch interception above
         }
         _ytInitialPlayerResponse = val;
       },
