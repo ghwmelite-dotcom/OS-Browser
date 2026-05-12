@@ -1,4 +1,4 @@
-import { app, ipcMain, BrowserWindow, WebContentsView, nativeImage, net, Menu, MenuItem, clipboard, shell, dialog } from 'electron';
+import { app, ipcMain, BrowserWindow, WebContentsView, nativeImage, net, Menu, MenuItem, clipboard, shell, dialog, globalShortcut } from 'electron';
 import { IPC } from '../../../shared/dist';
 import { getDatabase } from '../db/database';
 import path from 'path';
@@ -12,7 +12,7 @@ import { getAdBlockService } from '../services/adblock-engine';
 import { isGovCaptureDomain, captureCurrentPage } from '../services/interaction-vault';
 import { TabManager } from '../tabs/TabManager';
 import { TabSessionManager } from '../tabs/TabSessionManager';
-import { getTabView, getAllTabViews, resizeAllViews, hideAllTabViews, detachTabView } from '../tabs/TabWebContents';
+import { getTabView, getAllTabViews, resizeAllViews, hideAllTabViews, detachTabView, enterHtmlFullscreen, exitHtmlFullscreen, getHtmlFullscreenTabId } from '../tabs/TabWebContents';
 
 function isAllowedUrl(url: string): boolean {
   if (!url) return false;
@@ -765,6 +765,20 @@ export function registerTabHandlers(mainWindow: BrowserWindow): void {
     resizeAllViews(mainWindow);
   });
 
+  // Window-level Esc fallback for HTML fullscreen — when focus is on the
+  // chrome (renderer) instead of the active tab, Esc keypresses land here
+  // and Chromium's built-in fullscreen-exit doesn't fire. Forward to the
+  // fullscreen tab's webContents so it can exit normally.
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown' || input.key !== 'Escape') return;
+    const fsTabId = getHtmlFullscreenTabId();
+    if (!fsTabId) return;
+    const fsView = getTabView(fsTabId);
+    if (!fsView) return;
+    event.preventDefault();
+    fsView.webContents.executeJavaScript('document.exitFullscreen && document.exitFullscreen();').catch(() => {});
+  });
+
   // ── New TabManager-backed IPC handlers ─────────────────────────────
   ipcMain.handle(IPC.TAB_REORDER, (_e, id: string, newIndex: number) => tabManager.reorderTab(id, newIndex));
   ipcMain.handle(IPC.TAB_DUPLICATE, (_e, id: string) => tabManager.duplicateTab(id));
@@ -864,6 +878,75 @@ export function createTabFromMain(mainWindow: BrowserWindow, url: string, oauthO
 function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: BrowserWindow): void {
   const wc = view.webContents;
   const db = getDatabase();
+
+  // ── HTML5 Fullscreen (video, etc.) ──────────────────────────────────
+  // When a page calls element.requestFullscreen(), elevate the BrowserWindow
+  // to OS-level fullscreen AND expand the WebContentsView to cover the entire
+  // window (over the chrome + sidebar). Without this, the video only fills the
+  // chrome-offset panel region, not the screen.
+  let wasFullScreenBeforeHtml = false;
+  let tabInHtmlFullscreen = false;
+  wc.on('enter-html-full-screen' as any, () => {
+    wasFullScreenBeforeHtml = mainWindow.isFullScreen();
+    tabInHtmlFullscreen = true;
+    if (!wasFullScreenBeforeHtml) mainWindow.setFullScreen(true);
+    enterHtmlFullscreen(tabId, mainWindow);
+    // OS-level Esc fallback — works even when keyboard focus has drifted
+    // outside the WebContentsView (which can happen under setFullScreen on
+    // Windows). Registered only while in HTML fullscreen so normal Esc
+    // behavior (close dialogs etc.) is preserved the rest of the time.
+    try {
+      globalShortcut.register('Escape', () => {
+        try {
+          wc.executeJavaScript('document.exitFullscreen && document.exitFullscreen();').catch(() => {});
+        } catch { /* tab may be destroyed */ }
+      });
+    } catch { /* shortcut may already be registered */ }
+  });
+  wc.on('leave-html-full-screen' as any, () => {
+    tabInHtmlFullscreen = false;
+    try { globalShortcut.unregister('Escape'); } catch {}
+    exitHtmlFullscreen(mainWindow);
+    if (!wasFullScreenBeforeHtml && mainWindow.isFullScreen()) {
+      mainWindow.setFullScreen(false);
+    }
+  });
+
+  // Fallback Esc handler — some sites swallow Esc or focus routing prevents
+  // Chromium's built-in fullscreen-exit from firing. If Esc is pressed while
+  // this tab is in HTML fullscreen, force-exit via the JS API which fires
+  // the normal leave-html-full-screen event.
+  wc.on('before-input-event', (event, input) => {
+    if (!tabInHtmlFullscreen) return;
+    if (input.type !== 'keyDown') return;
+    if (input.key === 'Escape') {
+      event.preventDefault();
+      wc.executeJavaScript('document.exitFullscreen && document.exitFullscreen();').catch(() => {});
+    }
+  });
+
+  // Inject a page-level Esc keydown handler so fullscreen exit works even
+  // when the embedder doesn't see the keypress. Runs in the page's JS
+  // context (capturing phase on window) so focus routing/OS-fullscreen
+  // capture can't swallow it. Idempotent — only installs once per page.
+  wc.on('dom-ready', () => {
+    wc.executeJavaScript(`
+      (function(){
+        if (window.__osBrowserEscFsHandler) return;
+        window.__osBrowserEscFsHandler = true;
+        window.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape' && document.fullscreenElement) {
+            e.preventDefault();
+            e.stopPropagation();
+            try {
+              var p = document.exitFullscreen && document.exitFullscreen();
+              if (p && p.catch) p.catch(function(){});
+            } catch (err) {}
+          }
+        }, true);
+      })();
+    `).catch(() => {});
+  });
 
   // ── Ad domain list for navigation blocking ──────────────────────────
   const AD_POPUP_DOMAINS = [
@@ -1603,14 +1686,17 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
     } catch { /* USSD detection injection failed — non-critical */ }
 
     // ── Password Form Detection ──────────────────────────────────────
-    // Detects login form submissions and stores credentials temporarily
-    // so the did-navigate handler can send them to the renderer for the
-    // "Save Password?" prompt.
+    // Detects login form submissions and stores credentials.
+    // Covers: form submit, button click, Enter key, AND AJAX/SPA logins.
+    // Uses IPC message for immediate notification (no navigation required).
     try {
       wc.executeJavaScript(`
         (function() {
           if (window.__osBrowserPasswordDetector) return;
           window.__osBrowserPasswordDetector = true;
+
+          var lastSent = '';
+          var sendTimer = null;
 
           function extractCredentials(form) {
             var inputs = form ? form.querySelectorAll('input') : document.querySelectorAll('input');
@@ -1639,10 +1725,20 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
             return { username: username, password: password };
           }
 
-          // Store any captured data — username-only, password-only, or both
           function storeCreds(creds) {
             if (creds.username || creds.password) {
               window.__osBrowserDetectedCreds = creds;
+              // For SPA/AJAX logins: send immediately via IPC if we have both
+              if (creds.username && creds.password) {
+                var key = creds.username + ':' + creds.password;
+                if (key === lastSent) return;
+                lastSent = key;
+                // Small delay to let the login request complete
+                if (sendTimer) clearTimeout(sendTimer);
+                sendTimer = setTimeout(function() {
+                  window.__osBrowserPasswordReady = true;
+                }, 800);
+              }
             }
           }
 
@@ -1653,13 +1749,15 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
             storeCreds(extractCredentials(form));
           }, true);
 
-          // Also detect click on submit buttons (for JS-driven forms)
+          // Detect click on submit buttons (for JS-driven forms)
           document.addEventListener('click', function(e) {
             var el = e.target;
             while (el && el !== document.body) {
               if ((el.tagName === 'BUTTON' && (el.type === 'submit' || !el.type)) ||
                   (el.tagName === 'INPUT' && el.type === 'submit') ||
-                  (el.tagName === 'A' && el.getAttribute('role') === 'button')) {
+                  (el.tagName === 'A' && el.getAttribute('role') === 'button') ||
+                  (el.tagName === 'DIV' && el.getAttribute('role') === 'button') ||
+                  (el.tagName === 'SPAN' && el.getAttribute('role') === 'button')) {
                 var form = el.closest('form');
                 storeCreds(extractCredentials(form));
                 return;
@@ -1668,7 +1766,7 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
             }
           }, true);
 
-          // For Enter key submission
+          // Enter key submission
           document.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
               var active = document.activeElement;
@@ -1681,6 +1779,28 @@ function setupViewEvents(view: WebContentsView, tabId: string, mainWindow: Brows
         })()
       `);
     } catch { /* password detection injection failed — non-critical */ }
+
+    // Poll for SPA-login credential readiness (AJAX logins that don't navigate)
+    const spaPasswordPoll = setInterval(() => {
+      if (wc.isDestroyed()) { clearInterval(spaPasswordPoll); return; }
+      wc.executeJavaScript('window.__osBrowserPasswordReady ? window.__osBrowserDetectedCreds : null')
+        .then((creds: any) => {
+          if (!creds || !creds.username || !creds.password) return;
+          wc.executeJavaScript('window.__osBrowserPasswordReady = false; window.__osBrowserDetectedCreds = null;').catch(() => {});
+          let domain = '';
+          try { domain = new URL(wc.getURL()).hostname; } catch {}
+          if (!domain) return;
+          mainWindow.webContents.send('password:detected', {
+            tabId, url: wc.getURL(), domain,
+            username: creds.username,
+            password: creds.password,
+          });
+        })
+        .catch(() => {});
+    }, 1500);
+
+    // Clean up poll when tab is destroyed
+    wc.on('destroyed', () => clearInterval(spaPasswordPoll));
   });
 
   wc.on('did-stop-loading', () => {

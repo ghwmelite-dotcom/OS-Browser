@@ -11,9 +11,49 @@ const tabViews = new Map<string, WebContentsView>();
 // Total: 171px when all visible
 const CHROME_TOP = 171;
 // Kente Sidebar icon rail width (always visible on the left)
-const CHROME_LEFT = 48;
+const CHROME_LEFT_DEFAULT = 48;
 // Bottom safety margin — prevents covering the Windows taskbar on maximize
 const CHROME_BOTTOM = 2;
+
+// Dynamic left offset — adjusts as the Kente sidebar expands/collapses so the
+// tab WebContentsView stays to the right of the panel instead of overlapping it.
+let currentLeftOffset = CHROME_LEFT_DEFAULT;
+
+// When a tab enters HTML5 fullscreen (e.g. YouTube video), its view must
+// cover the entire window — over the chrome and sidebar — not just the
+// chrome-offset region. Track which tab is in this state so resize events
+// don't snap it back to normal bounds.
+let htmlFullscreenTabId: string | null = null;
+
+export function getHtmlFullscreenTabId(): string | null {
+  return htmlFullscreenTabId;
+}
+
+export function enterHtmlFullscreen(tabId: string, mainWindow: BrowserWindow): void {
+  htmlFullscreenTabId = tabId;
+  const view = tabViews.get(tabId);
+  if (!view) return;
+  // Cover the entire window content area
+  const [winW, winH] = mainWindow.getContentSize();
+  view.setBounds({ x: 0, y: 0, width: winW, height: winH });
+  // Raise to the top of the child view stack so chrome can't paint over it
+  try {
+    mainWindow.contentView.removeChildView(view);
+    mainWindow.contentView.addChildView(view);
+  } catch { /* view re-ordering failed — non-critical */ }
+}
+
+export function exitHtmlFullscreen(mainWindow: BrowserWindow): void {
+  htmlFullscreenTabId = null;
+  resizeAllViews(mainWindow);
+}
+
+export function setChromeLeftOffset(pixels: number, mainWindow: BrowserWindow): void {
+  const clamped = Math.max(0, Math.min(Math.round(pixels), 1200));
+  if (clamped === currentLeftOffset) return;
+  currentLeftOffset = clamped;
+  resizeAllViews(mainWindow);
+}
 
 // ── View access ─────────────────────────────────────────────────────────
 
@@ -200,7 +240,7 @@ export function getPipTabId(): string | null {
 export function resizeView(view: WebContentsView, mainWindow: BrowserWindow): void {
   try {
     const [winW, winH] = mainWindow.getContentSize();
-    const x = CHROME_LEFT;
+    const x = currentLeftOffset;
     const y = CHROME_TOP;
     const w = Math.max(0, winW - x);
     const h = Math.max(0, winH - y - CHROME_BOTTOM);
@@ -212,7 +252,11 @@ export function resizeView(view: WebContentsView, mainWindow: BrowserWindow): vo
 
 export function resizeAllViews(mainWindow: BrowserWindow): void {
   for (const [id, view] of tabViews) {
-    if (id === pipTabId) {
+    if (id === htmlFullscreenTabId) {
+      // HTML5 fullscreen — cover the entire window
+      const [winW, winH] = mainWindow.getContentSize();
+      view.setBounds({ x: 0, y: 0, width: winW, height: winH });
+    } else if (id === pipTabId) {
       // Re-position PiP in bottom-right of resized window
       const [winW, winH] = mainWindow.getContentSize();
       view.setBounds({ x: winW - 416, y: winH - 271, width: 400, height: 225 });
