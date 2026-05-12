@@ -372,7 +372,6 @@ const YOUTUBE_AD_BLOCK_SCRIPT = `
     // YouTube Premium subscription nags
     'ytd-mealbar-promo-renderer',
     'tp-yt-paper-dialog:has(#mealbar-promo-renderer)',
-    'ytd-popup-container:has(a[href*="premium"])',
     'ytd-enforcement-message-view-model',
     // Sponsored cards in recommendations
     'ytd-promoted-sparkles-text-search-renderer',
@@ -1767,7 +1766,7 @@ const WEBRTC_LEAK_PREVENTION_SCRIPT = `
 `;
 
 // ── Default whitelisted hostnames ─────────────────────────────────────────
-const DEFAULT_GOV_WHITELIST_PATTERNS = ['*.gov.gh', '*.mil.gh', '*.edu.gh'];
+const DEFAULT_GOV_WHITELIST_PATTERNS = ['*.gov.gh', '*.mil.gh', '*.edu.gh', 'ohcs-smartgate.pages.dev'];
 
 export class AdBlockService {
   private blocker: ElectronBlocker | null = null;
