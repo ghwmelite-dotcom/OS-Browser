@@ -1,25 +1,22 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/OS_Browser-v1.0.0-D4A017?style=for-the-badge&labelColor=050505" alt="Version" />
-  <img src="https://img.shields.io/badge/Platform-Windows-0078D6?style=for-the-badge&labelColor=050505" alt="Platform" />
-  <img src="https://img.shields.io/badge/Built_with-Electron_33-47848F?style=for-the-badge&labelColor=050505" alt="Electron" />
-  <img src="https://img.shields.io/badge/AI_Powered-Cloudflare_Workers_AI-F38020?style=for-the-badge&labelColor=050505" alt="AI" />
-  <img src="https://img.shields.io/badge/Made_in-Ghana_🇬🇭-006B3F?style=for-the-badge&labelColor=050505" alt="Ghana" />
-</p>
+<div align="center">
 
-<h1 align="center">
-  <br />
-  🛡️ OS Browser
-  <br />
-  <sub>Ghana's AI-Powered Desktop Browser</sub>
-</h1>
+<img src="docs/assets/banner.svg" alt="OS Browser — Ghana's AI-Powered Desktop Browser" width="100%" />
 
-<p align="center">
-  <strong>Built for civil servants. Designed for Ghana. Powered by AI.</strong>
-</p>
+<br/>
 
-<p align="center">
-  OS Browser is a standalone desktop browser built specifically for Ghana's public sector. It combines a full Chromium-based browsing experience with built-in AI assistance, government portal quick-access, Twi language translation, network-level ad blocking, and government-grade privacy — all in a beautiful Ghana-inspired interface.
-</p>
+[![Live Site](https://img.shields.io/badge/🌐_Live-osbrowser.askozzy.work-D4A017?style=for-the-badge&labelColor=050505)](https://osbrowser.askozzy.work/)
+
+[![Version](https://img.shields.io/badge/OS_Browser-v1.0.0-D4A017?style=flat-square&labelColor=050505)](https://github.com/ghwmelite-dotcom/OS-Browser)
+[![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=flat-square&labelColor=050505&logo=windows&logoColor=white)](#-getting-started)
+[![Electron 33](https://img.shields.io/badge/Built_with-Electron_33-47848F?style=flat-square&labelColor=050505&logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![Cloudflare Workers AI](https://img.shields.io/badge/AI_Powered-Cloudflare_Workers_AI-F38020?style=flat-square&labelColor=050505&logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/workers-ai/)
+[![Made in Ghana](https://img.shields.io/badge/Made_in-Ghana_🇬🇭-006B3F?style=flat-square&labelColor=050505)](https://osbrowser.askozzy.work/)
+
+**Built for civil servants. Designed for Ghana. Powered by AI.**
+
+</div>
+
+OS Browser is a standalone desktop browser built specifically for Ghana's public sector. It combines a full Chromium-based browsing experience with built-in AI assistance, government portal quick-access, Twi language translation, network-level ad blocking, and government-grade privacy — all in a beautiful Ghana-inspired interface.
 
 ---
 
@@ -61,32 +58,50 @@
 
 ---
 
+## 🔒 Local-first by design
+
+Your browsing life never leaves the machine. The only thing that crosses the wire is the AI prompt itself — answered by a stateless edge worker that keeps nothing.
+
+<div align="center">
+<img src="docs/assets/local-first.svg" alt="Local-first architecture — data stays on device, only prompts cross the wire to a stateless Cloudflare edge worker" width="100%" />
+</div>
+
+---
+
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────────────────────┐
-│              OS Browser (Electron)               │
-│                                                  │
-│  ┌────────────────┐   ┌───────────────────────┐  │
-│  │  Main Process   │   │  Renderer (React)     │  │
-│  │                 │   │                       │  │
-│  │  • SQLite DB    │   │  • Browser Chrome     │  │
-│  │  • Ad Blocker   │   │  • AI Sidebar         │  │
-│  │  • Tab Manager  │   │  • New Tab Page       │  │
-│  │  • Page Cache   │   │  • Settings/Panels    │  │
-│  │  • Credentials  │   │  • Zustand Stores     │  │
-│  └───────┬─────────┘   └───────┬───────────────┘  │
-│          │      IPC Bridge      │                  │
-│          └──────────┬───────────┘                  │
-└─────────────────────┼──────────────────────────────┘
-                      │ HTTPS
-           ┌──────────▼──────────┐
-           │  Cloudflare Worker  │
-           │  (Stateless AI)     │
-           │  • Chat / Summarize │
-           │  • Translate / Search│
-           │  • No user data     │
-           └─────────────────────┘
+```mermaid
+flowchart TB
+    subgraph APP["🖥️ OS Browser — Electron"]
+        subgraph MAIN["Main Process"]
+            DB[("SQLite DB<br/><i>encrypted at rest</i>")]
+            AD["🛡️ Ad Blocker"]
+            TM["Tab Manager<br/><i>auto-suspend · max 10</i>"]
+            PC["Page Cache"]
+            CR["Credentials"]
+        end
+        subgraph REN["Renderer — React"]
+            CHROME["Browser Chrome"]
+            SIDE["⚡ AI Sidebar"]
+            NTP["New Tab Page<br/><i>gov portals</i>"]
+            SET["Settings & Panels"]
+            ZS["Zustand Stores"]
+        end
+        MAIN <-.->|"IPC Bridge<br/>(contextBridge)"| REN
+    end
+
+    subgraph EDGE["☁️ Cloudflare Worker — stateless AI"]
+        W["Chat · Summarize<br/>Translate · Search<br/><i>no user data stored</i>"]
+        AI["⚡ Workers AI<br/>6 models w/ fallback"]
+        W --> AI
+    end
+
+    MAIN -->|"HTTPS — prompt only"| W
+
+    style APP fill:#10130f,stroke:#006B3F,color:#e7eaf0
+    style MAIN fill:#161a23,stroke:#4cc38a,color:#e7eaf0
+    style REN fill:#161a23,stroke:#D4A017,color:#e7eaf0
+    style EDGE fill:#1a180f,stroke:#FCD116,color:#e7eaf0
 ```
 
 ---
@@ -132,9 +147,11 @@ os-browser/
 │   └── src/
 │       ├── routes/          # AI chat, summarize, translate, search, compare
 │       ├── middleware/      # Device auth, rate limiting
-│       └── services/       # Workers AI wrapper with model fallback
+│       └── services/        # Workers AI wrapper with model fallback
 │
+├── landing/           # osbrowser.askozzy.work landing page
 └── docs/              # Design spec + implementation plan
+    └── assets/        # README illustrations (SVG)
 ```
 
 ---
@@ -242,8 +259,8 @@ Proprietary — Hodges & Co. Limited / ohwpstudios
 
 ---
 
-<p align="center">
-  <strong>Built with ❤️ in Accra, Ghana</strong>
-  <br />
-  <sub>Hodges & Co. Limited / ohwpstudios</sub>
-</p>
+<div align="center">
+<strong>Built with ❤️ in Accra, Ghana</strong>
+<br />
+<sub>Hodges & Co. Limited / ohwpstudios</sub>
+</div>
